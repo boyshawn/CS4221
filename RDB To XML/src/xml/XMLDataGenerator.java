@@ -10,10 +10,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.Iterator;
 import javax.sql.rowset.CachedRowSet;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import database.DBAccess;
 
 public class XMLDataGenerator implements Generator {
@@ -24,10 +21,7 @@ public class XMLDataGenerator implements Generator {
 	}
 
 	private File privateGenerator(String dbName, String fileName){
-		Connection con = null;
-		String url = "???"; // Need to confirm later
-		String user = "acebrain_francis";
-		String pwd = "nus1234";
+		
 		String filePath = "/test/" + fileName + ".xml";
 		File f = null;
 		try {
@@ -45,9 +39,7 @@ public class XMLDataGenerator implements Generator {
 
 			try{
 				// Get table names & data
-				Class.forName("com.mysql.jdbc.Driver").newInstance();
-				con = DriverManager.getConnection(url,user,pwd);
-				DBAccess dbCache = new DBAccess(con);
+				DBAccess dbCache = DBAccess.getInstance();
 				Map<String, CachedRowSet> tables = dbCache.getTableCache();
 				Set<String> tablenames = tables.keySet();
 				Iterator<String> tableItr = tablenames.iterator();
@@ -94,13 +86,6 @@ public class XMLDataGenerator implements Generator {
 			writer.close();
 		} catch(FileNotFoundException e){
 			e.printStackTrace();
-		}
-		try{
-			if(con!=null){
-				con.close();
-			}
-		}catch(SQLException ex){
-			ex.printStackTrace();
 		}
 		return f;
 	}
