@@ -12,7 +12,7 @@ public class DBAccess {
 	private Connection dbConnection;
 	private Map<String, CachedRowSet> dbTableCache;
 	
-	DBAccess(Connection dbConnection) {
+	public DBAccess(Connection dbConnection) {
 		// stub
 	}
 	

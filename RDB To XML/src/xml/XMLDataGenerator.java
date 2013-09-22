@@ -1,13 +1,107 @@
 package xml;
 
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.FileNotFoundException;
+import java.util.Set;
+import java.util.Map;
+import java.util.List;
+import java.util.Iterator;
+import javax.sql.rowset.CachedRowSet;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import database.DBAccess;
 
 public class XMLDataGenerator implements Generator {
-
 	@Override
 	public File generate(String dbName, String fileName) {
 		// TODO Auto-generated method stub
-		return null;
+		return privateGenerator(dbName,fileName);
 	}
 
+	private File privateGenerator(String dbName, String fileName){
+		Connection con = null;
+		String url = "???"; // Need to confirm later
+		String user = "acebrain_francis";
+		String pwd = "nus1234";
+		String filePath = "/test/" + fileName + ".xml";
+		File f = null;
+		try {
+			// Create file to write XML data
+			f = new File(filePath);
+			f.mkdirs();
+			try{
+				f.createNewFile();
+			}catch(IOException e){
+				e.printStackTrace();
+			}
+			PrintWriter writer = new PrintWriter(new FileOutputStream(filePath),true);
+			// Write DB name to file
+			writer.println("<" + dbName.toUpperCase() + ">");
+
+			try{
+				// Get table names & data
+				Class.forName("com.mysql.jdbc.Driver").newInstance();
+				con = DriverManager.getConnection(url,user,pwd);
+				DBAccess dbCache = new DBAccess(con);
+				Map<String, CachedRowSet> tables = dbCache.getTableCache();
+				Set<String> tablenames = tables.keySet();
+				Iterator<String> tableItr = tablenames.iterator();
+
+				// Write data for each table/relation
+				while(tableItr.hasNext()){
+					String tName = tableItr.next();
+					// Write table name to file
+					writer.println("	<"+tName.toUpperCase()+">");
+					
+					// Process the rows for each table
+					CachedRowSet crs = tables.get(tName);
+					List<String> cols = dbCache.getUniqueColumns(tName);
+					while (crs.next()){
+						ResultSet row = crs.getOriginalRow();
+						for(int i=0;i<cols.size();i++){
+							String colName = cols.get(i);
+							writer.print("		<"+colName.toUpperCase()+">");
+							String nextData = row.getNString(colName);
+							writer.println(nextData+"</"+colName.toUpperCase()+">");
+						}
+						row.close();
+					}
+					// Write the closing tag for the relation
+					writer.println("	</"+tName.toUpperCase()+">");
+					crs.close();
+				}
+
+				// Retrieve data from the database
+				/*Class.forName("com.mysql.jdbc.Driver").newInstance();
+				con = DriverManager.getConnection(url,user,pwd);
+				Statement st=con.createStatement();
+				String query = ("SELECT * FROM "+tName);
+				ResultSet rs = st.executeQuery(query);
+				if(rs.next()){
+
+				}*/
+
+				// Write the closing tag for DB
+				writer.println("</"+ dbName.toUpperCase()+">");
+			}catch(Exception ex){
+				ex.printStackTrace();
+			}
+			writer.close();
+		} catch(FileNotFoundException e){
+			e.printStackTrace();
+		}
+		try{
+			if(con!=null){
+				con.close();
+			}
+		}catch(SQLException ex){
+			ex.printStackTrace();
+		}
+		return f;
+	}
 }
