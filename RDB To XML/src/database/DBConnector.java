@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+import org.apache.log4j.Logger;
+
 import main.MainException;
 
 
@@ -13,7 +15,8 @@ import main.MainException;
  *
  */
 public class DBConnector {
-
+	
+	private static Logger logger = Logger.getLogger(DBConnector.class);
 	private static volatile DBConnector singDbConnector = null;	//Singleton Database connector
 	private Connection dbConnection;
 
@@ -30,6 +33,7 @@ public class DBConnector {
 			synchronized (DBConnector.class){
 				if(singDbConnector == null){
 					singDbConnector = new DBConnector();
+					logger.info("Singleton DB Connector created.");
 				}
 			}
 		}
@@ -37,7 +41,6 @@ public class DBConnector {
 		return singDbConnector;
 	}
 	
-
 	/**
 	 * This method will open the database connection with the method with the information given.
 	 * @param address
