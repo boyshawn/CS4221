@@ -17,10 +17,13 @@ import javax.sql.rowset.CachedRowSet;
 
 import main.MainException;
 
+import org.apache.log4j.Logger;
+
 import database.DBAccess;
 
 public class XMLSchemaGenerator implements Generator {
-
+	
+	private static Logger logger = Logger.getLogger(XMLSchemaGenerator.class);
 	private File file;
 	private PrintWriter writer;
 	private DBAccess dbAccess;
@@ -40,10 +43,15 @@ public class XMLSchemaGenerator implements Generator {
 	private void setup(String fileName) throws MainException {
 		file = new File(fileName+".xsd");
 		
+		boolean isDone;
 		try {
-			if (file.exists())
-				file.delete();
-			file.createNewFile();
+			if (file.exists()) {
+				isDone = file.delete();
+				logger.info("file deleted? " + isDone);
+			}
+			
+			isDone = file.createNewFile();
+			logger.info("file created? " + isDone);
 			
 			writer = new PrintWriter(new BufferedWriter(new FileWriter(file, false)), true);
 			
@@ -160,7 +168,7 @@ public class XMLSchemaGenerator implements Generator {
 					writer.println("\t\t\t\t\t\t\t\t\t\t<maxLength value=\""+colSize+"\"/>");
 					writer.println("\t\t\t\t\t\t\t\t\t</xs:restriction>");
 					writer.println("\t\t\t\t\t\t\t\t</xs:simpleType>");
-					writer.println("\t\t\t\t\t\t\t</xs:element name>");
+					writer.println("\t\t\t\t\t\t\t</xs:element>");
 				}
 			}
 			
