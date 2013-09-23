@@ -30,6 +30,9 @@ public class XMLDataGenerator implements Generator {
 		File f = new File(filePath);
 		f.mkdirs();
 		try{
+			if (f.exists()){
+				f.delete();
+			}
 			f.createNewFile();
 		}catch(IOException e){
 			throw new MainException("IOException: The data output file cannot be created.");
