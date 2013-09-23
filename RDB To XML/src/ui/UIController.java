@@ -120,15 +120,16 @@ public class UIController {
 			} else {
 				if (v.validateFilename(xmlName)) {
 					try {
-						r.translateToXML(dbname, xmlName);
+						String fName = path+ "\\" + xmlName;
+						r.translateToXML(dbname, fName);
+						translate.displaySuccessfulMsg();
+						translate.emptiedField();
+						translate.setErrorMsg(" ");
+						main.showMainPane();
 					} catch (MainException me) {
 						translate.setErrorMsg(me.getMessage());
 						me.printStackTrace();	
 					}
-					translate.displaySuccessfulMsg();
-					translate.emptiedField();
-					translate.setErrorMsg(" ");
-					main.showMainPane();
 				} else {
 					translate.setErrorMsg("Invalid file name");
 				}
