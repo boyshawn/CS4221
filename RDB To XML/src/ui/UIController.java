@@ -120,7 +120,8 @@ public class UIController {
 			} else {
 				if (v.validateFilename(xmlName)) {
 					try {
-						r.translateToXML(dbname, xmlName);
+						String fName = path+ "\\" + xmlName;
+						r.translateToXML(dbname, fName);
 						translate.displaySuccessfulMsg();
 						translate.emptiedField();
 						translate.setErrorMsg(" ");
