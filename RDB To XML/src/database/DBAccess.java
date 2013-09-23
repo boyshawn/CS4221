@@ -5,11 +5,14 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.sql.rowset.CachedRowSet;
+
+import main.MainException;
 
 import com.sun.rowset.CachedRowSetImpl;
 
@@ -24,7 +27,7 @@ public class DBAccess {
 	 * 
 	 * @param conn   database connection that has been opened by DBConnector
 	 */
-	private DBAccess(Connection conn) {
+	DBAccess(Connection conn) {
 		this.dbConnection = conn;
 		dbTableCache = new HashMap<String, CachedRowSet>();
 		try{
@@ -33,11 +36,6 @@ public class DBAccess {
 			ResultSet results = null;
 			CachedRowSet crs = new CachedRowSetImpl();
 			while(tables.next()){
-				/*
-				stmt = dbConnection.createStatement();
-				results = stmt.executeQuery("SELECT * FROM " + tables.getString(3));
-				crs.populate(results);
-				*/
 				String tableName = tables.getString(3);
 				results = md.getColumns(null, null, tableName, null);
 				crs.populate(results);
@@ -52,24 +50,9 @@ public class DBAccess {
 		singDbAccess = this;
 	}
 
-//	/**
-//	 * gets an instance of the DBConnector. Create a new instance if there is no
-//	 * one in the program.
-//	 * 
-//	 * @return instance of the DBConnector
-//	 */
-//	public DBConnector getInstance() {
-//		if(singDbConnector == null){
-//			synchronized (DBConnector.class){
-//				if(singDbConnector == null){
-//					singDbConnector = new DBConnector();
-//				}
-//			}
-//		}
-//		
-//		return singDbConnector;
-//	}
-	public static DBAccess getInstance() {
+	
+	public static DBAccess getInstance() throws MainException {
+		/*
 		if(singDbAccess == null){
 			synchronized (DBAccess.class){
 				if(singDbAccess == null){
@@ -78,30 +61,64 @@ public class DBAccess {
 				}
 			}
 		}
+		*/
+		if (singDbAccess == null)
+			throw new MainException("DBAccess instance not initialized");
+		else
+			return singDbAccess;
 	}
 	
 	public void removeInstance() {
-		// stub
+		singDbAccess = null;
+		dbConnection = null;
+		dbTableCache = null;
 	}
 	
 	public Map<String, CachedRowSet> getTableCache() {
 		return dbTableCache;
 	}
 	
-	public List<String> getUniqueColumns(String tableName) {
-		return null; // stub
+	public List<String> getUniqueColumns(String tableName) throws MainException {
+		List<String> uniqueCols = new ArrayList<String>();
+		try {
+			ResultSet rs = dbConnection.getMetaData().getIndexInfo(null, null, tableName, true, true);
+			while(rs.next()) {
+				uniqueCols.add(rs.getString("COLUMN_NAME"));
+			}
+			return uniqueCols;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new MainException("Failed to get unique columns for " + tableName);
+		}
 	}
 	
-	public List<String> getPrimaryKeys(String tableName) {
-		return null; // stub
+	public List<String> getPrimaryKeys(String tableName) throws MainException {
+		List<String> primaryKeys = new ArrayList<String>();
+		try {
+			ResultSet rs = dbConnection.getMetaData().getPrimaryKeys(null, null, tableName);
+			while(rs.next()) {
+				primaryKeys.add(rs.getString("COLUMN_NAME"));
+			}
+			return primaryKeys;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new MainException("Failed to get primary keys for " + tableName);
+		}
 	}
 	
-	public CachedRowSet getForeignKeys(String tableName) {
-		return null; // stub
+	public CachedRowSet getForeignKeys(String tableName) throws MainException {
+		CachedRowSet crs;
+		try {
+			crs = new CachedRowSetImpl();
+			crs.populate(dbConnection.getMetaData().getImportedKeys(null, null, tableName));
+			return crs;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new MainException("Failed to get foreign keys for " + tableName);
+		}
 	}
 	
 	public CachedRowSet getData(String tableName) {
-		// return dbTableCache.get(tableName);
 		try{
 			Statement stmt = null;
 			ResultSet results = null;

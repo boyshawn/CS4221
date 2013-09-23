@@ -1,9 +1,10 @@
 package database;
 
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+
+import main.MainException;
 
 
 /**
@@ -16,6 +17,8 @@ public class DBConnector {
 	private static volatile DBConnector singDbConnector = null;	//Singleton Database connector
 	private Connection dbConnection;
 
+	private DBConnector() {}
+	
 	/**
 	 * gets an instance of the DBConnector. Create a new instance if there is no
 	 * one in the program.
@@ -33,6 +36,7 @@ public class DBConnector {
 		
 		return singDbConnector;
 	}
+	
 
 	/**
 	 * This method will open the database connection with the method with the information given.
@@ -41,19 +45,19 @@ public class DBConnector {
 	 * @param dbName
 	 * @param username
 	 * @param password
-	 * @throws SQLException 
+	 * @throws MainException 
 	 */
 	public void openConnection(String address, String port, String dbName,
-			String username, String password) throws SQLException {
+			String username, String password) throws MainException {
 
 		String connectionUrl = "jdbc:" + address;
 
 		try {
 			dbConnection = DriverManager.getConnection(connectionUrl, username, password);
+			new DBAccess(dbConnection);
 		} catch (SQLException e){
-			System.out.println("Login not successful.");
 			e.printStackTrace();
-			throw e;
+			throw new MainException("Failed to connect to database");
 		}
 	}
 
@@ -62,13 +66,13 @@ public class DBConnector {
 	 * @throws SQLException 
 	 * 
 	 */
-	public void closeConnection() throws SQLException {
+	public void closeConnection() throws MainException {
 		try{
 			dbConnection.close();
+			DBAccess.getInstance().removeInstance();
 		} catch (SQLException e){
-			System.out.println("Error with closing connection");
 			e.printStackTrace();
-			throw e;
+			throw new MainException("Failed to close connection to database");
 		}
 	}
 }

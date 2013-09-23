@@ -40,7 +40,7 @@ public class XMLSchemaGenerator implements Generator {
 		return file;
 	}
 	
-	private boolean setup(String fileName) {
+	private boolean setup(String fileName) throws MainException {
 		file = new File(fileName+".xml");
 		
 		try {
@@ -168,7 +168,7 @@ public class XMLSchemaGenerator implements Generator {
 		}
 	}
 	
-	private void printPrimaryKeys() {
+	private void printPrimaryKeys() throws MainException {
 		Iterator<String> tableNamesItr = tableNames.iterator();
 		
 		while(tableNamesItr.hasNext()) {
@@ -187,7 +187,7 @@ public class XMLSchemaGenerator implements Generator {
 		}
 	}
 	
-	private void printUniqueConstraints() {
+	private void printUniqueConstraints() throws MainException {
 		Iterator<String> tableNamesItr = tableNames.iterator();
 		
 		while(tableNamesItr.hasNext()) {
