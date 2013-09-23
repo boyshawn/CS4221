@@ -5,22 +5,33 @@ import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+
+/**
+ * The DBConnector is a class which the DB use to deal with connection with database
+ * @author Francis Pang
+ *
+ */
 public class DBConnector {
 
-	private DBConnector dbConnector;
+	private static volatile DBConnector singDbConnector = null;	//Singleton Database connector
 	private Connection dbConnection;
 
 	/**
-	 * The DBConnector is a class which the DB use to deal with connection with database
-	 * @author Francis Pang
-	 *
+	 * gets an instance of the DBConnector. Create a new instance if there is no
+	 * one in the program.
+	 * 
+	 * @return instance of the DBConnector
 	 */
-	private DBConnector() {
-		// stub
-	}
-
-	public DBConnector getInstance() {
-		return null; //stub
+	public static DBConnector getInstance() {
+		if(singDbConnector == null){
+			synchronized (DBConnector.class){
+				if(singDbConnector == null){
+					singDbConnector = new DBConnector();
+				}
+			}
+		}
+		
+		return singDbConnector;
 	}
 
 	/**
@@ -41,10 +52,9 @@ public class DBConnector {
 			dbConnection = DriverManager.getConnection(connectionUrl, username, password);
 		} catch (SQLException e){
 			System.out.println("Login not successful.");
+			e.printStackTrace();
 			throw e;
 		}
-
-		DatabaseMetaData dbMetaData = dbConnection.getMetaData();
 	}
 
 	/**
@@ -57,6 +67,7 @@ public class DBConnector {
 			dbConnection.close();
 		} catch (SQLException e){
 			System.out.println("Error with closing connection");
+			e.printStackTrace();
 			throw e;
 		}
 	}

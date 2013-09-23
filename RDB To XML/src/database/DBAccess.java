@@ -15,7 +15,7 @@ import com.sun.rowset.CachedRowSetImpl;
 
 public class DBAccess {
 	
-	private static DBAccess instance = null;
+	private static volatile DBAccess singDbAccess = null;
 	private Connection dbConnection;
 	private Map<String, CachedRowSet> dbTableCache;
 	
@@ -24,7 +24,7 @@ public class DBAccess {
 	 * 
 	 * @param conn   database connection that has been opened by DBConnector
 	 */
-	DBAccess(Connection conn) {
+	private DBAccess(Connection conn) {
 		this.dbConnection = conn;
 		dbTableCache = new HashMap<String, CachedRowSet>();
 		try{
@@ -49,11 +49,35 @@ public class DBAccess {
 			ex.printStackTrace();
 		}
 		
-		instance = this;
+		singDbAccess = this;
 	}
-	
+
+//	/**
+//	 * gets an instance of the DBConnector. Create a new instance if there is no
+//	 * one in the program.
+//	 * 
+//	 * @return instance of the DBConnector
+//	 */
+//	public DBConnector getInstance() {
+//		if(singDbConnector == null){
+//			synchronized (DBConnector.class){
+//				if(singDbConnector == null){
+//					singDbConnector = new DBConnector();
+//				}
+//			}
+//		}
+//		
+//		return singDbConnector;
+//	}
 	public static DBAccess getInstance() {
-		return instance;
+		if(singDbAccess == null){
+			synchronized (DBAccess.class){
+				if(singDbAccess == null){
+					//FIXME: To fix this ambiguios bug
+					singDbAccess = new DBAccess(conn);
+				}
+			}
+		}
 	}
 	
 	public void removeInstance() {
