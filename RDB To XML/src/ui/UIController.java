@@ -119,11 +119,8 @@ public class UIController {
 						.setErrorMsg("Please enter the XML file name and choose a directory");
 			} else {
 				if (v.validateFilename(xmlName)) {
-					String xmlDataName = path + "/" + xmlName + "_data.xml";
-					String xmlSchemaName = path + "/" + xmlName + "_schema.xml";
-
 					try {
-						r.translateToXML(dbname, xmlSchemaName, xmlDataName);
+						r.translateToXML(dbname, xmlName);
 					} catch (MainException me) {
 						translate.setErrorMsg(me.getMessage());
 						me.printStackTrace();	

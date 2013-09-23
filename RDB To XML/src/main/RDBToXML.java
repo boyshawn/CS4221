@@ -15,13 +15,13 @@ public class RDBToXML {
 		dbc.openConnection(address, port, dbName, username, password);
 	}
 	
-	public void translateToXML (String dbName, String xmlSchemaFileName, String xmlDataFileName) throws MainException {
+	public void translateToXML (String dbName, String xmlFileName) throws MainException {
 		
 		XMLDataGenerator dataGen = new XMLDataGenerator();
-		dataGen.generate(dbName, xmlDataFileName);
+		dataGen.generate(dbName, xmlFileName);
 		
 		XMLSchemaGenerator schemaGen = new XMLSchemaGenerator();
-		schemaGen.generate(dbName, xmlSchemaFileName);
+		schemaGen.generate(dbName, xmlFileName);
 		
 		dbc.closeConnection();	
 	}	
