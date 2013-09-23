@@ -15,6 +15,8 @@ import java.util.Set;
 
 import javax.sql.rowset.CachedRowSet;
 
+import main.MainException;
+
 import database.DBAccess;
 
 public class XMLSchemaGenerator implements Generator {
@@ -27,7 +29,7 @@ public class XMLSchemaGenerator implements Generator {
 	private Set<String> tableNames;
 	
 	@Override
-	public File generate(String dbName, String fileName) {
+	public File generate(String dbName, String fileName) throws MainException {
 		if (!setup(fileName))
 			return null;
 		
@@ -84,7 +86,7 @@ public class XMLSchemaGenerator implements Generator {
 		sqlDataTypes.put(java.sql.Types.VARCHAR,   "xs:string");
 	}
 	
-	private void printDatabase(String dbName) {
+	private void printDatabase(String dbName) throws MainException {
 		
 		writer.println("<xs:schema>");
 		writer.println("\t<xs:element name=\""+dbName+"\">");
@@ -104,7 +106,7 @@ public class XMLSchemaGenerator implements Generator {
 		writer.println("</xs:schema>");
 	}
 	
-	private void printTables() {
+	private void printTables() throws MainException {
 		Iterator<String> tableNamesItr = tableNames.iterator();
 		
 		while(tableNamesItr.hasNext()) {
@@ -122,7 +124,7 @@ public class XMLSchemaGenerator implements Generator {
 		}
 	}
 	
-	private void printColumns(String tableName) {
+	private void printColumns(String tableName) throws MainException {
 		CachedRowSet tableDetails = tablesCache.get(tableName);
 		String xml, colName, colDefault, colType;
 		int colSize;
@@ -161,8 +163,8 @@ public class XMLSchemaGenerator implements Generator {
 			}
 			
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			throw new MainException("Database connection error when accessing columns");
 		}
 	}
 	
@@ -204,7 +206,7 @@ public class XMLSchemaGenerator implements Generator {
 		}
 	}
 	
-	private void printForeignKeys() {
+	private void printForeignKeys() throws MainException {
 		Iterator<String> tableNamesItr = tableNames.iterator();
 		
 		while(tableNamesItr.hasNext()) {
@@ -232,8 +234,8 @@ public class XMLSchemaGenerator implements Generator {
 				writer.println("\t\t</xs:keyref>");
 				
 			} catch (SQLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
+				throw new MainException("Database connection error when accessing foreign keys");
 			}
 		}
 	}
