@@ -38,7 +38,7 @@ public class XMLSchemaGenerator implements Generator {
 	}
 	
 	private void setup(String fileName) throws MainException {
-		file = new File(fileName);
+		file = new File(fileName+".xsd");
 		
 		try {
 			if (file.exists())
@@ -84,7 +84,13 @@ public class XMLSchemaGenerator implements Generator {
 	
 	private void printDatabase(String dbName) throws MainException {
 		
-		writer.println("<xs:schema>");
+		writer.println("<?xml version=\"1.0\"?>");
+		writer.println("<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"");
+		writer.println("targetNamespace=\"http://www.w3schools.com\"");
+		writer.println("xmlns=\"http://www.w3schools.com\"");
+		writer.println("elementFormDefault=\"qualified\">");
+		writer.println();
+		
 		writer.println("\t<xs:element name=\""+dbName+"\">");
 		writer.println("\t\t<xs:complexType>");
 		writer.println("\t\t\t<xs:sequence>");
