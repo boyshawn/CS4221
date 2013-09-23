@@ -21,19 +21,18 @@ public class XMLDataGenerator implements Generator {
 	}
 
 	private File privateGenerator(String dbName, String fileName){
-		
-		String filePath = "/test/" + fileName + ".xml";
+
 		File f = null;
 		try {
 			// Create file to write XML data
-			f = new File(filePath);
+			f = new File(fileName);
 			f.mkdirs();
 			try{
 				f.createNewFile();
 			}catch(IOException e){
 				e.printStackTrace();
 			}
-			PrintWriter writer = new PrintWriter(new FileOutputStream(filePath),true);
+			PrintWriter writer = new PrintWriter(new FileOutputStream(fileName),true);
 			// Write DB name to file
 			writer.println("<" + dbName.toUpperCase() + ">");
 
@@ -51,7 +50,7 @@ public class XMLDataGenerator implements Generator {
 					writer.println("	<"+tName.toUpperCase()+">");
 					
 					// Process the rows for each table
-					CachedRowSet crs = tables.get(tName);
+					CachedRowSet crs = dbCache.getData(tName);
 					List<String> cols = dbCache.getUniqueColumns(tName);
 					while (crs.next()){
 						ResultSet row = crs.getOriginalRow();
