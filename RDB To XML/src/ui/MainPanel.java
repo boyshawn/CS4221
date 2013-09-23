@@ -102,6 +102,7 @@ public class MainPanel {
 			
 			mainPane.add(Box.createRigidArea(new Dimension(0,40)));
 		}
+		generateInput(); //testing
 		return mainPane;
 	}
 		
@@ -199,5 +200,14 @@ public class MainPanel {
 	
 	public JPanel getTranslatePane() {
 		return t;
+	}
+	
+	//for testing purpose
+	void generateInput() {
+		dbNameField.setText("acebrain_francisjanice");
+		dbAddressField.setText("www.solvith.com");
+		portNumField.setText("3306");
+		usernameField.setText("acebrain_francis");
+		passwordField.setText("nus1234");
 	}
 }
