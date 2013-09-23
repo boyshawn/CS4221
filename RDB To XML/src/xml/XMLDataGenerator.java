@@ -82,7 +82,7 @@ public class XMLDataGenerator implements Generator {
 				crs.close();
 			}
 		}catch(SQLException ex){
-			throw new MainException("DataGenerator: Exception in retrieve data for individual tables.");
+			throw new MainException("DataGenerator: Exception in retrieving data for individual tables.");
 		}
 		// Write the closing tag for DB
 		writer.println("</"+ dbName+">");
