@@ -67,16 +67,6 @@ public class XMLDataGenerator implements Generator {
 					crs.close();
 				}
 
-				// Retrieve data from the database
-				/*Class.forName("com.mysql.jdbc.Driver").newInstance();
-				con = DriverManager.getConnection(url,user,pwd);
-				Statement st=con.createStatement();
-				String query = ("SELECT * FROM "+tName);
-				ResultSet rs = st.executeQuery(query);
-				if(rs.next()){
-
-				}*/
-
 				// Write the closing tag for DB
 				writer.println("</"+ dbName.toUpperCase()+">");
 			}catch(Exception ex){
