@@ -121,14 +121,14 @@ public class UIController {
 				if (v.validateFilename(xmlName)) {
 					try {
 						r.translateToXML(dbname, xmlName);
+						translate.displaySuccessfulMsg();
+						translate.emptiedField();
+						translate.setErrorMsg(" ");
+						main.showMainPane();
 					} catch (MainException me) {
 						translate.setErrorMsg(me.getMessage());
 						me.printStackTrace();	
 					}
-					translate.displaySuccessfulMsg();
-					translate.emptiedField();
-					translate.setErrorMsg(" ");
-					main.showMainPane();
 				} else {
 					translate.setErrorMsg("Invalid file name");
 				}
