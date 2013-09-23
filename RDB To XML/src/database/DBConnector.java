@@ -50,7 +50,14 @@ public class DBConnector {
 	public void openConnection(String address, String port, String dbName,
 			String username, String password) throws MainException {
 
-		String connectionUrl = "jdbc:" + address;
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+		} catch (ClassNotFoundException e1) {
+			e1.printStackTrace();
+			throw new MainException("Not able to find class com.mysql.jdbc.Driver");
+		}
+		
+		String connectionUrl = "jdbc:mysql://" + address + "/" + dbName;
 
 		try {
 			dbConnection = DriverManager.getConnection(connectionUrl, username, password);
