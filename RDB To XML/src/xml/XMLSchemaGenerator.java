@@ -29,19 +29,16 @@ public class XMLSchemaGenerator implements Generator {
 	private Set<String> tableNames;
 	
 	@Override
-	public File generate(String dbName, String fileName) throws MainException {
-		if (!setup(fileName))
-			return null;
+	public void generate(String dbName, String fileName) throws MainException {
+		setup(fileName);
 		
 		printDatabase(dbName);
 		
 		finish();
-		
-		return file;
 	}
 	
-	private boolean setup(String fileName) throws MainException {
-		file = new File(fileName+".xml");
+	private void setup(String fileName) throws MainException {
+		file = new File(fileName);
 		
 		try {
 			if (file.exists())
@@ -52,7 +49,7 @@ public class XMLSchemaGenerator implements Generator {
 			
 		} catch (IOException e) {
 			e.printStackTrace();
-			return false;
+			throw new MainException("Unable to open file " + fileName);
 		}
 		
 		dbAccess = DBAccess.getInstance();
@@ -60,7 +57,6 @@ public class XMLSchemaGenerator implements Generator {
 		tableNames = tablesCache.keySet();
 		setupDataTypes();
 		
-		return true;
 	}
 	
 	private void setupDataTypes() {

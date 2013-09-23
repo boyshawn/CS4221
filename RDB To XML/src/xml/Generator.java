@@ -6,6 +6,6 @@ import main.MainException;
 
 public interface Generator {
 	
-	public File generate(String dbName, String fileName) throws MainException ;
+	public void generate(String dbName, String fileName) throws MainException ;
 	
 }
