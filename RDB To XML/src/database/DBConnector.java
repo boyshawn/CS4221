@@ -57,7 +57,7 @@ public class DBConnector {
 			throw new MainException("Not able to find class com.mysql.jdbc.Driver");
 		}
 		
-		String connectionUrl = "jdbc:mysql://" + address + "/" + dbName;
+		String connectionUrl = "jdbc:mysql://" + address + ":" + port + "/" + dbName;
 
 		try {
 			dbConnection = DriverManager.getConnection(connectionUrl, username, password);
