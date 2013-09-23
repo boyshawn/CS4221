@@ -26,11 +26,6 @@ public class InputFormatValidator {
 		return false;
 	}
 
-	boolean validateAdd(String add) {
-
-		return true;
-	}
-
 	boolean validatePort(String port) {
 		if (port.matches("^\\d+$")) // only digit
 			return true;

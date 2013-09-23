@@ -3,12 +3,11 @@ package ui;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.sql.SQLException;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 
+import main.MainException;
 import main.RDBToXML;
 
 /**
@@ -52,8 +51,7 @@ public class UIController {
 				main.setErrorMsg("Please enter all the fields");
 			} else {
 				// validate name add port.
-				if (v.validateName(name) && v.validateAdd(address)
-						&& v.validatePort(port)) {
+				if (v.validateName(name) && v.validatePort(port)) {
 					try {
 						r.connectToDB(address, port, name, username, password);
 						dbname = name;
@@ -62,14 +60,13 @@ public class UIController {
 						main.getMainFrame().setContentPane(
 								main.getTranslatePane());
 						main.getMainFrame().validate();
-					} catch (Exception s) { // SQLException
-						main.setErrorMsg("Database access unsuccessful. Please try again");
+					} catch (MainException me) { 
+						main.setErrorMsg(me.getMessage());
+						me.printStackTrace();
 					}
 				} else {
 					if (!v.validateName(name)) {
 						main.setErrorMsg("Invalid database name");
-					} else if (!v.validateAdd(address)) {
-						main.setErrorMsg("Invalid database address");
 					} else if (!v.validatePort(port)) {
 						main.setErrorMsg("Invalid port number");
 					}
@@ -103,7 +100,7 @@ public class UIController {
 				String fullPath = file.getAbsolutePath();
 				translate.setPath(fullPath);
 			} catch (Exception ex) {
-				//System.out.println("User did not choose any directory");
+				System.out.println("User did not choose any directory");
 			}
 		}
 	}
@@ -122,10 +119,15 @@ public class UIController {
 						.setErrorMsg("Please enter the XML file name and choose a directory");
 			} else {
 				if (v.validateFilename(xmlName)) {
-					String xmlDataName = path + "/" + xmlName + "_data";
-					String xmlSchemaName = path + "/" + xmlName + "_schema";
+					String xmlDataName = path + "/" + xmlName + "_data.xml";
+					String xmlSchemaName = path + "/" + xmlName + "_schema.xml";
 
-					r.translateToXML(dbname, xmlSchemaName, xmlDataName);
+					try {
+						r.translateToXML(dbname, xmlSchemaName, xmlDataName);
+					} catch (MainException me) {
+						translate.setErrorMsg(me.getMessage());
+						me.printStackTrace();	
+					}
 					translate.displaySuccessfulMsg();
 					translate.emptiedField();
 					translate.setErrorMsg(" ");
