@@ -25,26 +25,44 @@ public class DBAccess {
 	/**
 	 * Constructor that can only be used by DBConnector
 	 * 
-	 * @param conn   database connection that has been opened by DBConnector
+	 * @param dbConnection   database connection that has been opened by DBConnector
+	 * @throws MainException 
 	 */
-	DBAccess(Connection conn) {
-		this.dbConnection = conn;
+	public DBAccess(Connection dbConnection) throws MainException {
+		DatabaseMetaData dbMetadata;
+		ResultSet tables;
+		ResultSet results = null;
+		CachedRowSet cachedRowSet;
 		dbTableCache = new HashMap<String, CachedRowSet>();
+		
+		this.dbConnection = dbConnection;
+		
+		try {
+			if(this.dbConnection.isClosed()){
+				throw new MainException("The database connection is closed.");
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new MainException("Cannot access database connection.");
+		}
+		
 		try{
-			DatabaseMetaData md = dbConnection.getMetaData();
-			ResultSet tables = md.getTables(null,null, "%", null);
-			ResultSet results = null;
-			CachedRowSet crs = new CachedRowSetImpl();
+			dbMetadata = dbConnection.getMetaData();
+			tables = dbMetadata.getTables(null,null, "%", null);
+			
+			cachedRowSet = new CachedRowSetImpl();
+			
 			while(tables.next()){
 				String tableName = tables.getString(3);
-				results = md.getColumns(null, null, tableName, null);
-				crs.populate(results);
-				dbTableCache.put(tableName,crs);
+				results = dbMetadata.getColumns(null, null, tableName, null);
+				cachedRowSet.populate(results);
+				dbTableCache.put(tableName,cachedRowSet);
 			}
+			
 		}catch(SQLException ex){
 			ex.printStackTrace();
-		}catch(Exception ex){
-			ex.printStackTrace();
+			//TODO: include the database address
+			throw new MainException("Error in reading the database for " + ".");
 		}
 		
 		singDbAccess = this;
@@ -52,20 +70,11 @@ public class DBAccess {
 
 	
 	public static DBAccess getInstance() throws MainException {
-		/*
-		if(singDbAccess == null){
-			synchronized (DBAccess.class){
-				if(singDbAccess == null){
-					//FIXME: To fix this ambiguios bug
-					singDbAccess = new DBAccess(conn);
-				}
-			}
-		}
-		*/
 		if (singDbAccess == null)
 			throw new MainException("DBAccess instance not initialized");
-		else
+		else{
 			return singDbAccess;
+		}
 	}
 	
 	public void removeInstance() {
