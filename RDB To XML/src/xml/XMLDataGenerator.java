@@ -47,7 +47,7 @@ public class XMLDataGenerator implements Generator {
 		writer.println("<" + dbName);
 		writer.println("xmlns=\"http://www.w3schools.com\"");
 		writer.println("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
-		writer.print("xsi:schemaLocation="+fileName+".xsd>");
+		writer.println("xsi:schemaLocation="+fileName+".xsd>");
 
 		// Get table names & data
 		DBAccess dbCache = DBAccess.getInstance();
