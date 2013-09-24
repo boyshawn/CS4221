@@ -73,7 +73,7 @@ public class XMLDataGenerator implements Generator {
 						String colName = cols.get(i);
 						writer.print("		<"+colName+">");
 						String nextData = crs.getString(colName);
-						if (nextData=="null"){
+						if (crs.wasNull()){
 							nextData="";
 						}
 						writer.println(nextData+"</"+colName+">");
