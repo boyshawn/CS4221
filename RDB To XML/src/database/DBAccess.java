@@ -90,7 +90,8 @@ public class DBAccess {
 	public List<String> getUniqueColumns(String tableName) throws MainException {
 		List<String> uniqueCols = new ArrayList<String>();
 		try {
-			ResultSet rs = dbConnection.getMetaData().getIndexInfo(null, null, tableName, true, true);
+			//ResultSet rs = dbConnection.getMetaData().getIndexInfo(null, null, tableName, true, true);
+			ResultSet rs = dbConnection.getMetaData().getColumns(null,null,tableName,null);
 			while(rs.next()) {
 				uniqueCols.add(rs.getString("COLUMN_NAME"));
 			}

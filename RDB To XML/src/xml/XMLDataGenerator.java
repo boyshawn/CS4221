@@ -50,7 +50,7 @@ public class XMLDataGenerator implements Generator {
 		writer.println("<" + dbName);
 		writer.println("xmlns=\"http://www.w3schools.com\"");
 		writer.println("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
-		writer.println("xsi:schemaLocation="+fileName+".xsd>");
+		writer.println("xsi:schemaLocation=\""+fileName+".xsd\">");
 
 		// Get table names & data
 		DBAccess dbCache = DBAccess.getInstance();
@@ -61,24 +61,26 @@ public class XMLDataGenerator implements Generator {
 			// Write data for each table/relation
 			while(tableItr.hasNext()){
 				String tName = tableItr.next();
-				// Write table name to file
-				writer.println("	<"+tName+">");
 
 				// Process the rows for each table
 				CachedRowSet crs = dbCache.getData(tName);
 				List<String> cols = dbCache.getUniqueColumns(tName);
+				
 				while (crs.next()){
-					ResultSet row = crs.getOriginalRow();
+					// Write table name to file
+					writer.println("	<"+tName+">");
 					for(int i=0;i<cols.size();i++){
 						String colName = cols.get(i);
 						writer.print("		<"+colName+">");
-						String nextData = row.getNString(colName);
+						String nextData = crs.getString(colName);
+						if (nextData=="null"){
+							nextData="";
+						}
 						writer.println(nextData+"</"+colName+">");
 					}
-					row.close();
+					// Write the closing tag for the relation
+					writer.println("	</"+tName+">");
 				}
-				// Write the closing tag for the relation
-				writer.println("	</"+tName+">");
 				crs.close();
 			}
 		}catch(SQLException ex){
