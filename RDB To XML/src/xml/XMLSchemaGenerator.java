@@ -17,10 +17,13 @@ import javax.sql.rowset.CachedRowSet;
 
 import main.MainException;
 
+import org.apache.log4j.Logger;
+
 import database.DBAccess;
 
 public class XMLSchemaGenerator implements Generator {
-
+	
+	private static Logger logger = Logger.getLogger(XMLSchemaGenerator.class);
 	private File file;
 	private PrintWriter writer;
 	private DBAccess dbAccess;
@@ -28,6 +31,12 @@ public class XMLSchemaGenerator implements Generator {
 	private Map<Integer, String> sqlDataTypes;
 	private Set<String> tableNames;
 	
+	/**
+	 * To generate the XML Schema for a database
+	 * @param dbName			name of database
+	 * @param fileName			name of file to output the XML schema (including its absolute path)
+	 * @throws MainException	if there is a database connection error which occurred at any time during the XML Schema generation
+	 */
 	@Override
 	public void generate(String dbName, String fileName) throws MainException {
 		setup(fileName);
@@ -37,13 +46,23 @@ public class XMLSchemaGenerator implements Generator {
 		finish();
 	}
 	
+	/**
+	 * Set up the file I/O connection to write the XML schema to and the global data structures needed
+	 * @param fileName			name of the file (including its absolute path)
+	 * @throws MainException	if there is a database connection error which occurred at any time during the set up
+	 */
 	private void setup(String fileName) throws MainException {
 		file = new File(fileName+".xsd");
 		
+		boolean isDone;
 		try {
-			if (file.exists())
-				file.delete();
-			file.createNewFile();
+			if (file.exists()) {
+				isDone = file.delete();
+				logger.info("file deleted? " + isDone);
+			}
+			
+			isDone = file.createNewFile();
+			logger.info("file created? " + isDone);
 			
 			writer = new PrintWriter(new BufferedWriter(new FileWriter(file, false)), true);
 			
@@ -59,6 +78,9 @@ public class XMLSchemaGenerator implements Generator {
 		
 	}
 	
+	/**
+	 * Set up the mapping of SQL data types with XML Schema data types
+	 */
 	private void setupDataTypes() {
 		sqlDataTypes = new HashMap<Integer, String>();
 		
@@ -82,6 +104,11 @@ public class XMLSchemaGenerator implements Generator {
 		sqlDataTypes.put(java.sql.Types.VARCHAR,   "xs:string");
 	}
 	
+	/**
+	 * Print XML schema for a database
+	 * @param dbName			name of database
+	 * @throws MainException	if failed to retrieve any information of the database due to a database connection error
+	 */
 	private void printDatabase(String dbName) throws MainException {
 		
 		writer.println("<?xml version=\"1.0\"?>");
@@ -108,6 +135,10 @@ public class XMLSchemaGenerator implements Generator {
 		writer.println("</xs:schema>");
 	}
 	
+	/**
+	 * Print XML schema for all tables in a database
+	 * @throws MainException	if failed to retrieve information of a table due to a database connection error
+	 */
 	private void printTables() throws MainException {
 		Iterator<String> tableNamesItr = tableNames.iterator();
 		
@@ -126,6 +157,11 @@ public class XMLSchemaGenerator implements Generator {
 		}
 	}
 	
+	/**
+	 * Print XML schema for each column in a specified table
+	 * @param tableName			the name of the table for its columns to be printed out
+	 * @throws MainException	if failed to retrieve details of columns due to a database connection error
+	 */
 	private void printColumns(String tableName) throws MainException {
 		CachedRowSet tableDetails = tablesCache.get(tableName);
 		String xml, colName, colDefault, colType;
@@ -141,26 +177,34 @@ public class XMLSchemaGenerator implements Generator {
 				colSize     = tableDetails.getInt("COLUMN_SIZE");
 				
 				xml = "";
-				xml += "\t\t\t\t\t\t\t<xs:element name=\""+colName+"\" type=\""+colType+"\" nillable=\""+colNullable+"\"";
-				
-				if (colDefault != null) 
-					xml += " default=\""+colDefault+"\"";
 				
 				// if the column size is 0 or the SQL column type is not translated to xs:string
-				// then no restrictions added to xs:element
-				if (colSize == 0 || !colType.equals("xs:string")) 
+				// then xs:element has a "type" attribute and there is no restriction added to xs:element
+				if (colSize == 0 || !colType.equals("xs:string")) {
+					xml += "\t\t\t\t\t\t\t<xs:element name=\""+colName+"\" type=\""+colType+"\" nillable=\""+colNullable+"\"";
+					
+					if (colDefault != null) 
+						xml += " default=\""+colDefault+"\"";
+					
 					xml += "/>";
+					writer.println(xml);
+				}
 				else {
+					xml += "\t\t\t\t\t\t\t<xs:element name=\""+colName+"\" nillable=\""+colNullable+"\"";
+					
+					if (colDefault != null) 
+						xml += " default=\""+colDefault+"\"";
+					
 					xml += ">";
 					writer.println(xml);
 					
 					// column size restriction for SQL column type (eg. varchar) translated to xs:string
 					writer.println("\t\t\t\t\t\t\t\t<xs:simpleType>");
 					writer.println("\t\t\t\t\t\t\t\t\t<xs:restriction base=\"xs:string\">");
-					writer.println("\t\t\t\t\t\t\t\t\t\t<maxLength value=\""+colSize+"\"/>");
+					writer.println("\t\t\t\t\t\t\t\t\t\t<xs:maxLength value=\""+colSize+"\"/>");
 					writer.println("\t\t\t\t\t\t\t\t\t</xs:restriction>");
 					writer.println("\t\t\t\t\t\t\t\t</xs:simpleType>");
-					writer.println("\t\t\t\t\t\t\t</xs:element name>");
+					writer.println("\t\t\t\t\t\t\t</xs:element>");
 				}
 			}
 			
@@ -170,6 +214,10 @@ public class XMLSchemaGenerator implements Generator {
 		}
 	}
 	
+	/**
+	 * Print XML schema for primary keys for each table
+	 * @throws MainException	when failed to retrieve primary keys
+	 */
 	private void printPrimaryKeys() throws MainException {
 		Iterator<String> tableNamesItr = tableNames.iterator();
 		
@@ -178,17 +226,21 @@ public class XMLSchemaGenerator implements Generator {
 			List<String> primaryKeys = dbAccess.getPrimaryKeys(tableName);
 			
 			writer.println("\t\t<xs:key name=\""+tableName+"PK"+"\">");
-			writer.println("\t\t\t<xs:selector name=\".//"+tableName+"\"/>");
+			writer.println("\t\t\t<xs:selector xpath=\".//"+tableName+"\"/>");
 			
 			Iterator<String> primaryKeysItr = primaryKeys.iterator();
 			while(primaryKeysItr.hasNext()) {
-				writer.println("\t\t\t<xs:field name=\""+primaryKeysItr.next()+"\"/>");
+				writer.println("\t\t\t<xs:field xpath=\""+primaryKeysItr.next()+"\"/>");
 			}
 			
 			writer.println("\t\t</xs:key>");
 		}
 	}
 	
+	/**
+	 * Print XML schema for columns under unique constraint for each table, if any
+	 * @throws MainException	Unable to retrieve columns with unique constraint due to database connection error
+	 */
 	private void printUniqueConstraints() throws MainException {
 		Iterator<String> tableNamesItr = tableNames.iterator();
 		
@@ -197,43 +249,48 @@ public class XMLSchemaGenerator implements Generator {
 			List<String> uniqueCols = dbAccess.getUniqueColumns(tableName);
 			
 			writer.println("\t\t<xs:unique name=\""+tableName+"Uniq"+"\">");
-			writer.println("\t\t\t<xs:selector name=\".//"+tableName+"\"/>");
+			writer.println("\t\t\t<xs:selector xpath=\".//"+tableName+"\"/>");
 			
 			Iterator<String> uniqueColsItr = uniqueCols.iterator();
 			while(uniqueColsItr.hasNext()) {
-				writer.println("\t\t\t<xs:field name=\""+uniqueColsItr.next()+"\"/>");
+				writer.println("\t\t\t<xs:field xpath=\""+uniqueColsItr.next()+"\"/>");
 			}
 			
 			writer.println("\t\t</xs:unique>");
 		}
 	}
 	
+	/**
+	 * Print XML schema for foreign keys for each table, if any
+	 * @throws MainException	Unable to retrieve foreign keys due to database connection error
+	 */
 	private void printForeignKeys() throws MainException {
 		Iterator<String> tableNamesItr = tableNames.iterator();
 		
 		while(tableNamesItr.hasNext()) {
 			String tableName = tableNamesItr.next();
 			CachedRowSet foreignKeys = dbAccess.getForeignKeys(tableName);
-			boolean isStart = true;
+			boolean hasStarted = false;
 			String pkTableName, fkColName;
 			
 			try {
 				while(foreignKeys.next()) {
 					
 					// if there is a foreign key in the table
-					if (isStart) {
-						isStart = false;
+					if (!hasStarted) {
+						hasStarted = true;
 						pkTableName = foreignKeys.getString("PKTABLE_NAME");
 						
 						writer.println("\t\t<xs:keyref name=\""+tableName+"FK"+"\" refer=\""+pkTableName+"PK"+"\">");
-						writer.println("\t\t\t<xs:selector name=\".//"+tableName+"\"/>");
+						writer.println("\t\t\t<xs:selector xpath=\".//"+tableName+"\"/>");
 					}
 					
 					fkColName = foreignKeys.getString("FKCOLUMN_NAME");
-					writer.println("\t\t\t<xs:field name=\""+fkColName+"\"/>");
+					writer.println("\t\t\t<xs:field xpath=\""+fkColName+"\"/>");
 				}
 				
-				writer.println("\t\t</xs:keyref>");
+				if (hasStarted)
+					writer.println("\t\t</xs:keyref>");
 				
 			} catch (SQLException e) {
 				e.printStackTrace();
@@ -242,6 +299,9 @@ public class XMLSchemaGenerator implements Generator {
 		}
 	}
 	
+	/**
+	 * Close I/O connection to file 
+	 */
 	private void finish() {
 		writer.close();
 	}
