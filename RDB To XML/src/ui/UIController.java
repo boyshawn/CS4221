@@ -10,11 +10,6 @@ import javax.swing.JFrame;
 import main.MainException;
 import main.RDBToXML;
 
-/**
- * 
- * @author Sarah
- * 
- */
 
 public class UIController {
 	private MainPanel main;

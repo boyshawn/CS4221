@@ -14,11 +14,6 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
-/**
- * 
- * @author Sarah
- *
- */
 
 public class MainPanel {
 	private JFrame mainFrame;

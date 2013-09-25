@@ -4,23 +4,16 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseListener;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-/**
- * 
- * @author Sarah
- *
- */
 
 public class TranslatePanel extends JPanel {
 	private JButton browseButton;
@@ -33,8 +26,45 @@ public class TranslatePanel extends JPanel {
 	public TranslatePanel() {
 		super();
 		setPreferredSize(new Dimension(600, 400));
+		
+		BoxLayout layout = new BoxLayout(this, BoxLayout.Y_AXIS);
+		//setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+		setLayout(layout);
+		
+		add(Box.createRigidArea(new Dimension(0,130)));
+		
+		errorMsgLabel = new JLabel(" ");
+		errorMsgLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+		errorMsgLabel.setForeground(Color.RED);
+		add(errorMsgLabel);
+		
+		JPanel xmlNamePane = new JPanel(new FlowLayout(FlowLayout.TRAILING));
+		xmlNamePane.add(new JLabel("Enter the XML file name"));
+		xmlNamePane.add(getXmlNameField());
+		xmlNamePane.add(new JLabel("                                "));
+		xmlNamePane.setAlignmentX(Component.CENTER_ALIGNMENT);
+		add(xmlNamePane, layout);
+		
+		JPanel directoryPane = new JPanel(new FlowLayout(FlowLayout.TRAILING));
+		directoryPane.add(new JLabel("Save to"));
+		directoryPane.add(getPathField());
+		directoryPane.add(new JLabel(" "));
+		directoryPane.add(getBrowseButton());
+		directoryPane.add(new JLabel("  "));
+		directoryPane.setAlignmentX(Component.CENTER_ALIGNMENT);
+		add(directoryPane, layout);
+		
+		JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.TRAILING));
+		bottomPanel.add(getTranslateButton());
+		bottomPanel.add(getCancelButton());
+		bottomPanel.add(new JLabel("                                "));
+		bottomPanel.add(new JLabel("                                "));
+		bottomPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+		add(bottomPanel, layout);
+		
+		add(Box.createRigidArea(new Dimension(0,130)));
 
-		setLayout(new GridBagLayout());
+	/*	setLayout(new GridBagLayout());
 
 		GridBagConstraints c = new GridBagConstraints();
 		c.insets = new Insets(5, 5, 5, 5);
@@ -79,7 +109,7 @@ public class TranslatePanel extends JPanel {
 		bottomPanel.add(getTranslateButton());
 		bottomPanel.add(getCancelButton());
 		bottomPanel.add(new JLabel("              "));
-		add(bottomPanel, c);
+		add(bottomPanel, c);*/
 
 	}
 
