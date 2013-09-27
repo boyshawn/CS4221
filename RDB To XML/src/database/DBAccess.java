@@ -29,7 +29,6 @@ public class DBAccess {
 	 * @throws MainException 
 	 */
 	public DBAccess(Connection dbConnection) throws MainException {
-		DatabaseMetaData dbMetadata;
 		
 		this.dbConnection = dbConnection;
 		
@@ -135,7 +134,11 @@ public class DBAccess {
 		CachedRowSet crs;
 		try {
 			crs = new CachedRowSetImpl();
-			crs.populate(dbConnection.getMetaData().getImportedKeys(null, null, tableName));
+			String dbCatalog = dbConnection.getCatalog();
+			String dbSchema = dbConnection.getSchema();
+			crs.populate(dbConnection.getMetaData().getExportedKeys(dbCatalog, dbSchema, tableName));
+			logger.debug("Size of CRS is " + crs.getFetchSize());
+			
 			return crs;
 		} catch (SQLException e) {
 			e.printStackTrace();
