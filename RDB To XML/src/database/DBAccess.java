@@ -131,13 +131,14 @@ public class DBAccess {
 	}
 	
 	public CachedRowSet getForeignKeys(String tableName) throws MainException {
+		logger.debug("getForeignKeys : " + tableName);
 		CachedRowSet crs;
 		try {
 			crs = new CachedRowSetImpl();
-			String dbCatalog = dbConnection.getCatalog();
-			String dbSchema = dbConnection.getSchema();
-			crs.populate(dbConnection.getMetaData().getExportedKeys(dbCatalog, dbSchema, tableName));
-			logger.debug("Size of CRS is " + crs.getFetchSize());
+			ResultSet rs = dbConnection.getMetaData().getImportedKeys(dbConnection.getCatalog(), null, tableName);
+			crs.populate(rs);
+			
+			logger.debug("Size of CRS is " + rs.getFetchSize());
 			
 			return crs;
 		} catch (SQLException e) {

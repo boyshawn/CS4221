@@ -70,7 +70,7 @@ public class DBConnector {
 		 * Form a valid connection URL in the format of jdbc:mysql://[DBaddress]:[Port Number]/[Schema name]
 		 * For example: jdbc:mysql://localhost:3306/mkyongcom
 		 */
-		String connectionUrl = "jdbc:mysql://" + address + ":" + port + "/" + dbName;
+		String connectionUrl = "jdbc:mysql://" + address + ":" + port + "/" + dbName + "?zeroDateTimeBehavior=round";
 
 		//
 		try {

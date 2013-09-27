@@ -82,9 +82,9 @@ public class XMLSchemaGenerator implements Generator {
 		sqlDataTypes = new HashMap<Integer, String>();
 		
 		sqlDataTypes.put(java.sql.Types.BIGINT,    		"xs:long");
-		sqlDataTypes.put(java.sql.Types.BINARY,    		"xs:hexBinary");
-		sqlDataTypes.put(java.sql.Types.BIT,       		"xs:short");
-		sqlDataTypes.put(java.sql.Types.BLOB,      		"xs:hexBinary");
+		sqlDataTypes.put(java.sql.Types.BINARY,    		"xs:base64Binary");
+		sqlDataTypes.put(java.sql.Types.BIT,       		"xs:boolean");
+		sqlDataTypes.put(java.sql.Types.BLOB,      		"xs:base64Binary");
 		sqlDataTypes.put(java.sql.Types.BOOLEAN,   		"xs:boolean");
 		sqlDataTypes.put(java.sql.Types.CHAR,      		"xs:string");
 		sqlDataTypes.put(java.sql.Types.CLOB,      		"xs:string");
@@ -95,14 +95,14 @@ public class XMLSchemaGenerator implements Generator {
 		sqlDataTypes.put(java.sql.Types.FLOAT,    		"xs:float");
 		sqlDataTypes.put(java.sql.Types.INTEGER,   		"xs:int");
 		sqlDataTypes.put(java.sql.Types.LONGNVARCHAR,   "xs:string");
-		sqlDataTypes.put(java.sql.Types.LONGVARBINARY,  "xs:hexBinary");
+		sqlDataTypes.put(java.sql.Types.LONGVARBINARY,  "xs:base64Binary");
 		sqlDataTypes.put(java.sql.Types.NUMERIC,  		"xs:decimal");
 		sqlDataTypes.put(java.sql.Types.REAL,      		"xs:float");
 		sqlDataTypes.put(java.sql.Types.SMALLINT,  		"xs:short");
 		sqlDataTypes.put(java.sql.Types.TIME,      		"xs:time");
 		sqlDataTypes.put(java.sql.Types.TIMESTAMP, 		"xs:dateTime");
 		sqlDataTypes.put(java.sql.Types.TINYINT, 		"xs:short");
-		sqlDataTypes.put(java.sql.Types.VARBINARY, 		"xs:hexBinary");
+		sqlDataTypes.put(java.sql.Types.VARBINARY, 		"xs:base64Binary");
 		sqlDataTypes.put(java.sql.Types.VARCHAR,   		"xs:string");
 		sqlDataTypes.put(java.sql.Types.DISTINCT, 		"xs:string");
 		sqlDataTypes.put(java.sql.Types.NULL, 			"xs:string");
@@ -171,27 +171,23 @@ public class XMLSchemaGenerator implements Generator {
 	 * @throws MainException	if failed to retrieve details of columns due to a database connection error
 	 */
 	private void printColumns(String tableName) throws MainException {
-		//CachedRowSet tableDetails = tablesCache.get(tableName);
 		CachedRowSet tableDetails = dbAccess.getColumnsDetails(tableName);
 		String xml, xmlColDefault, colName, colDefault, colType;
-		int colSize;
+		int colSize, colSQLType;
 		boolean colNullable;
 			
 		try {
 			while (tableDetails.next()) {
 				colName     = tableDetails.getString("COLUMN_NAME");
-				colDefault  = tableDetails.getString("COLUMN_DEF");
-				colType     = sqlDataTypes.get(tableDetails.getInt("DATA_TYPE"));
 				colNullable = tableDetails.getInt("NULLABLE") == DatabaseMetaData.columnNullable ? true : false;
 				colSize     = tableDetails.getInt("COLUMN_SIZE");
+				colSQLType  = tableDetails.getInt("DATA_TYPE");
+				colDefault  = tableDetails.getString("COLUMN_DEF");
 				
-				//logger.debug("colName : " + colName);
+				colType       = sqlDataTypes.get(colSQLType);
+				xmlColDefault = getColDefaultValuePrint(colSQLType, colDefault);	
 				
-				xml = "";
-				
-				xmlColDefault = "";
-				if (colDefault != null && !colDefault.equals("null") && !colDefault.equals(""))
-					xmlColDefault = " default=\""+colDefault+"\"";	
+				xml = "";	
 				
 				// if the column size is 0 or the SQL column type is not translated to xs:string
 				// then xs:element has a "type" attribute and there is no restriction added to xs:element
@@ -221,6 +217,37 @@ public class XMLSchemaGenerator implements Generator {
 			e.printStackTrace();
 			throw new MainException("Database error when accessing columns from table " + tableName + " : " + e.getMessage());
 		}
+	}
+	
+	/**
+	 * changes the SQL column's default value to correspond with the XML schema data type if needed
+	 * @param sqlDataType	SQL data type of column
+	 * @param colDefault	SQL default value of column
+	 * @return				If 'colDefault' is null, return empty string.
+	 * 						Else returns a string in the form of " default = "*column_default_value*""
+	 */
+	private String getColDefaultValuePrint(int sqlDataType, String colDefault) {
+		
+		if (colDefault == null)
+			return "";
+		
+		if (colDefault.equals(""))
+			return "";
+		
+		switch(sqlDataType) {
+			case java.sql.Types.BIT :
+				if (colDefault.contains("1"))
+					colDefault = "true";
+				else
+					colDefault = "false";
+				break;
+			
+			case java.sql.Types.DATE :
+				if (colDefault.equals("0000-00-00"))
+					return "";
+		}
+		
+		return " default=\""+colDefault+"\"";
 	}
 	
 	/**
