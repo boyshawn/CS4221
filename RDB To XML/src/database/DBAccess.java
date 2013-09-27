@@ -142,7 +142,7 @@ public class DBAccess {
 		}
 	}
 	
-	public CachedRowSet getData(String tableName) {
+	public CachedRowSet getData(String tableName) throws MainException {
 		try{
 			Statement stmt = null;
 			ResultSet results = null;
@@ -155,11 +155,11 @@ public class DBAccess {
 			
 		}catch(SQLException ex){
 			ex.printStackTrace();
-			return null;
+			throw new MainException("Database connection error for " + tableName);
 			
 		}catch(Exception ex){
 			ex.printStackTrace();
-			return null;
+			throw new MainException("Exception at DBAccess.getData(tableName) when retrieving data from table " + tableName);
 		}
 	}
 	
