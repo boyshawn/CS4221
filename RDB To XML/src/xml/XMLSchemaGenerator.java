@@ -196,7 +196,7 @@ public class XMLSchemaGenerator implements Generator {
 					
 					logger.debug("table name : " + tableName + " ; column default : " + colDefault);
 					
-					if (colDefault != null && !colDefault.equals("null")) 
+					if (colDefault != null && !colDefault.equals("null") && !colDefault.equals("")) 
 						xml += " default=\""+colDefault+"\"";
 					
 					xml += "/>";
