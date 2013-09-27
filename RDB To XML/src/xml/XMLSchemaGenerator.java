@@ -189,8 +189,6 @@ public class XMLSchemaGenerator implements Generator {
 				colSize     = tableDetails.getInt("COLUMN_SIZE");
 				
 				logger.debug("colName : " + colName);
-				logger.debug("colSize : " + colSize);
-				logger.debug("colType : " + colType);
 				
 				xml = "";
 				
