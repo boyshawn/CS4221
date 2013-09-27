@@ -14,21 +14,17 @@ import javax.sql.rowset.CachedRowSet;
 
 import org.apache.log4j.Logger;
 
-<<<<<<< HEAD
 import xml.XMLSchemaGenerator;
 
-=======
->>>>>>> 7da0641ae3e5397ce2cdc7a79f5bf51ac95daed8
 import main.MainException;
 
 import com.sun.rowset.CachedRowSetImpl;
+
 public class DBAccess {
 	
-	private Logger logger = Logger.getLogger(DBAccess.class);
 	private static volatile DBAccess singDbAccess = null;
 	private Connection dbConnection;
 	private Map<String, CachedRowSet> dbTableCache;
-	private static Logger logger = Logger.getLogger(DBAccess.class);
 	
 	/**
 	 * Constructor that can only be used by DBConnector
@@ -65,7 +61,6 @@ public class DBAccess {
 				results = dbMetadata.getColumns(null, null, tableName, null);
 				cachedRowSet.populate(results);
 				dbTableCache.put(tableName,cachedRowSet);
-				logger.info(cachedRowSet.toString());
 			}
 			
 			
