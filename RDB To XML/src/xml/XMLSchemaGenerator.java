@@ -173,7 +173,7 @@ public class XMLSchemaGenerator implements Generator {
 	private void printColumns(String tableName) throws MainException {
 		//CachedRowSet tableDetails = tablesCache.get(tableName);
 		CachedRowSet tableDetails = dbAccess.getColumnsDetails(tableName);
-		String xml, colName, colDefault, colType;
+		String xml, xmlColDefault, colName, colDefault, colType;
 		int colSize;
 		boolean colNullable;
 			
@@ -185,28 +185,24 @@ public class XMLSchemaGenerator implements Generator {
 				colNullable = tableDetails.getInt("NULLABLE") == DatabaseMetaData.columnNullable ? true : false;
 				colSize     = tableDetails.getInt("COLUMN_SIZE");
 				
-				logger.debug("colName : " + colName);
+				//logger.debug("colName : " + colName);
 				
 				xml = "";
+				
+				xmlColDefault = "";
+				if (colDefault != null && !colDefault.equals("null") && !colDefault.equals(""))
+					xmlColDefault = " default=\""+colDefault+"\"";	
 				
 				// if the column size is 0 or the SQL column type is not translated to xs:string
 				// then xs:element has a "type" attribute and there is no restriction added to xs:element
 				if (colSize == 0 || !colType.equals("xs:string")) {
-					xml += "\t\t\t\t\t\t\t<xs:element name=\""+colName+"\" type=\""+colType+"\" nillable=\""+colNullable+"\"";
-					
-					logger.debug("table name : " + tableName + " ; column default : " + colDefault);
-					
-					if (colDefault != null && !colDefault.equals("null") && !colDefault.equals("")) 
-						xml += " default=\""+colDefault+"\"";
+					xml += "\t\t\t\t\t\t\t<xs:element name=\""+colName+"\" type=\""+colType+"\" nillable=\""+colNullable+"\""+xmlColDefault;
 					
 					xml += "/>";
 					writer.println(xml);
 				}
 				else {
-					xml += "\t\t\t\t\t\t\t<xs:element name=\""+colName+"\" nillable=\""+colNullable+"\"";
-					
-					if (colDefault != null) 
-						xml += " default=\""+colDefault+"\"";
+					xml += "\t\t\t\t\t\t\t<xs:element name=\""+colName+"\" nillable=\""+colNullable+"\""+xmlColDefault;
 					
 					xml += ">";
 					writer.println(xml);
