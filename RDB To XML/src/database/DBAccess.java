@@ -12,6 +12,10 @@ import java.util.Map;
 
 import javax.sql.rowset.CachedRowSet;
 
+import org.apache.log4j.Logger;
+
+import xml.XMLSchemaGenerator;
+
 import main.MainException;
 
 import com.sun.rowset.CachedRowSetImpl;
@@ -22,6 +26,7 @@ public class DBAccess {
 	private static volatile DBAccess singDbAccess = null;
 	private Connection dbConnection;
 	private Map<String, CachedRowSet> dbTableCache;
+	private static Logger logger = Logger.getLogger(DBAccess.class);
 	
 	/**
 	 * Constructor that can only be used by DBConnector
@@ -60,9 +65,9 @@ public class DBAccess {
 				dbTableCache.put(tableName,cachedRowSet);
 			}
 			
+			
 		}catch(SQLException ex){
 			ex.printStackTrace();
-			//TODO: include the database address
 			throw new MainException("Error in reading the database for " + ".");
 		}
 		
@@ -114,6 +119,21 @@ public class DBAccess {
 			e.printStackTrace();
 			throw new MainException("Failed to get all columns for " + tableName);
 		}
+	}
+	
+	public CachedRowSet getColumnsDetails(String tableName) throws MainException {
+		ResultSet results;
+		try {
+			DatabaseMetaData dbMetadata = dbConnection.getMetaData();
+			results = dbMetadata.getColumns(null, null, tableName, null);
+			CachedRowSet cachedRowSet = new CachedRowSetImpl();
+			cachedRowSet.populate(results);
+			return cachedRowSet;	
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new MainException("Exception when retrieving detail of columns for table " + tableName + " : " + e.getMessage());
+		}
+		
 	}
 	
 	public List<String> getPrimaryKeys(String tableName) throws MainException {

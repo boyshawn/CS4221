@@ -163,7 +163,8 @@ public class XMLSchemaGenerator implements Generator {
 	 * @throws MainException	if failed to retrieve details of columns due to a database connection error
 	 */
 	private void printColumns(String tableName) throws MainException {
-		CachedRowSet tableDetails = tablesCache.get(tableName);
+		//CachedRowSet tableDetails = tablesCache.get(tableName);
+		CachedRowSet tableDetails = dbAccess.getColumnsDetails(tableName);
 		String xml, colName, colDefault, colType;
 		int colSize;
 		boolean colNullable;
