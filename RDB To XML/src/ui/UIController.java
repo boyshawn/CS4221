@@ -98,6 +98,12 @@ public class UIController {
 			try {
 				File file = chooser.getSelectedFile();
 				String fullPath = file.getAbsolutePath();
+				// for mac
+				String OS = System.getProperty("os.name").toLowerCase();
+				if (OS.indexOf("mac") >= 0) {
+					int last = fullPath.lastIndexOf("//");
+					fullPath= fullPath.substring(0, last);
+				}
 				translate.setPath(fullPath);
 			} catch (Exception ex) {
 				System.out.println("User did not choose any directory");
@@ -120,12 +126,10 @@ public class UIController {
 			} else {
 				if (v.validateFilename(xmlName)) {
 					try {
-						// for mac
 						String fName = "";
+						// for mac
 						String OS = System.getProperty("os.name").toLowerCase();
 						if (OS.indexOf("mac") >= 0) {
-							int last = path.lastIndexOf("//");
-							path = path.substring(0, last);
 							fName = path + "//" + xmlName;
 						} else {
 							// for windows
