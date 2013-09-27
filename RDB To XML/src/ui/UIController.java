@@ -101,10 +101,15 @@ public class UIController {
 				// for mac
 				String OS = System.getProperty("os.name").toLowerCase();
 				if (OS.indexOf("mac") >= 0) {
-					int last = fullPath.lastIndexOf("//");
-					fullPath= fullPath.substring(0, last);
+					System.out.println("MAC");
+					System.out.println(fullPath);
+					int last = fullPath.lastIndexOf("/");
+					String macPath = fullPath.substring(0, last);
+					System.out.println(macPath);
+					translate.setPath(macPath);
+				} else {
+					translate.setPath(fullPath);
 				}
-				translate.setPath(fullPath);
 			} catch (Exception ex) {
 				System.out.println("User did not choose any directory");
 			}
@@ -130,7 +135,7 @@ public class UIController {
 						// for mac
 						String OS = System.getProperty("os.name").toLowerCase();
 						if (OS.indexOf("mac") >= 0) {
-							fName = path + "//" + xmlName;
+							fName = path + "/" + xmlName;
 						} else {
 							// for windows
 							fName = path+ "\\" + xmlName;
