@@ -1,5 +1,6 @@
 package ui;
 
+import java.awt.Desktop;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -146,10 +147,8 @@ public class UIController {
 						translate.setErrorMsg(" ");
 						// open the files generated
 						try {
-							ProcessBuilder pb = new ProcessBuilder("Notepad.exe", fName + ".xml");
-							pb.start();
-							ProcessBuilder pb2 = new ProcessBuilder("Notepad.exe", fName + ".xsd");
-							pb2.start();
+							Desktop.getDesktop().open(new File(fName + ".xml"));
+							Desktop.getDesktop().open(new File(fName + ".xsd"));
 						} catch (Exception ex) {
 							ex.printStackTrace();
 						}
