@@ -8,9 +8,9 @@ import java.io.FileNotFoundException;
 import java.util.Set;
 import java.util.Map;
 import java.util.List;
+import java.util.LinkedList;
 import java.util.Iterator;
 import javax.sql.rowset.CachedRowSet;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import database.DBAccess;
 import main.MainException;
@@ -64,19 +64,23 @@ public class XMLDataGenerator implements Generator {
 
 				// Process the rows for each table
 				CachedRowSet crs = dbCache.getData(tName);
-				List<String> cols = dbCache.getUniqueColumns(tName);
+				List<String> cols = dbCache.getAllColumns(tName);
 				
 				while (crs.next()){
 					// Write table name to file
 					writer.println("	<"+tName+">");
 					for(int i=0;i<cols.size();i++){
 						String colName = cols.get(i);
-						writer.print("		<"+colName+">");
 						String nextData = crs.getString(colName);
+						
+						
 						if (crs.wasNull()){
-							nextData="";
+							writer.print("		<"+colName);
+							writer.print(" xsi:nil=\"true\">");
+						}else{
+							writer.print("		<"+colName+">"+nextData);
 						}
-						writer.println(nextData+"</"+colName+">");
+						writer.println("</"+colName+">");
 					}
 					// Write the closing tag for the relation
 					writer.println("	</"+tName+">");

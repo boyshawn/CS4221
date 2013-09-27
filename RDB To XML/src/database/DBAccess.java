@@ -101,6 +101,20 @@ public class DBAccess {
 		}
 	}
 	
+	public List<String> getAllColumns(String tableName) throws MainException {
+		List<String> uniqueCols = new ArrayList<String>();
+		try {
+			ResultSet rs = dbConnection.getMetaData().getColumns(null, null, tableName, null);
+			while(rs.next()) {
+				uniqueCols.add(rs.getString("COLUMN_NAME"));
+			}
+			return uniqueCols;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new MainException("Failed to get all columns for " + tableName);
+		}
+	}
+	
 	public List<String> getPrimaryKeys(String tableName) throws MainException {
 		List<String> primaryKeys = new ArrayList<String>();
 		try {
