@@ -18,6 +18,7 @@ public class RDBToXML {
 		dataGen.generate(dbName, xmlFileName);
 		
 		XMLSchemaGenerator schemaGen = new XMLSchemaGenerator();
+		
 		schemaGen.generate(dbName, xmlFileName);
 		
 		dbc.closeConnection();	
