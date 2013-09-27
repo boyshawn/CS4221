@@ -14,14 +14,13 @@ import javax.sql.rowset.CachedRowSet;
 
 import org.apache.log4j.Logger;
 
-import xml.XMLSchemaGenerator;
-
 import main.MainException;
 
 import com.sun.rowset.CachedRowSetImpl;
 
 public class DBAccess {
 	
+	private Logger logger = Logger.getLogger(DBAccess.class);
 	private static volatile DBAccess singDbAccess = null;
 	private Connection dbConnection;
 	private Map<String, CachedRowSet> dbTableCache;
