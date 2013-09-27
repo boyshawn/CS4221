@@ -307,15 +307,20 @@ public class XMLSchemaGenerator implements Generator {
 			String tableName = tableNamesItr.next();
 			CachedRowSet foreignKeys = dbAccess.getForeignKeys(tableName);
 			boolean hasStarted = false;
-			String pkTableName, fkColName;
+			String pkTableName = "", currPKTableName = "", fkColName;
 			
 			try {
 				while(foreignKeys.next()) {
+					currPKTableName = foreignKeys.getString("PKTABLE_NAME");
 					
 					// if there is a foreign key in the table
-					if (!hasStarted) {
-						hasStarted = true;
-						pkTableName = foreignKeys.getString("PKTABLE_NAME");
+					if (!hasStarted || !pkTableName.equals(currPKTableName)) {
+						if (hasStarted)
+							writer.println("\t\t</xs:keyref>");
+						else
+							hasStarted = true;
+						
+						pkTableName = currPKTableName;
 						
 						writer.println("\t\t<xs:keyref name=\""+tableName+"FK"+"\" refer=\""+pkTableName+"PK"+"\">");
 						writer.println("\t\t\t<xs:selector xpath=\".//"+tableName+"\"/>");
@@ -323,6 +328,8 @@ public class XMLSchemaGenerator implements Generator {
 					
 					fkColName = foreignKeys.getString("FKCOLUMN_NAME");
 					writer.println("\t\t\t<xs:field xpath=\""+fkColName+"\"/>");
+					
+					logger.debug("printForeignKeys : table - " + tableName + " ; column - " + fkColName);
 				}
 				
 				if (hasStarted)

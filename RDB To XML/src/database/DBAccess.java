@@ -137,9 +137,6 @@ public class DBAccess {
 			crs = new CachedRowSetImpl();
 			ResultSet rs = dbConnection.getMetaData().getImportedKeys(dbConnection.getCatalog(), null, tableName);
 			crs.populate(rs);
-			
-			logger.debug("Size of CRS is " + rs.getFetchSize());
-			
 			return crs;
 		} catch (SQLException e) {
 			e.printStackTrace();
