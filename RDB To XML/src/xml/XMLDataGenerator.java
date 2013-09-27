@@ -72,8 +72,6 @@ public class XMLDataGenerator implements Generator {
 					for(int i=0;i<cols.size();i++){
 						String colName = cols.get(i);
 						String nextData = crs.getString(colName);
-						
-						
 						if (crs.wasNull()){
 							writer.print("		<"+colName);
 							writer.print(" xsi:nil=\"true\">");
