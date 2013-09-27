@@ -6,6 +6,8 @@ import java.io.File;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import main.MainException;
 import main.RDBToXML;
@@ -86,8 +88,11 @@ public class UIController {
 			JFileChooser chooser = new JFileChooser();
 			chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 			chooser.setDialogTitle("Save to");
+			//trial
+			UIManager.put("FileChooser.FileNameLabelText", "hello");
+			SwingUtilities.updateComponentTreeUI(chooser);
 			JFrame frame = new JFrame();
-			int returnVal = chooser.showDialog(frame, "Select");
+			chooser.showDialog(frame, "Select");
 
 			chooser.setAcceptAllFileFilterUsed(false);
 			try {
@@ -105,21 +110,40 @@ public class UIController {
 		public void actionPerformed(ActionEvent e) {
 			String xmlName, path;
 			InputFormatValidator v = new InputFormatValidator();
-
+			
 			xmlName = translate.getFilename();
 			path = translate.getPath();
-
+			
 			if (xmlName.isEmpty() || path.isEmpty()) {
 				translate
 						.setErrorMsg("Please enter the XML file name and choose a directory");
 			} else {
 				if (v.validateFilename(xmlName)) {
 					try {
-						String fName = path+ "\\" + xmlName;
+						// for mac
+						String fName = "";
+						String OS = System.getProperty("os.name").toLowerCase();
+						if (OS.indexOf("mac") >= 0) {
+							int last = path.lastIndexOf("//");
+							path = path.substring(0, last);
+							fName = path + "//" + xmlName;
+						} else {
+							// for windows
+							fName = path+ "\\" + xmlName;
+						}
 						r.translateToXML(dbname, fName);
 						translate.displaySuccessfulMsg();
 						translate.emptiedField();
 						translate.setErrorMsg(" ");
+						// open the files generated
+						try {
+							ProcessBuilder pb = new ProcessBuilder("Notepad.exe", fName + ".xml");
+							pb.start();
+							ProcessBuilder pb2 = new ProcessBuilder("Notepad.exe", fName + ".xsd");
+							pb2.start();
+						} catch (Exception ex) {
+							ex.printStackTrace();
+						}
 						main.showMainPane();
 					} catch (MainException me) {
 						translate.setErrorMsg(me.getMessage());
