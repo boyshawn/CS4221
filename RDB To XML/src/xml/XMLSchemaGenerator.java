@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.sql.rowset.CachedRowSet;
 
@@ -27,9 +26,8 @@ public class XMLSchemaGenerator implements Generator {
 	private File file;
 	private PrintWriter writer;
 	private DBAccess dbAccess;
-	private Map<String, CachedRowSet> tablesCache;
+	private List<String> tableNames;
 	private Map<Integer, String> sqlDataTypes;
-	private Set<String> tableNames;
 	
 	/**
 	 * To generate the XML Schema for a database
@@ -72,8 +70,7 @@ public class XMLSchemaGenerator implements Generator {
 		}
 		
 		dbAccess = DBAccess.getInstance();
-		tablesCache = dbAccess.getTableCache();
-		tableNames = tablesCache.keySet();
+		tableNames = dbAccess.getTableNames();
 		setupDataTypes();
 		
 	}

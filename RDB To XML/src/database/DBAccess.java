@@ -6,15 +6,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.sql.rowset.CachedRowSet;
 
-import org.apache.log4j.Logger;
-
 import main.MainException;
+
+import org.apache.log4j.Logger;
 
 import com.sun.rowset.CachedRowSetImpl;
 
@@ -23,7 +21,6 @@ public class DBAccess {
 	private Logger logger = Logger.getLogger(DBAccess.class);
 	private static volatile DBAccess singDbAccess = null;
 	private Connection dbConnection;
-	private Map<String, CachedRowSet> dbTableCache;
 	
 	/**
 	 * Constructor that can only be used by DBConnector
@@ -33,10 +30,6 @@ public class DBAccess {
 	 */
 	public DBAccess(Connection dbConnection) throws MainException {
 		DatabaseMetaData dbMetadata;
-		ResultSet tables;
-		ResultSet results = null;
-		CachedRowSet cachedRowSet;
-		dbTableCache = new HashMap<String, CachedRowSet>();
 		
 		this.dbConnection = dbConnection;
 		
@@ -47,25 +40,6 @@ public class DBAccess {
 		} catch (SQLException e) {
 			e.printStackTrace();
 			throw new MainException("Cannot access database connection.");
-		}
-		
-		try{
-			dbMetadata = dbConnection.getMetaData();
-			tables = dbMetadata.getTables(null,null, "%", null);
-			
-			cachedRowSet = new CachedRowSetImpl();
-			
-			while(tables.next()){
-				String tableName = tables.getString(3);
-				results = dbMetadata.getColumns(null, null, tableName, null);
-				cachedRowSet.populate(results);
-				dbTableCache.put(tableName,cachedRowSet);
-			}
-			
-			
-		}catch(SQLException ex){
-			ex.printStackTrace();
-			throw new MainException("Error in reading the database for " + ".");
 		}
 		
 		singDbAccess = this;
@@ -83,11 +57,21 @@ public class DBAccess {
 	public void removeInstance() {
 		singDbAccess = null;
 		dbConnection = null;
-		dbTableCache = null;
 	}
 	
-	public Map<String, CachedRowSet> getTableCache() {
-		return dbTableCache;
+	public List<String> getTableNames() throws MainException {
+		List<String> tableNames = new ArrayList<String>();
+		try {
+			ResultSet tables = dbConnection.getMetaData().getTables(null,null, "%", null);
+			while(tables.next()){
+				String tableName = tables.getString(3);
+				tableNames.add(tableName);
+			}
+			return tableNames;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new MainException("Exception when retrieving table names : " + e.getMessage());
+		}
 	}
 	
 	public List<String> getUniqueColumns(String tableName) throws MainException {
