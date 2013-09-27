@@ -1,14 +1,11 @@
 package main;
 
-import java.io.File;
-
 import xml.XMLDataGenerator;
 import xml.XMLSchemaGenerator;
 import database.DBConnector;
 
 public class RDBToXML {
 	
-	private String dbName, xmlSchemaFileName, xmlDataFileName;
 	private DBConnector dbc = DBConnector.getInstance();
 	
 	public void connectToDB (String address, String port, String dbName, String username, String password) throws MainException {	

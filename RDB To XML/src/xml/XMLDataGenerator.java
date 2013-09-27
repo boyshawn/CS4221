@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.List;
 import java.util.Iterator;
 import javax.sql.rowset.CachedRowSet;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import database.DBAccess;
 import main.MainException;

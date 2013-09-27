@@ -87,7 +87,7 @@ public class UIController {
 			chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 			chooser.setDialogTitle("Save to");
 			JFrame frame = new JFrame();
-			int returnVal = chooser.showDialog(frame, "Select");
+			chooser.showDialog(frame, "Select");
 
 			chooser.setAcceptAllFileFilterUsed(false);
 			try {
