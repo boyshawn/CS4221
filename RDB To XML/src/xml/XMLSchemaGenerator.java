@@ -84,24 +84,35 @@ public class XMLSchemaGenerator implements Generator {
 	private void setupDataTypes() {
 		sqlDataTypes = new HashMap<Integer, String>();
 		
-		sqlDataTypes.put(java.sql.Types.BIGINT,    "xs:integer");
-		sqlDataTypes.put(java.sql.Types.BINARY,    "xs:hexBinary");
-		sqlDataTypes.put(java.sql.Types.BLOB,      "xs:hexBinary");
-		sqlDataTypes.put(java.sql.Types.BOOLEAN,   "xs:boolean");
-		sqlDataTypes.put(java.sql.Types.CHAR,      "xs:string");
-		sqlDataTypes.put(java.sql.Types.CLOB,      "xs:string");
-		sqlDataTypes.put(java.sql.Types.DATE,      "xs:date");
-		sqlDataTypes.put(java.sql.Types.DECIMAL,   "xs:decimal");
-		sqlDataTypes.put(java.sql.Types.DOUBLE,    "xs:double");
-		sqlDataTypes.put(java.sql.Types.FLOAT,     "xs:double");
-		sqlDataTypes.put(java.sql.Types.INTEGER,   "xs:integer");
-		sqlDataTypes.put(java.sql.Types.NUMERIC,   "xs:decimal");
-		sqlDataTypes.put(java.sql.Types.REAL,      "xs:double");
-		sqlDataTypes.put(java.sql.Types.SMALLINT,  "xs:integer");
-		sqlDataTypes.put(java.sql.Types.TIME,      "xs:time");
-		sqlDataTypes.put(java.sql.Types.TIMESTAMP, "xs:dateTime");
-		sqlDataTypes.put(java.sql.Types.VARBINARY, "xs:hexBinary");
-		sqlDataTypes.put(java.sql.Types.VARCHAR,   "xs:string");
+		sqlDataTypes.put(java.sql.Types.BIGINT,    		"xs:long");
+		sqlDataTypes.put(java.sql.Types.BINARY,    		"xs:hexBinary");
+		sqlDataTypes.put(java.sql.Types.BIT,       		"xs:short");
+		sqlDataTypes.put(java.sql.Types.BLOB,      		"xs:hexBinary");
+		sqlDataTypes.put(java.sql.Types.BOOLEAN,   		"xs:boolean");
+		sqlDataTypes.put(java.sql.Types.CHAR,      		"xs:string");
+		sqlDataTypes.put(java.sql.Types.CLOB,      		"xs:string");
+		sqlDataTypes.put(java.sql.Types.DATALINK,  		"xs:anyURI");
+		sqlDataTypes.put(java.sql.Types.DATE,      		"xs:date");
+		sqlDataTypes.put(java.sql.Types.DECIMAL,   		"xs:decimal");
+		sqlDataTypes.put(java.sql.Types.DOUBLE,   		"xs:double");
+		sqlDataTypes.put(java.sql.Types.FLOAT,    		"xs:float");
+		sqlDataTypes.put(java.sql.Types.INTEGER,   		"xs:int");
+		sqlDataTypes.put(java.sql.Types.LONGNVARCHAR,   "xs:string");
+		sqlDataTypes.put(java.sql.Types.LONGVARBINARY,  "xs:hexBinary");
+		sqlDataTypes.put(java.sql.Types.NUMERIC,  		"xs:decimal");
+		sqlDataTypes.put(java.sql.Types.REAL,      		"xs:float");
+		sqlDataTypes.put(java.sql.Types.SMALLINT,  		"xs:short");
+		sqlDataTypes.put(java.sql.Types.TIME,      		"xs:time");
+		sqlDataTypes.put(java.sql.Types.TIMESTAMP, 		"xs:dateTime");
+		sqlDataTypes.put(java.sql.Types.TINYINT, 		"xs:short");
+		sqlDataTypes.put(java.sql.Types.VARBINARY, 		"xs:hexBinary");
+		sqlDataTypes.put(java.sql.Types.VARCHAR,   		"xs:string");
+		sqlDataTypes.put(java.sql.Types.DISTINCT, 		"xs:string");
+		sqlDataTypes.put(java.sql.Types.NULL, 			"xs:string");
+		sqlDataTypes.put(java.sql.Types.OTHER, 			"xs:string");
+		sqlDataTypes.put(java.sql.Types.REF, 			"xs:string");
+		sqlDataTypes.put(java.sql.Types.STRUCT, 		"xs:string");
+		sqlDataTypes.put(java.sql.Types.JAVA_OBJECT, 	"xs:string");
 	}
 	
 	/**
@@ -177,6 +188,10 @@ public class XMLSchemaGenerator implements Generator {
 				colNullable = tableDetails.getInt("NULLABLE") == DatabaseMetaData.columnNullable ? true : false;
 				colSize     = tableDetails.getInt("COLUMN_SIZE");
 				
+				logger.debug("colName : " + colName);
+				logger.debug("colSize : " + colSize);
+				logger.debug("colType : " + colType);
+				
 				xml = "";
 				
 				// if the column size is 0 or the SQL column type is not translated to xs:string
@@ -184,7 +199,9 @@ public class XMLSchemaGenerator implements Generator {
 				if (colSize == 0 || !colType.equals("xs:string")) {
 					xml += "\t\t\t\t\t\t\t<xs:element name=\""+colName+"\" type=\""+colType+"\" nillable=\""+colNullable+"\"";
 					
-					if (colDefault != null) 
+					logger.debug("table name : " + tableName + " ; column default : " + colDefault);
+					
+					if (colDefault != null && !colDefault.equals("null")) 
 						xml += " default=\""+colDefault+"\"";
 					
 					xml += "/>";
