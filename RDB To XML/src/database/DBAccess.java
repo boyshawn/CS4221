@@ -16,6 +16,7 @@ import main.MainException;
 
 import com.sun.rowset.CachedRowSetImpl;
 
+@SuppressWarnings("restriction")
 public class DBAccess {
 	
 	private static volatile DBAccess singDbAccess = null;

@@ -11,7 +11,7 @@ public class RDBToXMLMain {
 		TranslatePanel t = new TranslatePanel();
 		MainPanel m = new MainPanel(t);
 		RDBToXML r = new RDBToXML();
-		UIController c = new UIController(m, t, r);
+		new UIController(m, t, r);
 		m.getMainFrame().setVisible(true);
 	}
 }

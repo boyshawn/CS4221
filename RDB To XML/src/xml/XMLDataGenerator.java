@@ -1,19 +1,20 @@
 package xml;
 
 import java.io.File;
-import java.io.PrintWriter;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.FileNotFoundException;
-import java.util.Set;
-import java.util.Map;
-import java.util.List;
-import java.util.LinkedList;
-import java.util.Iterator;
-import javax.sql.rowset.CachedRowSet;
+import java.io.PrintWriter;
 import java.sql.SQLException;
-import database.DBAccess;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.sql.rowset.CachedRowSet;
+
 import main.MainException;
+import database.DBAccess;
 
 public class XMLDataGenerator implements Generator {
 	@Override
