@@ -8,8 +8,6 @@ import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import javax.sql.rowset.CachedRowSet;
 
@@ -55,8 +53,7 @@ public class XMLDataGenerator implements Generator {
 
 		// Get table names & data
 		DBAccess dbCache = DBAccess.getInstance();
-		Map<String, CachedRowSet> tables = dbCache.getTableCache();
-		Set<String> tablenames = tables.keySet();
+		List<String> tablenames = dbCache.getTableNames();
 		Iterator<String> tableItr = tablenames.iterator();
 		try{
 			// Write data for each table/relation
