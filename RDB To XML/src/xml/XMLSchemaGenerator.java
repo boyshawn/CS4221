@@ -305,6 +305,7 @@ public class XMLSchemaGenerator implements Generator {
 	 */
 	private void finish() {
 		writer.close();
+		logger.info("Close database connection.");
 	}
 	
 }
