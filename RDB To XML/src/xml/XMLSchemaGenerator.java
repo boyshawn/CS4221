@@ -210,7 +210,7 @@ public class XMLSchemaGenerator implements Generator {
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
-			throw new MainException("Database connection error when accessing columns");
+			throw new MainException("Database error when accessing columns from table " + tableName + " : " + e.getMessage());
 		}
 	}
 	
