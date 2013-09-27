@@ -155,7 +155,7 @@ public class DBAccess {
 			
 		}catch(SQLException ex){
 			ex.printStackTrace();
-			throw new MainException("Database connection error for " + tableName);
+			throw new MainException("Exception when retrieving data from table " + tableName + " : " + ex.getMessage());
 			
 		}catch(Exception ex){
 			ex.printStackTrace();
