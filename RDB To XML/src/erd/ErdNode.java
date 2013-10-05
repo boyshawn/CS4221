@@ -1,5 +1,6 @@
 package erd;
 
+import java.util.Iterator;
 import java.util.Vector;
 
 public abstract class ErdNode {
@@ -41,6 +42,22 @@ public abstract class ErdNode {
 	}
 	
 	public boolean doesLinkExists(String tableName){
-		return true;	//Stub
+		Iterator<ErdNode> linkIterator = link.iterator();
+		
+		if(!linkIterator.hasNext()){
+			return false;
+		}
+		
+		do{
+			ErdNode iterErdNode = (ErdNode) linkIterator.next();
+			
+			String erdNodeTableName = iterErdNode.getTableName();
+			
+			if(erdNodeTableName == tableName){
+				return true;
+			}
+		}while(linkIterator.hasNext());
+		
+		return false;
 	}
 }
