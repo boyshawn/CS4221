@@ -4,14 +4,15 @@ import java.util.Map;
 
 public class ERDBuilder {
 
-	private Map<String, ERDType> entityTypes;
-	private Map<String, ERDType> relationshipTypes;
+	private Map<String, ErdNode> entityTypes;
+	private Map<String, ErdNode> relationshipTypes;
 	
 	public void buildERD() {
 		
 	}
 	
 	private boolean checkCycle() {
+		return false;
 		
 	}
 }

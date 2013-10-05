@@ -2,7 +2,7 @@ package erd;
 
 import java.util.Vector;
 
-public abstract class ErdNode implements ErdBase{
+public abstract class ErdNode {
 	
 	//Attributes
 	String tableName;
