@@ -63,7 +63,7 @@ public class ERDBuilder {
 		String fkTableName;
 		
 		if (fkTableNames.size() == 0)
-			entityTypes.put(tableName, new EntityType(tableName, tableName));
+			entityTypes.put(tableName, new ErdNode(tableName, tableName, ErdNodeType.ENTITY_TYPE));
 		
 		// if a table's foreign keys only reference 1 table, that table is a weak entity type
 		else if (fkTableNames.size() == 1) {
@@ -74,7 +74,7 @@ public class ERDBuilder {
 			if (fkNode == null && (fkNode = relationshipTypes.get(fkTableName)) == null)
 				fkNode = constructNode(fkTableName);
 			
-			WeakEntityType weakEntity = new WeakEntityType(tableName, tableName);
+			ErdNode weakEntity = new ErdNode(tableName, tableName, ErdNodeType.WEAK_ENTITY_TYPE);
 			
 			weakEntity.addLink(fkNode);
 			fkNode.addLink(weakEntity);
@@ -85,7 +85,7 @@ public class ERDBuilder {
 		
 		// if a table's foreign keys references more than 1 tables, that table is a relationship type
 		else if (fkTableNames.size() > 1) {
-			RelationshipType relationship = new RelationshipType(tableName,tableName);
+			ErdNode relationship = new ErdNode(tableName,tableName, ErdNodeType.RELATIONSHIP_TYPE);
 			
 			while(fkTableNamesItr.hasNext()) {
 				fkTableName = fkTableNamesItr.next();
