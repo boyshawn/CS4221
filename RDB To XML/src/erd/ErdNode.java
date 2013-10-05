@@ -10,7 +10,7 @@ import main.MainException;
  * 
  * <p>
  * It model a node in the Entity Relationship Diagram. A node can represent a
- * entity type node or a relationship type node.
+ * entity type, weak entity or relationship type.
  * </p>
  * 
  * @since 2013-Oct-05
@@ -18,12 +18,13 @@ import main.MainException;
  * @version 2013-Oct-05
  * 
  */
-public abstract class ErdNode {
+public class ErdNode {
 
 	//Attributes
 	/** The name of the Database table, also known as the <i>relation name</i>. **/
 	String tableName;
 	String originalTableName;
+	ErdNodeType nodeType;
 
 	/**
 	 * To store all the arcs branching out from the ERD node. The connecting arc
@@ -32,9 +33,10 @@ public abstract class ErdNode {
 	Vector<ErdNode> link; 
 
 	/** Sole constructor**/
-	public ErdNode(String tableName, String originalTableName) {
+	public ErdNode(String tableName, String originalTableName, ErdNodeType nodeType) {
 		this.tableName = tableName;
 		this.originalTableName = originalTableName;
+		this.nodeType = nodeType;
 	}
 
 	//Method
@@ -127,5 +129,22 @@ public abstract class ErdNode {
 
 			throw new MainException(ErdNodeNotInsideLinkExceptionMessage);
 		}
+	}
+	
+	/**
+	 * Changes the node type of this ERD Node to be equal to the argument name.
+	 * @param nodeType The new node type to be set
+	 */
+	@SuppressWarnings("unused")
+	private void setNodeType(ErdNodeType nodeType){
+		this.nodeType = nodeType;
+	}
+	
+	/**
+	 * returns the node type of this ERD Node
+	 * @return the node type of this ERD Node
+	 */
+	public ErdNodeType getErdNodeType(){
+		return this.nodeType;
 	}
 }
