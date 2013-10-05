@@ -26,10 +26,10 @@ public class MainPanel {
 	private JTextField usernameField;
 	private JPasswordField passwordField;
 	private JLabel errorMsgLabel;
-	private TranslatePanel t;
+	private ChooseRootPanel rt;
 	
-	public MainPanel(TranslatePanel t) {
-		this.t = t;
+	public MainPanel(ChooseRootPanel rt) {
+		this.rt = rt;
 		getMainFrame().setContentPane(getMainPane());
 		getMainFrame().pack();
 		getMainFrame().setLocationRelativeTo(null);
@@ -193,8 +193,8 @@ public class MainPanel {
 		passwordField.setText("");
 	}
 	
-	public JPanel getTranslatePane() {
-		return t;
+	public JPanel getChooseRootPane() {
+		return rt;
 	}
 	
 	//for testing purpose
