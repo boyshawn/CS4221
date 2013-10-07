@@ -65,6 +65,7 @@ public class ERDBuilder {
 		if (fkTableNames.size() == 0)
 			entityTypes.put(tableName, new ErdNode(tableName, tableName, ErdNodeType.ENTITY_TYPE));
 		
+		
 		// if a table's foreign keys only reference 1 table, that table is a weak entity type
 		else if (fkTableNames.size() == 1) {
 			fkTableName = fkTableNamesItr.next();
