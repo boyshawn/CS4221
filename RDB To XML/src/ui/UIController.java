@@ -17,17 +17,21 @@ import main.RDBToXML;
 public class UIController {
 	private MainPanel main;
 	private TranslatePanel translate;
+	private ChooseRootPanel root;
 	private RDBToXML r;
 	private String dbname;
 
-	public UIController(MainPanel main, TranslatePanel translate, RDBToXML r) { 
+	public UIController(MainPanel main, ChooseRootPanel root, TranslatePanel translate, RDBToXML r) { 
 		
 		this.main = main;
+		this.root = root;
 		this.translate = translate;
 		this.r = r;
 
 		this.main.addConnectListener(new ConnectListener());
-		this.translate.addCancelListener(new CancelListener());
+		this.root.addNextListener(new NextListener());
+		this.root.addCancelListener(new CancelListener());
+		//this.translate.addPrevListener(new PrevListener());
 		this.translate.addBrowseListener(new BrowseListener());
 		this.translate.addTranslateListener(new TranslateListener());
 	}
@@ -56,7 +60,7 @@ public class UIController {
 						main.emptiedField();
 						main.setErrorMsg(" ");
 						main.getMainFrame().setContentPane(
-								main.getTranslatePane());
+								main.getChooseRootPane());
 						main.getMainFrame().validate();
 					} catch (MainException me) { 
 						main.setErrorMsg(me.getMessage());
@@ -74,6 +78,15 @@ public class UIController {
 		}
 	}
 
+	class NextListener implements ActionListener {
+		
+		public void actionPerformed(ActionEvent e) {
+			main.getMainFrame().setContentPane(
+					root.getTranslatePane());
+			main.getMainFrame().validate();
+		}
+	}
+	
 	class CancelListener implements ActionListener {
 
 		public void actionPerformed(ActionEvent e) {

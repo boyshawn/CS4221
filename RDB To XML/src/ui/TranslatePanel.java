@@ -16,9 +16,8 @@ import javax.swing.JTextField;
 
 
 public class TranslatePanel extends JPanel {
-	/**
-	 * 
-	 */
+
+
 	private static final long serialVersionUID = 1L;
 	private JButton browseButton;
 	private JButton translateButton;
