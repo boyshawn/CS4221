@@ -36,7 +36,6 @@ public class ERDBuilder {
 			
 			// if table name has not already been processed
 			if (entityTypes.get(tableName) == null && relationshipTypes.get(tableName) == null) {
-				
 				constructNode(tableName);
 			}
 			
@@ -62,8 +61,11 @@ public class ERDBuilder {
 		Iterator<String> fkTableNamesItr = fkTableNames.iterator();
 		String fkTableName;
 		
-		if (fkTableNames.size() == 0)
-			entityTypes.put(tableName, new ErdNode(tableName, tableName, ErdNodeType.ENTITY_TYPE));
+		if (fkTableNames.size() == 0) {
+			ErdNode entity = new ErdNode(tableName, tableName, ErdNodeType.ENTITY_TYPE);
+			entityTypes.put(tableName, entity);
+			return entity;
+		}
 		
 		
 		// if a table's foreign keys only reference 1 table, that table is a weak entity type
@@ -107,6 +109,7 @@ public class ERDBuilder {
 			throw new MainException("ERDBuilder error constructing node");
 		
 		return null;
+		
 	}
 	
 	public Map<String, ErdNode> getEntityTypes() {
