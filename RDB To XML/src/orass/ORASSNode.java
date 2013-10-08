@@ -1,18 +1,23 @@
 package orass;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 
 public class ORASSNode {
-	private LinkedList<ORASSNode> children;
+	private ArrayList<ORASSNode> children;
 	private String name;
+	
 	public ORASSNode(String n){
-		children = new LinkedList<ORASSNode>();
+		children = new ArrayList<ORASSNode>();
 		name = n;
 	}
-	public LinkedList<ORASSNode> getChildren(){
+	
+	public ArrayList<ORASSNode> getChildren(){
 		return children;
 	}
+	
 	public void addChildren(ORASSNode child){
-		children.add(child);
+		if(!children.contains(child)){
+			children.add(child);
+		}
 	}
 }
