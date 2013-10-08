@@ -10,25 +10,25 @@ import java.util.Iterator;
 import erd.*;
 
 public class ORASSBuilder {
-	private Map<String, EntityType> entities;
-	private Map<String, RelationshipType> rels;
+	private Map<String, ErdNode> entities;
+	private Map<String, ErdNode> rels;
 	private List<ORASSNode> nodes;
 	private Map<String, List<String>> nRels;
 	
-	public ORASSBuilder(Map<String, EntityType> erdEntities, Map<String, RelationshipType> erdRels){
+	public ORASSBuilder(Map<String, ErdNode> erdEntities, Map<String, ErdNode> erdRels){
 		entities = erdEntities;
 		rels = erdRels;
 		nodes = new ArrayList<ORASSNode>();
 	}
 	
-	public List<ORASSNode> buildORASS(EntityType root){
+	public List<ORASSNode> buildORASS(ErdNode root){
 		processNode(root);
 		return nodes;
 	}
 	
 	private void processNode(ErdNode erNode){
 		String tName = erNode.getTableName();
-		if(erNode instanceof EntityType){
+		if(erNode instanceof ErdNode){//change later
 			ORASSNode node = new ORASSNode(tName);
 			nodes.add(node);
 			
@@ -36,9 +36,9 @@ public class ORASSBuilder {
 			for(int i=0; i<links.size(); i++){
 				ErdNode relatedNode = links.get(i);
 				String relTName = relatedNode.getTableName();
-				if(relatedNode instanceof RelationshipType){ 
+				if(relatedNode instanceof ErdNode){ 
 					processNode(relatedNode);
-				}else if(relatedNode instanceof WeakEntityType){ 
+				}else if(relatedNode instanceof ErdNode){ 
 					//Related node is a weak entity
 					
 				} else { // The related node is a parent of a weak entity
@@ -50,7 +50,7 @@ public class ORASSBuilder {
 			Vector<ErdNode> links = entities.get(tName).getLinks();
 			
 			//Check if the entity is n-nary
-			if (nRels.containsKey(relTName)){
+			/*if (nRels.containsKey(relTName)){
 				//Need further checks
 				List<String> orderedEntities = nRels.get(relTName);
 				for(int j=0; j<orderedEntities.size(); j++){
@@ -58,7 +58,7 @@ public class ORASSBuilder {
 				}
 			} else{// Relationship is a binary relationship
 				
-			}
+			}*/
 		}
 	}
 	
