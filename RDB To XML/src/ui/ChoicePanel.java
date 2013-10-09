@@ -49,10 +49,11 @@ public class ChoicePanel extends JPanel {
 	
 	public void setRootList(String[] rlist) {
 		rootList = rlist;
+		rootCombo.removeAllItems();
 		for (int i = 0; i < rootList.length; i++) {
 			rootCombo.addItem(rootList[i]);
 		}
-		rootCombo.setSelectedIndex(1);
+		rootCombo.setSelectedIndex(0);
 	}
 	
 	public JPanel getTranslatePane() {
@@ -130,7 +131,7 @@ public class ChoicePanel extends JPanel {
 		
 		for (int i = 0; i < listS.size(); i++) {
 			JComboBox combo = new JComboBox(listS.toArray(new String[listS.size()]));
-			combo.setSelectedIndex(1);
+			combo.setSelectedIndex(0);
 			panel.add(combo);
 			combolist.add(combo);
 		}
