@@ -1,6 +1,7 @@
 package erd;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -24,6 +25,8 @@ public class ERDBuilder {
 	public ERDBuilder() throws MainException {
 		dbAccess = DBAccess.getInstance();
 		tableNames = dbAccess.getTableNames();
+		entityTypes = new HashMap<String, ErdNode>();
+		relationshipTypes = new HashMap<String, ErdNode>(); 
 	}
 	
 	public void buildERD() throws MainException {
