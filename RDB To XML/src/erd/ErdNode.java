@@ -37,6 +37,7 @@ public class ErdNode {
 		this.tableName = tableName;
 		this.originalTableName = originalTableName;
 		this.nodeType = nodeType;
+		link = new Vector<ErdNode>();
 	}
 
 	//Method

@@ -18,15 +18,18 @@ public class ERDBuilder {
 	private Map<String, ErdNode> entityTypes;
 	private Map<String, ErdNode> relationshipTypes;
 	
+	private Map<String, ErdNode> keyToErdNode;
+	
 	private DBAccess dbAccess;
 	private List<String> tableNames;
 	
 	
 	public ERDBuilder() throws MainException {
-		dbAccess = DBAccess.getInstance();
-		tableNames = dbAccess.getTableNames();
-		entityTypes = new HashMap<String, ErdNode>();
+		dbAccess          = DBAccess.getInstance();
+		tableNames        = dbAccess.getTableNames();
+		entityTypes       = new HashMap<String, ErdNode>();
 		relationshipTypes = new HashMap<String, ErdNode>(); 
+		keyToErdNode      = new HashMap<String, ErdNode>();
 	}
 	
 	public void buildERD() throws MainException {
@@ -51,6 +54,7 @@ public class ERDBuilder {
 		CachedRowSet foreignKeys = dbAccess.getForeignKeys(tableName);
 		Set<String> fkTableNames = new HashSet<String>();
 		
+		// add all the table names which are referenced by some foreign key in 'tableName' with no duplicates
 		try {
 			while(foreignKeys.next()) {
 				fkTableNames.add(foreignKeys.getString("PKTABLE_NAME"));
@@ -60,10 +64,10 @@ public class ERDBuilder {
 			throw new MainException("ERDBuilder failed to get foreign keys from table " + tableName + " : " + e.getMessage());
 		}
 		
-		// if a table has no foreign key, it is an entity type
 		Iterator<String> fkTableNamesItr = fkTableNames.iterator();
 		String fkTableName;
-		
+
+		// if a table has no foreign key, it is an entity type
 		if (fkTableNames.size() == 0) {
 			ErdNode entity = new ErdNode(tableName, tableName, ErdNodeType.ENTITY_TYPE);
 			entityTypes.put(tableName, entity);
@@ -106,12 +110,11 @@ public class ERDBuilder {
 			}
 			
 			relationshipTypes.put(tableName, relationship);
+			return relationship;
 		}
 		
 		else
 			throw new MainException("ERDBuilder error constructing node");
-		
-		return null;
 		
 	}
 	
