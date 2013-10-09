@@ -21,7 +21,7 @@ public class TranslatePanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private JButton browseButton;
 	private JButton translateButton;
-	private JButton cancelButton;
+	private JButton prevButton;
 	private JTextField pathField;
 	private JTextField xmlField;
 	private JLabel errorMsgLabel;
@@ -59,7 +59,7 @@ public class TranslatePanel extends JPanel {
 		
 		JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.TRAILING));
 		bottomPanel.add(getTranslateButton());
-		bottomPanel.add(getCancelButton());
+		bottomPanel.add(getPrevButton());
 		bottomPanel.add(new JLabel("                                "));
 		bottomPanel.add(new JLabel("                                "));
 		bottomPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -130,11 +130,11 @@ public class TranslatePanel extends JPanel {
 		return browseButton;
 	}
 
-	private JButton getCancelButton() {
-		if (cancelButton == null) {
-			cancelButton = new JButton("Cancel");
+	private JButton getPrevButton() {
+		if (prevButton == null) {
+			prevButton = new JButton("Previous");
 		}
-		return cancelButton;
+		return prevButton;
 	}
 
 	private JTextField getPathField() {
@@ -168,8 +168,8 @@ public class TranslatePanel extends JPanel {
 		translateButton.addActionListener(listenForTranslateButton);
 	}
 	
-	void addCancelListener(ActionListener listenForCancelButton) {
-		cancelButton.addActionListener(listenForCancelButton);
+	void addPrevListener(ActionListener listenForPrevButton) {
+		prevButton.addActionListener(listenForPrevButton);
 	}
 	
 	void addBrowseListener(ActionListener listenForBrowseButton) {

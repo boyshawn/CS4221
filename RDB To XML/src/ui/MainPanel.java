@@ -26,9 +26,9 @@ public class MainPanel {
 	private JTextField usernameField;
 	private JPasswordField passwordField;
 	private JLabel errorMsgLabel;
-	private ChooseRootPanel rt;
+	private ChoicePanel rt;
 	
-	public MainPanel(ChooseRootPanel rt) {
+	public MainPanel(ChoicePanel rt) {
 		this.rt = rt;
 		getMainFrame().setContentPane(getMainPane());
 		getMainFrame().pack();
@@ -193,7 +193,7 @@ public class MainPanel {
 		passwordField.setText("");
 	}
 	
-	public JPanel getChooseRootPane() {
+	public JPanel getChoicePanel() {
 		return rt;
 	}
 	
