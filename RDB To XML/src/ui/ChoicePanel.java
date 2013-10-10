@@ -140,5 +140,18 @@ public class ChoicePanel extends JPanel {
 		
 		return p;
 	}
-
+	
+	public List<JComboBox> addSplitCyclePanel(List<List<String>> c) {
+		add(new JLabel("Cycle(s) detected! Choose which entity to split"), layout);
+		List<JComboBox> comboList = new ArrayList<JComboBox>();
+		for (int i = 0; i < c.size(); i++) {
+			List<String> curr = c.get(i);
+			for (int j = 0; j < curr.size(); j++) {
+				JComboBox combo = new JComboBox(curr.toArray(new String[curr.size()]));
+				add(combo, layout);
+				comboList.add(combo);
+			}
+		}
+		return comboList;
+	}
 }

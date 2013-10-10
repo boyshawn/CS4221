@@ -7,6 +7,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,8 +37,14 @@ public class UIController {
 	private Map<JButton, List<String>> mapButtonNary;
 	private Map<String, List<String>> nary;
 	private Map<JButton, String> mapButtonRelationName;
+	private List<JComboBox> cycleCombo;
 
 	public UIController(MainPanel main, ChoicePanel choice, TranslatePanel translate, RDBToXML r) { 
+		
+		mapButtonLabel = new HashMap<JButton, JLabel>();
+		mapButtonCombo = new HashMap<JButton, Pair<JPanel, ArrayList<JComboBox>>>();
+		mapButtonNary = new HashMap<JButton, List<String>>();
+		mapButtonRelationName = new HashMap<JButton, String>();
 		
 		this.main = main;
 		this.choice = choice;
@@ -77,6 +84,9 @@ public class UIController {
 						main.setErrorMsg(" ");
 						
 						r.translateToERD();
+						List<List<String>> cycles = r.checkCycle();
+						cycleCombo = choice.addSplitCyclePanel(cycles);						
+						
 						r.translateToORASS();
 						
 						// set up the choice panel
@@ -152,10 +162,15 @@ public class UIController {
 	class NextListener implements ActionListener {
 		
 		public void actionPerformed(ActionEvent e) {
-			// set the root and nary relation order
+			// set the root, entity splitting, nary relation order
 			String rootString = choice.getRootCombo().getSelectedItem().toString(); 
 			Map<String, ErdNode> rootMap = r.getERDEntityTypes();
 			r.buildORASS(rootMap.get(rootString));
+			
+			for (int i = 0; i < cycleCombo.size(); i++) {
+				r.setEntityToBeSplitted(cycleCombo.get(i).getSelectedItem().toString(), i);
+			}
+			
 			r.setOrders(nary);
 	
 			main.getMainFrame().setContentPane(

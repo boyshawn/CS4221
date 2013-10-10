@@ -34,6 +34,14 @@ public class RDBToXML {
 		return erdb.getRelationshipTypes();
 	}
 	
+	public List<List<String>> checkCycle() {
+		return erdb.checkCycle();
+	}
+	
+	public void setEntityToBeSplitted(String entityName, int index) {
+		erdb.setEntityToBeSplitted(entityName, index);
+	}
+	
 	// ORA-SS
 	public void translateToORASS() throws MainException {
 		orassb = new ORASSBuilder(erdb.getEntityTypes(), erdb.getRelationshipTypes());
