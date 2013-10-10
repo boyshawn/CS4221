@@ -116,6 +116,36 @@ public class DBAccess {
 		
 	}
 	
+	public List<ColumnDetail> getDetailsOfColumns(String tableName) throws MainException {
+	
+		try {
+			DatabaseMetaData dbMetadata = dbConnection.getMetaData();
+			ResultSet results = dbMetadata.getColumns(null, null, tableName, null);
+			
+			List<ColumnDetail> columns = new ArrayList<ColumnDetail>();
+			String colName, colDefault;
+			int colSize, colSQLType;
+			boolean colNullable;
+			ColumnDetail column;
+			
+			while (results.next()) {
+				colName     = results.getString("COLUMN_NAME");
+				colNullable = results.getInt("NULLABLE") == DatabaseMetaData.columnNullable ? true : false;
+				colSize     = results.getInt("COLUMN_SIZE");
+				colSQLType  = results.getInt("DATA_TYPE");
+				colDefault  = results.getString("COLUMN_DEF");
+				column = new ColumnDetail(colName, colDefault, colNullable, colSize, colSQLType);
+				columns.add(column);
+			}
+			
+			return columns;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new MainException("Exception when retrieving detail of columns for table " + tableName + " : " + e.getMessage());
+		}
+	}
+	
 	public List<String> getPrimaryKeys(String tableName) throws MainException {
 		List<String> primaryKeys = new ArrayList<String>();
 		try {

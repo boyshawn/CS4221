@@ -1,9 +1,11 @@
 package erd;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Vector;
 
 import main.MainException;
+import database.ColumnDetail;
 
 /**
  * ERD Node Model object.
@@ -22,21 +24,24 @@ public class ErdNode {
 
 	//Attributes
 	/** The name of the Database table, also known as the <i>relation name</i>. **/
-	String tableName;
-	String originalTableName;
-	ErdNodeType nodeType;
-
+	private String tableName;
+	private String originalTableName;
+	private ErdNodeType nodeType;
+	
 	/**
 	 * To store all the arcs branching out from the ERD node. The connecting arc
 	 * from the ERD node can be either a Entity type or a Relationship type.
 	 */
-	Vector<ErdNode> link; 
-
+	private Vector<ErdNode> link; 
+	
+	private List<ColumnDetail> attributes;
+	
 	/** Sole constructor**/
-	public ErdNode(String tableName, String originalTableName, ErdNodeType nodeType) {
+	public ErdNode(String tableName, String originalTableName, ErdNodeType nodeType, List<ColumnDetail> attributes) {
 		this.tableName = tableName;
 		this.originalTableName = originalTableName;
 		this.nodeType = nodeType;
+		this.attributes  = attributes;
 		link = new Vector<ErdNode>();
 	}
 
@@ -147,5 +152,20 @@ public class ErdNode {
 	 */
 	public ErdNodeType getErdNodeType(){
 		return this.nodeType;
+	}
+	
+	public List<ColumnDetail> getAttributes() {
+		return this.attributes;
+	}
+	
+	public void addAttribute(ColumnDetail attr) {
+		attributes.add(attr);
+	}
+	
+	public void addAttributes(List<ColumnDetail> attrs) {
+		Iterator<ColumnDetail> itr = attrs.iterator();
+		while(itr.hasNext()) {
+			attributes.add(itr.next());
+		}
 	}
 }

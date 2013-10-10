@@ -18,8 +18,6 @@ public class ERDBuilder {
 	private Map<String, ErdNode> entityTypes;
 	private Map<String, ErdNode> relationshipTypes;
 	
-	private Map<String, ErdNode> keyToErdNode;
-	
 	private DBAccess dbAccess;
 	private List<String> tableNames;
 	
@@ -29,7 +27,6 @@ public class ERDBuilder {
 		tableNames        = dbAccess.getTableNames();
 		entityTypes       = new HashMap<String, ErdNode>();
 		relationshipTypes = new HashMap<String, ErdNode>(); 
-		keyToErdNode      = new HashMap<String, ErdNode>();
 	}
 	
 	public void buildERD() throws MainException {
@@ -69,7 +66,7 @@ public class ERDBuilder {
 
 		// if a table has no foreign key, it is an entity type
 		if (fkTableNames.size() == 0) {
-			ErdNode entity = new ErdNode(tableName, tableName, ErdNodeType.ENTITY_TYPE);
+			ErdNode entity = new ErdNode(tableName, tableName, ErdNodeType.ENTITY_TYPE, dbAccess.getDetailsOfColumns(tableName));
 			entityTypes.put(tableName, entity);
 			return entity;
 		}
@@ -84,18 +81,29 @@ public class ERDBuilder {
 			if (fkNode == null && (fkNode = relationshipTypes.get(fkTableName)) == null)
 				fkNode = constructNode(fkTableName);
 			
-			ErdNode weakEntity = new ErdNode(tableName, tableName, ErdNodeType.WEAK_ENTITY_TYPE);
+			List<String> columns = dbAccess.getAllColumns(tableName);
+			List<String> primaryKey = dbAccess.getPrimaryKeys(tableName);
 			
-			weakEntity.addLink(fkNode);
-			fkNode.addLink(weakEntity);
+			// if it is an all-key relation then merge entity with the table being referenced by foreign keys
+			if (columns.size() == primaryKey.size()) {
+				fkNode.addAttributes(dbAccess.getDetailsOfColumns(tableName));
+				return fkNode;
+			}
 			
-			entityTypes.put(tableName, weakEntity);
-			return weakEntity;
+			// else it is a weak entity
+			else {
+				ErdNode entity = new ErdNode(tableName, tableName, ErdNodeType.WEAK_ENTITY_TYPE, dbAccess.getDetailsOfColumns(tableName));
+				
+				entity.addLink(fkNode);
+				fkNode.addLink(entity);
+				entityTypes.put(tableName, entity);
+				return entity;
+			}
 		}
 		
 		// if a table's foreign keys references more than 1 tables, that table is a relationship type
 		else if (fkTableNames.size() > 1) {
-			ErdNode relationship = new ErdNode(tableName,tableName, ErdNodeType.RELATIONSHIP_TYPE);
+			ErdNode relationship = new ErdNode(tableName,tableName, ErdNodeType.RELATIONSHIP_TYPE, dbAccess.getDetailsOfColumns(tableName));
 			
 			while(fkTableNamesItr.hasNext()) {
 				fkTableName = fkTableNamesItr.next();
