@@ -25,7 +25,6 @@ import main.MainException;
 import main.RDBToXML;
 import erd.ErdNode;
 
-
 public class UIController {
 	private MainPanel main;
 	private TranslatePanel translate;
@@ -39,13 +38,14 @@ public class UIController {
 	private Map<JButton, String> mapButtonRelationName;
 	private List<JComboBox> cycleCombo;
 
-	public UIController(MainPanel main, ChoicePanel choice, TranslatePanel translate, RDBToXML r) { 
-		
+	public UIController(MainPanel main, ChoicePanel choice,
+			TranslatePanel translate, RDBToXML r) {
+
 		mapButtonLabel = new HashMap<JButton, JLabel>();
 		mapButtonCombo = new HashMap<JButton, Pair<JPanel, ArrayList<JComboBox>>>();
 		mapButtonNary = new HashMap<JButton, List<String>>();
 		mapButtonRelationName = new HashMap<JButton, String>();
-		
+
 		this.main = main;
 		this.choice = choice;
 		this.translate = translate;
@@ -82,68 +82,83 @@ public class UIController {
 						dbname = name;
 						main.emptiedField();
 						main.setErrorMsg(" ");
-						
+
 						r.translateToERD();
 						List<List<String>> cycles = r.checkCycle();
-						cycleCombo = choice.addSplitCyclePanel(cycles);						
-						
+						if (cycles.size() != 0) {
+							cycleCombo = choice.addSplitCyclePanel(cycles);
+						}
+
 						r.translateToORASS();
-						
+
 						// set up the choice panel
 						Map<String, ErdNode> rootMap = r.getERDEntityTypes();
 						String[] root = rootMap.keySet().toArray(new String[0]);
 						choice.setRootList(root);
-						
-						nary = r.getNaryRels();				
-						for (Map.Entry<String, List<String>> entry : nary.entrySet()) {
-						    String relName = entry.getKey();
-						    List<String> listOrder = entry.getValue();
-						    Pair<JButton, JLabel> n = choice.addChoicePanel(relName, listOrder);
-						    JButton b = n.getFirst();
-						    mapButtonRelationName.put(b, relName);
-						    mapButtonLabel.put(b, n.getSecond());
-						    mapButtonNary.put(b, listOrder);
-						    
-						    b.addMouseListener(new MouseAdapter() {
-						    	
+
+						nary = r.getNaryRels();
+						for (Map.Entry<String, List<String>> entry : nary
+								.entrySet()) {
+							String relName = entry.getKey();
+							List<String> listOrder = entry.getValue();
+							Pair<JButton, JLabel> n = choice.addChoicePanel(
+									relName, listOrder);
+							JButton b = n.getFirst();
+							mapButtonRelationName.put(b, relName);
+							mapButtonLabel.put(b, n.getSecond());
+							mapButtonNary.put(b, listOrder);
+
+							b.addMouseListener(new MouseAdapter() {
+
 								@Override
 								public void mouseReleased(MouseEvent e) {
 									if (MouseEvent.BUTTON1 == e.getButton()) {
-										JButton btemp = (JButton)e.getSource();
+										JButton btemp = (JButton) e.getSource();
 										Pair<JPanel, ArrayList<JComboBox>> pane;
 										if (mapButtonCombo.containsKey(btemp)) {
 											pane = mapButtonCombo.get(btemp);
 										} else {
-											pane = choice.getOptionPane(mapButtonNary.get(btemp));
+											pane = choice
+													.getOptionPane(mapButtonNary
+															.get(btemp));
 											mapButtonCombo.put(btemp, pane);
 										}
-										int result = JOptionPane.showConfirmDialog(null, pane.getFirst(), "Specify the order", JOptionPane.OK_CANCEL_OPTION);
+										int result = JOptionPane.showConfirmDialog(
+												null, pane.getFirst(),
+												"Specify the order",
+												JOptionPane.OK_CANCEL_OPTION);
 										if (result == JOptionPane.OK_OPTION) {
-											JLabel l = mapButtonLabel.get(btemp);
-											l.setText(""); //remove the current text
-											ArrayList<JComboBox> tcombo = pane.getSecond();
+											JLabel l = mapButtonLabel
+													.get(btemp);
+											l.setText(""); // remove the current
+															// text
+											ArrayList<JComboBox> tcombo = pane
+													.getSecond();
 											List<String> newOrder = new ArrayList<String>();
 											for (int i = 0; i < tcombo.size(); i++) {
-												String s = tcombo.get(i).getSelectedItem().toString();
+												String s = tcombo.get(i)
+														.getSelectedItem()
+														.toString();
 												newOrder.add(s);
 												l.setText(l.getText() + s + " ");
 											}
 											mapButtonNary.put(btemp, newOrder);
-											String reltemp = mapButtonRelationName.get(btemp);
+											String reltemp = mapButtonRelationName
+													.get(btemp);
 											nary.put(reltemp, newOrder);
 										}
 									}
 								}
-						    });
-						   
+							});
+
 						}
-						
+
 						choice.addNextCancelButton();
-						
+
 						main.getMainFrame().setContentPane(
 								main.getChoicePanel());
 						main.getMainFrame().validate();
-					} catch (MainException me) { 
+					} catch (MainException me) {
 						main.setErrorMsg(me.getMessage());
 						me.printStackTrace();
 					}
@@ -160,25 +175,28 @@ public class UIController {
 	}
 
 	class NextListener implements ActionListener {
-		
+
 		public void actionPerformed(ActionEvent e) {
 			// set the root, entity splitting, nary relation order
-			String rootString = choice.getRootCombo().getSelectedItem().toString(); 
+			String rootString = choice.getRootCombo().getSelectedItem()
+					.toString();
 			Map<String, ErdNode> rootMap = r.getERDEntityTypes();
 			r.buildORASS(rootMap.get(rootString));
 			
-			for (int i = 0; i < cycleCombo.size(); i++) {
-				r.setEntityToBeSplitted(cycleCombo.get(i).getSelectedItem().toString(), i);
+			if (cycleCombo.size() != 0) {
+				for (int i = 0; i < cycleCombo.size(); i++) {
+					r.setEntityToBeSplitted(cycleCombo.get(i).getSelectedItem()
+							.toString(), i);
+				}
 			}
-			
+
 			r.setOrders(nary);
-	
-			main.getMainFrame().setContentPane(
-					choice.getTranslatePane());
+
+			main.getMainFrame().setContentPane(choice.getTranslatePane());
 			main.getMainFrame().validate();
 		}
 	}
-	
+
 	class CancelListener implements ActionListener {
 
 		public void actionPerformed(ActionEvent e) {
@@ -188,20 +206,20 @@ public class UIController {
 	}
 
 	class PrevListener implements ActionListener {
-		
+
 		public void actionPerformed(ActionEvent e) {
 			main.getMainFrame().setContentPane(choice.getTranslatePane());
 			main.getMainFrame().validate();
 		}
 	}
-	
+
 	class BrowseListener implements ActionListener {
 
 		public void actionPerformed(ActionEvent e) {
 			JFileChooser chooser = new JFileChooser();
 			chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 			chooser.setDialogTitle("Save to");
-			//trial
+			// trial
 			UIManager.put("FileChooser.FileNameLabelText", "hello");
 			SwingUtilities.updateComponentTreeUI(chooser);
 			JFrame frame = new JFrame();
@@ -234,10 +252,10 @@ public class UIController {
 		public void actionPerformed(ActionEvent e) {
 			String xmlName, path;
 			InputFormatValidator v = new InputFormatValidator();
-			
+
 			xmlName = translate.getFilename();
 			path = translate.getPath();
-			
+
 			if (xmlName.isEmpty() || path.isEmpty()) {
 				translate
 						.setErrorMsg("Please enter the XML file name and choose a directory");
@@ -251,7 +269,7 @@ public class UIController {
 							fName = path + "/" + xmlName;
 						} else {
 							// for windows
-							fName = path+ "\\" + xmlName;
+							fName = path + "\\" + xmlName;
 						}
 						r.translateToXML(dbname, fName);
 						translate.displaySuccessfulMsg();
@@ -268,7 +286,7 @@ public class UIController {
 						main.showMainPane();
 					} catch (MainException me) {
 						translate.setErrorMsg(me.getMessage());
-						me.printStackTrace();	
+						me.printStackTrace();
 					}
 				} else {
 					translate.setErrorMsg("Invalid file name");

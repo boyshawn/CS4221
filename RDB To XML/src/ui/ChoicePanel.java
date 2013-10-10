@@ -142,7 +142,9 @@ public class ChoicePanel extends JPanel {
 	}
 	
 	public List<JComboBox> addSplitCyclePanel(List<List<String>> c) {
-		add(new JLabel("Cycle(s) detected! Choose which entity to split"), layout);
+		JLabel cycleLabel = new JLabel ("Cycle(s) detected! Choose which entity to split");
+		cycleLabel.setAlignmentX(RIGHT_ALIGNMENT);
+		add(cycleLabel, layout);
 		List<JComboBox> comboList = new ArrayList<JComboBox>();
 		for (int i = 0; i < c.size(); i++) {
 			List<String> curr = c.get(i);
