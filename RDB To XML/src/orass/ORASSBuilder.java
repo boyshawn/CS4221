@@ -167,6 +167,7 @@ public class ORASSBuilder{
 					node1.addChildren(node2);
 					node1 = node2;
 				} else{
+					// Add the attributes of the N-ary relationship to the last entity in the entity list
 					processRelAttributes(relName, node1);
 				}
 			}
