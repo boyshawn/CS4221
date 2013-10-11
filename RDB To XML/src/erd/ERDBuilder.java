@@ -58,11 +58,13 @@ public class ERDBuilder {
 		
 		CachedRowSet foreignKeys = dbAccess.getForeignKeys(tableName);
 		Set<String> fkTableNames = new HashSet<String>();
+		Set<String> fkColumns    = new HashSet<String>();
 		
 		// add all the table names which are referenced by some foreign key in 'tableName' with no duplicates
 		try {
 			while(foreignKeys.next()) {
 				fkTableNames.add(foreignKeys.getString("PKTABLE_NAME"));
+				fkColumns.add(foreignKeys.getString("FKCOLUMN_NAME"));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -82,20 +84,34 @@ public class ERDBuilder {
 		
 		// if a table's foreign keys only reference 1 table, that table is a weak entity type
 		else if (fkTableNames.size() == 1) {
-			fkTableName = fkTableNamesItr.next();
-			ErdNode fkNode     = entityTypes.get(fkTableName);
 			
-			// if that foreign table has not been processed, process it first
-			if (fkNode == null && (fkNode = relationshipTypes.get(fkTableName)) == null)
-				fkNode = constructNode(fkTableName);
+			fkTableName = fkTableNamesItr.next();
+			ErdNode fkNode = getErdNodeOfTable(fkTableName);
 			
 			List<String> columns = dbAccess.getAllColumns(tableName);
 			List<String> primaryKey = dbAccess.getPrimaryKeys(tableName);
 			
-			// if it is an all-key relation then merge entity with the table being referenced by foreign keys
+			// if it is an all-key relation then the table is of the same entity type as the table its foreign keys references to
 			if (columns.size() == primaryKey.size()) {
 				fkNode.addAttributes(dbAccess.getDetailsOfColumns(tableName));
+				
+				if (fkNode.getErdNodeType() == ErdNodeType.ENTITY_TYPE || fkNode.getErdNodeType() == ErdNodeType.WEAK_ENTITY_TYPE)
+					entityTypes.put(tableName, fkNode);
+				else
+					relationshipTypes.put(tableName, fkNode);
+				
 				return fkNode;
+			}
+			
+			// if the table's primary key is its foreign key then it is an entity type which has an 
+			// IS-A relationship with the table its foreign keys references to
+			else if (isEqualList((String[])primaryKey.toArray(), (String[])fkColumns.toArray())) {
+				ErdNode entity = new ErdNode(tableName, tableName, ErdNodeType.ENTITY_TYPE, dbAccess.getDetailsOfColumns(tableName));
+				
+				// add IS-A relationship link ?
+				
+				entityTypes.put(tableName, entity);
+				return entity;
 			}
 			
 			// else it is a weak entity
@@ -115,11 +131,7 @@ public class ERDBuilder {
 			
 			while(fkTableNamesItr.hasNext()) {
 				fkTableName = fkTableNamesItr.next();
-				ErdNode fkNode = entityTypes.get(fkTableName);
-				
-				// if that foreign table has not been processed, process it first
-				if (fkNode == null && (fkNode = relationshipTypes.get(fkTableName)) == null)
-					fkNode = constructNode(fkTableName);
+				ErdNode fkNode = getErdNodeOfTable(fkTableName);
 				
 				relationship.addLink(fkNode);
 				fkNode.addLink(relationship);
@@ -132,6 +144,52 @@ public class ERDBuilder {
 		else
 			throw new MainException("ERDBuilder error constructing node");
 		
+	}
+	
+	/**
+	 * Checks if 2 string arrays with unique elements are equal
+	 * @param stringArr1		The 1st string array
+	 * @param stringArr2		The 2nd string array
+	 * @return					true if the 2 lists have the same unique elements, else return false
+	 */
+	private boolean isEqualList (String[] stringArr1, String[] stringArr2) {
+		
+		if (stringArr1.length != stringArr2.length)
+			return false;
+	
+		else {
+			int size = stringArr1.length;
+			for (int i=0; i<size; ++i) {
+				boolean isSame = false;
+				for (int j=0; j<size; ++j) {
+					if (stringArr1[i] == stringArr2[j])
+						isSame = true;
+				}
+				
+				if (!isSame)
+					return false;
+			}
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * Retrieve an ErdNode that corresponds to a given table name.
+	 * If the ErdNode of the table name has not been created before, it will be created and stored.
+	 * @param tableName			table name whose corresponding ErdNode should be retrieved
+	 * @return					ErdNode belonging to the specified table name
+	 * @throws MainException 	
+	 */
+	public ErdNode getErdNodeOfTable (String tableName) throws MainException {
+		
+		ErdNode node = entityTypes.get(tableName);
+		
+		// if the table name has not been processed
+		if (node == null && (node = relationshipTypes.get(tableName)) == null)
+			node = constructNode(tableName);
+		
+		return node;
 	}
 	
 	public Map<String, ErdNode> getEntityTypes() {
