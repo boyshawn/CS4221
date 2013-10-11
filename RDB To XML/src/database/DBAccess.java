@@ -174,6 +174,24 @@ public class DBAccess {
 		}
 	}
 	
+	public List<String> getNamesOfForeignKeys(String tableName) throws MainException {
+		logger.debug("getForeignKeys : " + tableName);
+		CachedRowSet crs;
+		List<String> FKNames = new ArrayList<String>();
+		try {
+			crs = new CachedRowSetImpl();
+			ResultSet rs = dbConnection.getMetaData().getImportedKeys(dbConnection.getCatalog(), null, tableName);
+			crs.populate(rs);
+			while(crs.next()){
+				FKNames.add(crs.getString("FKCOLUMN_NAME"));
+			}
+			return FKNames;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new MainException("Failed to get the names of foreign keys for " + tableName);
+		}
+	}
+	
 	public CachedRowSet getData(String tableName) throws MainException {
 		try{
 			Statement stmt = null;
