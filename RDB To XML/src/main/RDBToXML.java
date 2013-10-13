@@ -9,6 +9,7 @@ import database.DBConnector;
 import erd.ERDBuilder;
 import erd.ErdNode;
 import orass.ORASSBuilder;
+import orass.ORASSNode;
 
 public class RDBToXML {
 	
@@ -47,8 +48,8 @@ public class RDBToXML {
 		orassb = new ORASSBuilder(erdb.getEntityTypes(), erdb.getRelationshipTypes());
 	}
 	
-	public void buildORASS(ErdNode root) {
-		orassb.buildORASS(root);
+	public ORASSNode buildORASS(ErdNode root) throws MainException {
+		return orassb.buildORASS(root);
 	}
 	
 	public Map<String, List<String>> getNaryRels() {

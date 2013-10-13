@@ -45,6 +45,8 @@ public class UIController {
 		mapButtonCombo = new HashMap<JButton, Pair<JPanel, ArrayList<JComboBox>>>();
 		mapButtonNary = new HashMap<JButton, List<String>>();
 		mapButtonRelationName = new HashMap<JButton, String>();
+		cycleCombo = new ArrayList<JComboBox>();
+		nary = new HashMap<String, List<String>>();
 
 		this.main = main;
 		this.choice = choice;
@@ -85,6 +87,21 @@ public class UIController {
 
 						r.translateToERD();
 						List<List<String>> cycles = r.checkCycle();
+						
+						//TESTING***********************//
+					/*	List<List<String>> cycles = new ArrayList<List<String>>();
+						List<String> list1 = new ArrayList<String>();
+						list1.add("entity1");
+						list1.add("entity2");
+						
+						List<String> list2 = new ArrayList<String>();
+						list2.add("entity3");
+						list2.add("entity4");
+						
+						cycles.add(list1);
+						cycles.add(list2);*/
+						//***************************//
+						
 						if (cycles.size() != 0) {
 							cycleCombo = choice.addSplitCyclePanel(cycles);
 						}
@@ -97,6 +114,20 @@ public class UIController {
 						choice.setRootList(root);
 
 						nary = r.getNaryRels();
+						
+						//TESTING************************//
+						/*List<String> temp = new ArrayList<String>();
+						List<String> temp2 = new ArrayList<String>();
+						temp.add("a");
+						temp.add("b");
+						temp.add("c");
+						temp2.add("student");
+						temp2.add("course");
+						temp2.add("prof");
+						nary.put("REL1", temp);
+						nary.put("REL2", temp2);*/
+						//***************************//
+						
 						for (Map.Entry<String, List<String>> entry : nary
 								.entrySet()) {
 							String relName = entry.getKey();
@@ -181,8 +212,12 @@ public class UIController {
 			String rootString = choice.getRootCombo().getSelectedItem()
 					.toString();
 			Map<String, ErdNode> rootMap = r.getERDEntityTypes();
-			r.buildORASS(rootMap.get(rootString));
-			
+			try {
+				r.buildORASS(rootMap.get(rootString));
+			} catch (MainException me) {
+				System.out.println(me.getMessage());
+			}
+
 			if (cycleCombo.size() != 0) {
 				for (int i = 0; i < cycleCombo.size(); i++) {
 					r.setEntityToBeSplitted(cycleCombo.get(i).getSelectedItem()
@@ -190,6 +225,18 @@ public class UIController {
 				}
 			}
 
+			//TESTING***************************//
+			 /* List<String> a = nary.get("REL1");
+			for (int j = 0; j < a.size(); j++) {
+				System.out.println(a.get(j));
+			}
+
+			List<String> b = nary.get("REL2");
+			for (int j = 0; j < b.size(); j++) {
+				System.out.println(b.get(j));
+			}*/
+			//*********************************//
+			
 			r.setOrders(nary);
 
 			main.getMainFrame().setContentPane(choice.getTranslatePane());

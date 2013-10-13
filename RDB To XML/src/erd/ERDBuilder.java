@@ -274,6 +274,10 @@ public class ERDBuilder {
 			// add link from n to the new entities
 			n.addLink(new1);
 			n.addLink(new2);
+			
+			// put the new entities to the HashMap
+			entityTypes.put(tableName + "1", new1);
+			entityTypes.put(tableName + "2", new2);
 		} catch (MainException me) {
 			System.out.println(me.getMessage());
 		} catch (Exception e) {
