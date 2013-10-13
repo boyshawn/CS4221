@@ -255,7 +255,7 @@ public class UIController {
 	class PrevListener implements ActionListener {
 
 		public void actionPerformed(ActionEvent e) {
-			main.getMainFrame().setContentPane(choice.getTranslatePane());
+			main.getMainFrame().setContentPane(main.getChoicePanel());
 			main.getMainFrame().validate();
 		}
 	}
