@@ -62,7 +62,7 @@ public class ORASSBuilder{
 	 * */
 	private ORASSNode processNode(ErdNode erNode) throws MainException{
 		String tName = erNode.getTableName();
-		ORASSNode node = createORASSNode(tName);
+		ORASSNode node = createORASSNode(tName, erNode.getOriginalTableName());
 		
 		Vector<ErdNode> links = entities.get(tName).getLinks();
 		for(int i=0; i<links.size(); i++){
@@ -162,7 +162,8 @@ public class ORASSBuilder{
 				// process the n-ary rel link
 				if(i<entityOrder.size()-1){
 					// If the node is not the last entity in the n-ary relationship
-					ORASSNode node2 = createORASSNode(entityOrder.get(i+1));
+					String nextEntity = entityOrder.get(i+1);
+					ORASSNode node2 = createORASSNode(nextEntity, entities.get(nextEntity).getOriginalTableName());
 					node1.addChildren(node2);
 					node1 = node2;
 				} else{
@@ -175,9 +176,9 @@ public class ORASSBuilder{
 		return parent;
 	}
 	
-	private ORASSNode createORASSNode (String nodeName){
+	private ORASSNode createORASSNode (String nodeName, String originalName){
 		if(!nodes.containsKey(nodeName)){
-			ORASSNode node = new ORASSNode(nodeName);
+			ORASSNode node = new ORASSNode(nodeName, originalName);
 			nodes.put(nodeName, node);
 		}
 		ORASSNode node = nodes.get(nodeName);

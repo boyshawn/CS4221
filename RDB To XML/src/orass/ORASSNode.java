@@ -7,12 +7,14 @@ import database.ColumnDetail;
 public class ORASSNode {
 	private List<ORASSNode> children;
 	private String name;
+	private String originalName;
 	private List<ColumnDetail> attributes;
 	
-	public ORASSNode(String n){
+	public ORASSNode(String n, String originalTName){
 		children = new ArrayList<ORASSNode>();
 		name = n;
 		attributes = new ArrayList<ColumnDetail>();
+		originalName = originalTName;
 	}
 	
 	public List<ORASSNode> getChildren(){
@@ -27,6 +29,10 @@ public class ORASSNode {
 	
 	public String getName(){
 		return name;
+	}
+	
+	public String getOriginalName(){
+		return originalName;
 	}
 	
 	public void addAttribute(ColumnDetail attr){
