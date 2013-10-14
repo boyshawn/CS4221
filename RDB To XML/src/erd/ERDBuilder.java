@@ -152,7 +152,7 @@ public class ERDBuilder {
 	 * @param stringArr2		The 2nd string array
 	 * @return					true if the 2 lists have the same unique elements, else return false
 	 */
-	private boolean isEqualList (String[] stringArr1, String[] stringArr2) {
+	private boolean isEqualList (Object[] stringArr1, Object[] stringArr2) {
 		
 		if (stringArr1.length != stringArr2.length)
 			return false;
@@ -162,7 +162,7 @@ public class ERDBuilder {
 			for (int i=0; i<size; ++i) {
 				boolean isSame = false;
 				for (int j=0; j<size; ++j) {
-					if (stringArr1[i] == stringArr2[j])
+					if (stringArr1[i].equals(stringArr2[j]))
 						isSame = true;
 				}
 				
