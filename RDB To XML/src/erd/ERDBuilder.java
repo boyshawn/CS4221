@@ -60,7 +60,7 @@ public class ERDBuilder {
 		Set<String> fkTableNames = new HashSet<String>();
 		Set<String> fkColumns    = new HashSet<String>();
 		
-		// add all the table names which are referenced by some foreign key in 'tableName' with no duplicates
+		// store all the table names that are being referenced by 'tableName' and all the foreign keys of 'tableName' 
 		try {
 			while(foreignKeys.next()) {
 				fkTableNames.add(foreignKeys.getString("PKTABLE_NAME"));
@@ -72,6 +72,7 @@ public class ERDBuilder {
 		}
 		
 		Iterator<String> fkTableNamesItr = fkTableNames.iterator();
+		Iterator<String> fkColumnsItr = fkColumns.iterator();
 		String fkTableName;
 
 		// if a table has no foreign key, it is an entity type
@@ -82,7 +83,7 @@ public class ERDBuilder {
 		}
 		
 		
-		// if a table's foreign keys only reference 1 table, that table is a weak entity type
+		// if a table's foreign keys only reference 1 table
 		else if (fkTableNames.size() == 1) {
 			
 			fkTableName = fkTableNamesItr.next();
@@ -91,8 +92,11 @@ public class ERDBuilder {
 			List<String> columns = dbAccess.getAllColumns(tableName);
 			List<String> primaryKey = dbAccess.getPrimaryKeys(tableName);
 			
-			// if it is an all-key relation then the table is of the same entity type as the table its foreign keys references to
-			if (columns.size() == primaryKey.size()) {
+			// if it is an all-key relation (m:m attribute) or if the primary key is the foreign key (1:m attribute)
+			// then the table is of the same entity type as the table its foreign keys references to
+			if (columns.size() == primaryKey.size() || 
+				(primaryKey.size() == fkColumns.size() && primaryKey.get(0) == fkColumnsItr.next())) {
+				
 				fkNode.addAttributes(dbAccess.getDetailsOfColumns(tableName));
 				
 				if (fkNode.getErdNodeType() == ErdNodeType.ENTITY_TYPE || fkNode.getErdNodeType() == ErdNodeType.WEAK_ENTITY_TYPE)
@@ -101,17 +105,6 @@ public class ERDBuilder {
 					relationshipTypes.put(tableName, fkNode);
 				
 				return fkNode;
-			}
-			
-			// if the table's primary key is its foreign key then it is an entity type which has an 
-			// IS-A relationship with the table its foreign keys references to
-			else if (isEqualList(primaryKey.toArray(), fkColumns.toArray())) {
-				ErdNode entity = new ErdNode(tableName, tableName, ErdNodeType.ENTITY_TYPE, dbAccess.getDetailsOfColumns(tableName));
-				
-				// add IS-A relationship link ?
-				
-				entityTypes.put(tableName, entity);
-				return entity;
 			}
 			
 			// else it is a weak entity
@@ -144,34 +137,6 @@ public class ERDBuilder {
 		else
 			throw new MainException("ERDBuilder error constructing node");
 		
-	}
-	
-	/**
-	 * Checks if 2 string arrays with unique elements are equal
-	 * @param stringArr1		The 1st string array
-	 * @param stringArr2		The 2nd string array
-	 * @return					true if the 2 lists have the same unique elements, else return false
-	 */
-	private boolean isEqualList (Object[] stringArr1, Object[] stringArr2) {
-		
-		if (stringArr1.length != stringArr2.length)
-			return false;
-	
-		else {
-			int size = stringArr1.length;
-			for (int i=0; i<size; ++i) {
-				boolean isSame = false;
-				for (int j=0; j<size; ++j) {
-					if (stringArr1[i].equals(stringArr2[j]))
-						isSame = true;
-				}
-				
-				if (!isSame)
-					return false;
-			}
-		}
-		
-		return true;
 	}
 	
 	/**

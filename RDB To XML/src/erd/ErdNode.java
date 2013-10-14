@@ -162,10 +162,28 @@ public class ErdNode {
 		attributes.add(attr);
 	}
 	
+	/**
+	 * Adds non-duplicated attributes into the list of attributes
+	 * @param attrs		list of attributes to add
+	 */
 	public void addAttributes(List<ColumnDetail> attrs) {
 		Iterator<ColumnDetail> itr = attrs.iterator();
+		boolean isDuplicate = false;
+		
 		while(itr.hasNext()) {
-			attributes.add(itr.next());
+			ColumnDetail columnToAdd = itr.next();
+			Iterator<ColumnDetail> attrsItr = attributes.iterator();
+			
+			while (attrsItr.hasNext()) {
+				ColumnDetail columnDetail = attrsItr.next();
+				if(columnDetail.getName().equals(columnToAdd.getName())) {
+					isDuplicate = true;
+					break;
+				}
+			}
+			
+			if (!isDuplicate)
+				attributes.add(columnToAdd);
 		}
 	}
 }
