@@ -8,6 +8,7 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -87,21 +88,21 @@ public class UIController {
 
 						r.translateToERD();
 						List<List<String>> cycles = r.checkCycle();
-						
-						//TESTING***********************//
-					/*	List<List<String>> cycles = new ArrayList<List<String>>();
+
+						// TESTING***********************//
+						/*List<List<String>> cycles = new ArrayList<List<String>>();
 						List<String> list1 = new ArrayList<String>();
 						list1.add("entity1");
 						list1.add("entity2");
-						
+
 						List<String> list2 = new ArrayList<String>();
 						list2.add("entity3");
 						list2.add("entity4");
-						
+
 						cycles.add(list1);
 						cycles.add(list2);*/
-						//***************************//
-						
+						// ***************************//
+
 						if (cycles.size() != 0) {
 							cycleCombo = choice.addSplitCyclePanel(cycles);
 						}
@@ -114,8 +115,8 @@ public class UIController {
 						choice.setRootList(root);
 
 						nary = r.getNaryRels();
-						
-						//TESTING************************//
+
+						// TESTING************************//
 						/*List<String> temp = new ArrayList<String>();
 						List<String> temp2 = new ArrayList<String>();
 						temp.add("a");
@@ -126,8 +127,8 @@ public class UIController {
 						temp2.add("prof");
 						nary.put("REL1", temp);
 						nary.put("REL2", temp2);*/
-						//***************************//
-						
+						// ***************************//
+
 						for (Map.Entry<String, List<String>> entry : nary
 								.entrySet()) {
 							String relName = entry.getKey();
@@ -149,34 +150,56 @@ public class UIController {
 										if (mapButtonCombo.containsKey(btemp)) {
 											pane = mapButtonCombo.get(btemp);
 										} else {
-											pane = choice
-													.getOptionPane(mapButtonNary
-															.get(btemp));
+											pane = choice.getOptionPane(mapButtonNary.get(btemp));
 											mapButtonCombo.put(btemp, pane);
 										}
-										int result = JOptionPane.showConfirmDialog(
-												null, pane.getFirst(),
-												"Specify the order",
-												JOptionPane.OK_CANCEL_OPTION);
-										if (result == JOptionPane.OK_OPTION) {
-											JLabel l = mapButtonLabel
-													.get(btemp);
-											l.setText(""); // remove the current
-															// text
-											ArrayList<JComboBox> tcombo = pane
-													.getSecond();
-											List<String> newOrder = new ArrayList<String>();
-											for (int i = 0; i < tcombo.size(); i++) {
-												String s = tcombo.get(i)
-														.getSelectedItem()
-														.toString();
-												newOrder.add(s);
-												l.setText(l.getText() + s + " ");
+
+										boolean check = true;
+										while (check) {
+											int result = JOptionPane.showConfirmDialog(null, pane.getFirst(),
+															"Specify the order",JOptionPane.OK_CANCEL_OPTION);
+											if (result == JOptionPane.CANCEL_OPTION) {
+												check = false;
+											} else {
+												if (result == JOptionPane.OK_OPTION) {
+													// check if the choices are
+													// different
+													List<String> newOrder = new ArrayList<String>();
+													List<JComboBox> temp2 = pane
+															.getSecond();
+													for (int i = 0; i < temp2
+															.size(); i++) {
+														String s = temp2
+																.get(i)
+																.getSelectedItem()
+																.toString();
+														newOrder.add(s);
+													}
+													HashSet<String> hashSet = new HashSet<String>();
+													check = false;
+													for (String s : newOrder) {
+														if (hashSet.contains(s))
+															check = true; // contains
+																			// duplicates
+														else
+															hashSet.add(s);
+													}
+													if (check) {
+														JOptionPane.showMessageDialog(pane.getFirst(),
+																		"Duplicate(s) detected! Choose the correct order!",
+																		"Inane error",JOptionPane.ERROR_MESSAGE);
+													} else {
+														JLabel l = mapButtonLabel.get(btemp);
+														l.setText(""); // remove the current text				
+														for (int i = 0; i < newOrder.size(); i++) {
+															l.setText(l.getText()+ newOrder.get(i)+ " ");
+														}
+														mapButtonNary.put(btemp,newOrder);
+														String reltemp = mapButtonRelationName.get(btemp);
+														nary.put(reltemp,newOrder);
+													}
+												}
 											}
-											mapButtonNary.put(btemp, newOrder);
-											String reltemp = mapButtonRelationName
-													.get(btemp);
-											nary.put(reltemp, newOrder);
 										}
 									}
 								}
@@ -225,18 +248,16 @@ public class UIController {
 				}
 			}
 
-			//TESTING***************************//
-			 /* List<String> a = nary.get("REL1");
-			for (int j = 0; j < a.size(); j++) {
-				System.out.println(a.get(j));
-			}
+			// TESTING***************************//
+			/*
+			 * List<String> a = nary.get("REL1"); for (int j = 0; j < a.size();
+			 * j++) { System.out.println(a.get(j)); }
+			 * 
+			 * List<String> b = nary.get("REL2"); for (int j = 0; j < b.size();
+			 * j++) { System.out.println(b.get(j)); }
+			 */
+			// *********************************//
 
-			List<String> b = nary.get("REL2");
-			for (int j = 0; j < b.size(); j++) {
-				System.out.println(b.get(j));
-			}*/
-			//*********************************//
-			
 			r.setOrders(nary);
 
 			main.getMainFrame().setContentPane(choice.getTranslatePane());
