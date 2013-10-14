@@ -134,7 +134,7 @@ public class DBAccess {
 				colSize     = results.getInt("COLUMN_SIZE");
 				colSQLType  = results.getInt("DATA_TYPE");
 				colDefault  = results.getString("COLUMN_DEF");
-				column = new ColumnDetail(colName, colDefault, colNullable, colSize, colSQLType);
+				column = new ColumnDetail(tableName, colName, colDefault, colNullable, colSize, colSQLType);
 				columns.add(column);
 			}
 			
