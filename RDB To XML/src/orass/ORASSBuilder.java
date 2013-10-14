@@ -69,6 +69,11 @@ public class ORASSBuilder{
 			ErdNode relatedNode = links.get(i);
 			ErdNodeType nodeType = relatedNode.getErdNodeType();
 			if(nodeType == ErdNodeType.ENTITY_TYPE || nodeType == ErdNodeType.WEAK_ENTITY_TYPE){
+				List<ColumnDetail> attrs = erNode.getAttributes();
+				for(int j=0; j<attrs.size(); j++){
+					node.addAttribute(attrs.get(j));
+				}
+				
 				ORASSNode child = processNode(relatedNode);
 				node.addChildren(child);
 			} else { 
@@ -97,6 +102,7 @@ public class ORASSBuilder{
 
 	private void processBinaryRel(String relName, ORASSNode parent) throws MainException{
 		Vector<ErdNode> links = rels.get(relName).getLinks(); // links should have only 2 elements
+		
 		if (links.size() > 2){
 			throw new MainException("Binary relationship" + relName + "has more than 2 links");
 		}
