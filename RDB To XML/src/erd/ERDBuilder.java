@@ -105,7 +105,7 @@ public class ERDBuilder {
 			
 			// if the table's primary key is its foreign key then it is an entity type which has an 
 			// IS-A relationship with the table its foreign keys references to
-			else if (isEqualList((String[])primaryKey.toArray(), (String[])fkColumns.toArray())) {
+			else if (isEqualList(primaryKey.toArray(), fkColumns.toArray())) {
 				ErdNode entity = new ErdNode(tableName, tableName, ErdNodeType.ENTITY_TYPE, dbAccess.getDetailsOfColumns(tableName));
 				
 				// add IS-A relationship link ?
@@ -274,10 +274,6 @@ public class ERDBuilder {
 			// add link from n to the new entities
 			n.addLink(new1);
 			n.addLink(new2);
-			
-			// put the new entities to the HashMap
-			entityTypes.put(tableName + "1", new1);
-			entityTypes.put(tableName + "2", new2);
 		} catch (MainException me) {
 			System.out.println(me.getMessage());
 		} catch (Exception e) {
