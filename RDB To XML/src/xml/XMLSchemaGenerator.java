@@ -19,6 +19,7 @@ import main.MainException;
 import org.apache.log4j.Logger;
 
 import database.DBAccess;
+import orass.ORASSNode;
 
 public class XMLSchemaGenerator implements Generator {
 	
@@ -36,7 +37,7 @@ public class XMLSchemaGenerator implements Generator {
 	 * @throws MainException	if there is a database connection error which occurred at any time during the XML Schema generation
 	 */
 	@Override
-	public void generate(String dbName, String fileName) throws MainException {
+	public void generate(String dbName, String fileName, ORASSNode root) throws MainException {
 		setup(fileName);
 		
 		printDatabase(dbName);

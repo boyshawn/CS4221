@@ -13,10 +13,11 @@ import javax.sql.rowset.CachedRowSet;
 
 import main.MainException;
 import database.DBAccess;
+import orass.ORASSNode;
 
 public class XMLDataGenerator implements Generator {
 	@Override
-	public void generate(String dbName, String fileName) throws MainException {
+	public void generate(String dbName, String fileName, ORASSNode root) throws MainException {
 		// TODO Auto-generated method stub
 		privateGenerator(dbName,fileName);
 	}
