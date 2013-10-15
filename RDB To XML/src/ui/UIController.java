@@ -187,7 +187,7 @@ public class UIController {
 													if (check) {
 														JOptionPane.showMessageDialog(pane.getFirst(),
 																		"Duplicate(s) detected! Choose the correct order!",
-																		"Inane error",JOptionPane.ERROR_MESSAGE);
+																		"ERROR",JOptionPane.ERROR_MESSAGE);
 													} else {
 														JLabel l = mapButtonLabel.get(btemp);
 														l.setText(""); // remove the current text				
@@ -234,34 +234,49 @@ public class UIController {
 			// set the root, entity splitting, nary relation order
 			String rootString = choice.getRootCombo().getSelectedItem()
 					.toString();
-			Map<String, ErdNode> rootMap = r.getERDEntityTypes();
-			try {
-				r.buildORASS(rootMap.get(rootString));
-			} catch (MainException me) {
-				System.out.println(me.getMessage());
+			
+			boolean check = true;
+			List<List<String>> list = new ArrayList<List<String>>(nary.values());
+			for (int i = 0; i < list.size(); i++) {
+				if (list.get(i).contains(rootString))
+					if (!list.get(i).get(0).equals(rootString))
+						check = false; 
 			}
-
-			if (cycleCombo.size() != 0) {
-				for (int i = 0; i < cycleCombo.size(); i++) {
-					r.setEntityToBeSplitted(cycleCombo.get(i).getSelectedItem()
-							.toString(), i);
+			
+			if (!check) {
+				JOptionPane.showMessageDialog(choice,
+						rootString + " must be the root of the n-ary relation",
+						"ERROR",JOptionPane.ERROR_MESSAGE);
+			} else {
+				Map<String, ErdNode> rootMap = r.getERDEntityTypes();
+				try {
+					r.buildORASS(rootMap.get(rootString));
+				} catch (MainException me) {
+					System.out.println(me.getMessage());
 				}
+	
+				if (cycleCombo.size() != 0) {
+					for (int i = 0; i < cycleCombo.size(); i++) {
+						r.setEntityToBeSplitted(cycleCombo.get(i).getSelectedItem()
+								.toString(), i);
+					}
+				}
+	
+				// TESTING***************************//
+				/*
+				 * List<String> a = nary.get("REL1"); for (int j = 0; j < a.size();
+				 * j++) { System.out.println(a.get(j)); }
+				 * 
+				 * List<String> b = nary.get("REL2"); for (int j = 0; j < b.size();
+				 * j++) { System.out.println(b.get(j)); }
+				 */
+				// *********************************//
+	
+				r.setOrders(nary);
+	
+				main.getMainFrame().setContentPane(choice.getTranslatePane());
+				main.getMainFrame().validate();
 			}
-
-			// TESTING***************************//
-			/*
-			 * List<String> a = nary.get("REL1"); for (int j = 0; j < a.size();
-			 * j++) { System.out.println(a.get(j)); }
-			 * 
-			 * List<String> b = nary.get("REL2"); for (int j = 0; j < b.size();
-			 * j++) { System.out.println(b.get(j)); }
-			 */
-			// *********************************//
-
-			r.setOrders(nary);
-
-			main.getMainFrame().setContentPane(choice.getTranslatePane());
-			main.getMainFrame().validate();
 		}
 	}
 
