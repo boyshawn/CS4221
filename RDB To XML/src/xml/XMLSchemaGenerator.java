@@ -15,19 +15,18 @@ import java.util.Map;
 import javax.sql.rowset.CachedRowSet;
 
 import main.MainException;
+import orass.ORASSNode;
 
 import org.apache.log4j.Logger;
 
+import database.ColumnDetail;
 import database.DBAccess;
-import orass.ORASSNode;
 
 public class XMLSchemaGenerator implements Generator {
 	
 	private static Logger logger = Logger.getLogger(XMLSchemaGenerator.class);
-	private File file;
 	private PrintWriter writer;
 	private DBAccess dbAccess;
-	private List<String> tableNames;
 	private Map<Integer, String> sqlDataTypes;
 	
 	/**
@@ -40,7 +39,7 @@ public class XMLSchemaGenerator implements Generator {
 	public void generate(String dbName, String fileName, ORASSNode root) throws MainException {
 		setup(fileName);
 		
-		printDatabase(dbName);
+		printDatabase(dbName, root);
 		
 		finish();
 	}
@@ -51,7 +50,7 @@ public class XMLSchemaGenerator implements Generator {
 	 * @throws MainException	if there is a database connection error which occurred at any time during the set up
 	 */
 	private void setup(String fileName) throws MainException {
-		file = new File(fileName+".xsd");
+		File file = new File(fileName+".xsd");
 		
 		boolean isDone;
 		try {
@@ -71,7 +70,6 @@ public class XMLSchemaGenerator implements Generator {
 		}
 		
 		dbAccess = DBAccess.getInstance();
-		tableNames = dbAccess.getTableNames();
 		setupDataTypes();
 		
 	}
@@ -114,11 +112,26 @@ public class XMLSchemaGenerator implements Generator {
 	}
 	
 	/**
+	 * Generates a string of tabs 
+	 * @param numberOfTabs	number of tabs
+	 * @return				a string of tabs according to the specified number of tabs
+	 */
+	private String getTabs(int numberOfTabs) {
+		String tabs = "";
+		
+		for (int i=0; i<numberOfTabs; ++i) {
+			tabs += "\t";
+		}
+		return tabs;
+	}
+	
+	/**
 	 * Print XML schema for a database
 	 * @param dbName			name of database
+	 * @param root				the root of the ORASS model
 	 * @throws MainException	if failed to retrieve any information of the database due to a database connection error
 	 */
-	private void printDatabase(String dbName) throws MainException {
+	private void printDatabase(String dbName, ORASSNode root) {
 		
 		writer.println("<?xml version=\"1.0\"?>");
 		writer.println("<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"");
@@ -127,98 +140,94 @@ public class XMLSchemaGenerator implements Generator {
 		writer.println("elementFormDefault=\"qualified\">");
 		writer.println();
 		
+		// root element of XML document is the database name
 		writer.println("\t<xs:element name=\""+dbName+"\">");
 		writer.println("\t\t<xs:complexType>");
 		writer.println("\t\t\t<xs:sequence>");
 		
-		printTables();
+		printTables(root, 4);
 		
 		writer.println("\t\t\t</xs:sequence>");
 		writer.println("\t\t</xs:complexType>");
 
-		printPrimaryKeys();
-		printUniqueConstraints();
-		printForeignKeys();
+		// keys, ref, unique
+		printUniqueConstraints(root, 2);
 		
 		writer.println("\t</xs:element>");
 		writer.println("</xs:schema>");
+		
 	}
 	
 	/**
-	 * Print XML schema for all tables in a database
+	 * Print details of a table that corresponds to 'node'
+	 * @param node				a node from ORASS model
+	 * @param numOfTabs			number of tabs needed for the xs:element tag
 	 * @throws MainException	if failed to retrieve information of a table due to a database connection error
 	 */
-	private void printTables() throws MainException {
-		Iterator<String> tableNamesItr = tableNames.iterator();
+	private void printTables(ORASSNode node, int numOfTabs) {
 		
-		while(tableNamesItr.hasNext()) {
-			String tableName = tableNamesItr.next();
+		String tableName = node.getOriginalName();
+		List<ORASSNode> children = node.getChildren();
+		Iterator<ORASSNode> itr  = children.iterator();
+		
+		writer.println(getTabs(numOfTabs)     + "<xs:element name=\""+tableName+"\" minOccurs=\"1\" maxOccurs=\"unbounded\">");
+		writer.println(getTabs(numOfTabs + 1) + "<xs:complexType>");
+		writer.println(getTabs(numOfTabs + 2) + "<xs:sequence>");
+		
+		printColumns(node.getAttributes(), numOfTabs + 3);
+		
+		while (itr.hasNext()) {
+			ORASSNode child = itr.next();
+			printTables(child, numOfTabs + 3);
+		}
+		
+		writer.println(getTabs(numOfTabs + 2) + "</xs:sequence>");
+		writer.println(getTabs(numOfTabs + 1) + "</xs:complexType>");
+		writer.println(getTabs(numOfTabs)     + "</xs:element>");
+		
+	}
+	
+	private void printColumns(List<ColumnDetail> columns, int numOfTabs) {
+		
+		Iterator<ColumnDetail> itr = columns.iterator();
+		String colType, xml, xmlColDefault;
+		
+		while(itr.hasNext()) {
 			
-			writer.println("\t\t\t\t<xs:element name=\""+tableName+"\" minOccurs=\"1\" maxOccurs=\"unbounded\">");
-			writer.println("\t\t\t\t\t<xs:complexType>");
-			writer.println("\t\t\t\t\t\t<xs:sequence>");
+			ColumnDetail column = itr.next();
 			
-			printColumns(tableName);
+			colType       = sqlDataTypes.get(column.getSqlType());
+			xmlColDefault = getColDefaultValuePrint(column.getSqlType(), column.getDefaultValue());	
 			
-			writer.println("\t\t\t\t\t\t</xs:sequence>");
-			writer.println("\t\t\t\t\t</xs:complexType>");
-			writer.println("\t\t\t\t</xs:element>");
+			xml = "";	
+			
+			// if the column size is 0 or the SQL column type is not translated to xs:string
+			// then xs:element has a "type" attribute and there is no restriction added to xs:element
+			if (column.getSize() == 0 || !colType.equals("xs:string")) {
+				xml += getTabs(numOfTabs) + "<xs:element name=\""+column.getName()+"\" type=\""+colType+"\" nillable=\""+column.isNullable()+"\""+xmlColDefault;
+				
+				xml += "/>";
+				writer.println(xml);
+			}
+			
+			else {
+				xml += getTabs(numOfTabs) + "<xs:element name=\""+column.getName()+"\" nillable=\""+column.isNullable()+"\""+xmlColDefault;
+				
+				xml += ">";
+				writer.println(xml);
+				
+				// column size restriction for SQL column type (eg. varchar) translated to xs:string
+				writer.println(getTabs(numOfTabs + 1) + "<xs:simpleType>");
+				writer.println(getTabs(numOfTabs + 2) + "<xs:restriction base=\"xs:string\">");
+				writer.println(getTabs(numOfTabs + 3) + "<xs:maxLength value=\""+column.getSize()+"\"/>");
+				writer.println(getTabs(numOfTabs + 2) + "</xs:restriction>");
+				writer.println(getTabs(numOfTabs + 1) + "</xs:simpleType>");
+				writer.println(getTabs(numOfTabs)     + "</xs:element>");
+			}
+			
 		}
 	}
 	
-	/**
-	 * Print XML schema for each column in a specified table
-	 * @param tableName			the name of the table for its columns to be printed out
-	 * @throws MainException	if failed to retrieve details of columns due to a database connection error
-	 */
-	private void printColumns(String tableName) throws MainException {
-		CachedRowSet tableDetails = dbAccess.getColumnsDetails(tableName);
-		String xml, xmlColDefault, colName, colDefault, colType;
-		int colSize, colSQLType;
-		boolean colNullable;
-			
-		try {
-			while (tableDetails.next()) {
-				colName     = tableDetails.getString("COLUMN_NAME");
-				colNullable = tableDetails.getInt("NULLABLE") == DatabaseMetaData.columnNullable ? true : false;
-				colSize     = tableDetails.getInt("COLUMN_SIZE");
-				colSQLType  = tableDetails.getInt("DATA_TYPE");
-				colDefault  = tableDetails.getString("COLUMN_DEF");
-				
-				colType       = sqlDataTypes.get(colSQLType);
-				xmlColDefault = getColDefaultValuePrint(colSQLType, colDefault);	
-				
-				xml = "";	
-				
-				// if the column size is 0 or the SQL column type is not translated to xs:string
-				// then xs:element has a "type" attribute and there is no restriction added to xs:element
-				if (colSize == 0 || !colType.equals("xs:string")) {
-					xml += "\t\t\t\t\t\t\t<xs:element name=\""+colName+"\" type=\""+colType+"\" nillable=\""+colNullable+"\""+xmlColDefault;
-					
-					xml += "/>";
-					writer.println(xml);
-				}
-				else {
-					xml += "\t\t\t\t\t\t\t<xs:element name=\""+colName+"\" nillable=\""+colNullable+"\""+xmlColDefault;
-					
-					xml += ">";
-					writer.println(xml);
-					
-					// column size restriction for SQL column type (eg. varchar) translated to xs:string
-					writer.println("\t\t\t\t\t\t\t\t<xs:simpleType>");
-					writer.println("\t\t\t\t\t\t\t\t\t<xs:restriction base=\"xs:string\">");
-					writer.println("\t\t\t\t\t\t\t\t\t\t<xs:maxLength value=\""+colSize+"\"/>");
-					writer.println("\t\t\t\t\t\t\t\t\t</xs:restriction>");
-					writer.println("\t\t\t\t\t\t\t\t</xs:simpleType>");
-					writer.println("\t\t\t\t\t\t\t</xs:element>");
-				}
-			}
-			
-		} catch (SQLException e) {
-			e.printStackTrace();
-			throw new MainException("Database error when accessing columns from table " + tableName + " : " + e.getMessage());
-		}
-	}
 	
 	/**
 	 * changes the SQL column's default value to correspond with the XML schema data type if needed
@@ -256,7 +265,7 @@ public class XMLSchemaGenerator implements Generator {
 	 * @throws MainException	when failed to retrieve primary keys
 	 */
 	private void printPrimaryKeys() throws MainException {
-		Iterator<String> tableNamesItr = tableNames.iterator();
+		Iterator<String> tableNamesItr = dbAccess.getTableNames().iterator();
 		
 		while(tableNamesItr.hasNext()) {
 			String tableName = tableNamesItr.next();
@@ -278,8 +287,8 @@ public class XMLSchemaGenerator implements Generator {
 	 * Print XML schema for columns under unique constraint for each table, if any
 	 * @throws MainException	Unable to retrieve columns with unique constraint due to database connection error
 	 */
-	private void printUniqueConstraints() throws MainException {
-		Iterator<String> tableNamesItr = tableNames.iterator();
+	private void printUniqueConstraints(ORASSNode node, int numOfTabs) throws MainException {
+		Iterator<String> tableNamesItr = dbAccess.getTableNames().iterator();
 		
 		while(tableNamesItr.hasNext()) {
 			String tableName = tableNamesItr.next();
@@ -301,6 +310,7 @@ public class XMLSchemaGenerator implements Generator {
 	 * Print XML schema for foreign keys for each table, if any
 	 * @throws MainException	Unable to retrieve foreign keys due to database connection error
 	 */
+	/*
 	private void printForeignKeys() throws MainException {
 		Iterator<String> tableNamesItr = tableNames.iterator();
 		
@@ -342,6 +352,7 @@ public class XMLSchemaGenerator implements Generator {
 			}
 		}
 	}
+	*/
 	
 	/**
 	 * Close I/O connection to file 
