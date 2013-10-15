@@ -5,14 +5,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import javax.sql.rowset.CachedRowSet;
 
 import main.MainException;
 import orass.ORASSNode;
@@ -151,7 +147,7 @@ public class XMLSchemaGenerator implements Generator {
 		writer.println("\t\t</xs:complexType>");
 
 		// keys, ref, unique
-		printUniqueConstraints(root, 2);
+		//printUniqueConstraints(root, 2);
 		
 		writer.println("\t</xs:element>");
 		writer.println("</xs:schema>");

@@ -58,7 +58,7 @@ public class ERDBuilder {
 		
 		CachedRowSet foreignKeys = dbAccess.getForeignKeys(tableName);
 		Set<String> fkTableNames = new HashSet<String>();
-		Set<String> fkColumns    = new HashSet<String>();
+		List<String> fkColumns    = new ArrayList<String>();
 		
 		// store all the table names that are being referenced by 'tableName' and all the foreign keys of 'tableName' 
 		try {
@@ -72,7 +72,6 @@ public class ERDBuilder {
 		}
 		
 		Iterator<String> fkTableNamesItr = fkTableNames.iterator();
-		Iterator<String> fkColumnsItr = fkColumns.iterator();
 		String fkTableName;
 
 		// if a table has no foreign key, it is an entity type
@@ -82,7 +81,6 @@ public class ERDBuilder {
 			return entity;
 		}
 		
-		
 		// if a table's foreign keys only reference 1 table
 		else if (fkTableNames.size() == 1) {
 			
@@ -91,11 +89,16 @@ public class ERDBuilder {
 			
 			List<String> columns = dbAccess.getAllColumns(tableName);
 			List<String> primaryKey = dbAccess.getPrimaryKeys(tableName);
+			boolean isReferenced = dbAccess.isBeingReferenced(tableName);
 			
-			// if it is an all-key relation (m:m attribute) or if the primary key is the foreign key (1:m attribute)
-			// then the table is of the same entity type as the table its foreign keys references to
-			if (columns.size() == primaryKey.size() || 
-				(primaryKey.size() == fkColumns.size() && primaryKey.get(0) == fkColumnsItr.next())) {
+			// if a table's foreign keys reference 1 other table only and 
+			// the table is not being referenced by any other table and if
+			// 1) it is an all-key relation / foreign key is part of primary key (m:m attribute) or 
+			// 2) foreign key is the primary key (1:m attribute) or
+			// 3) foreign key is non-prime (optional m:1 attribute)
+			// then the table is of the same entity type as the table its foreign keys references to (merge both entities)
+			// Note: cases 1,2 and 3 need not be checked for since they comprise of all possible ways
+			if (!isReferenced) {
 				
 				fkNode.addAttributes(dbAccess.getDetailsOfColumns(tableName));
 				
@@ -107,8 +110,12 @@ public class ERDBuilder {
 				return fkNode;
 			}
 			
-			// else it is a weak entity
-			else {
+			// if a table's foreign keys reference 1 other table only and 
+			// the table is being referenced by other table or it has prime attribute
+			// then the table is a weak entity 
+			// EX (foreign key is non prime) or ID (foreign key is proper subset of primary key)
+			else if ((isReferenced || columns.size() > primaryKey.size())){
+
 				ErdNode entity = new ErdNode(tableName, tableName, ErdNodeType.WEAK_ENTITY_TYPE, dbAccess.getDetailsOfColumns(tableName));
 				
 				entity.addLink(fkNode);
@@ -116,11 +123,14 @@ public class ERDBuilder {
 				entityTypes.put(tableName, entity);
 				return entity;
 			}
+			
+			else
+				throw new MainException("ERDBuilder error constructing node");
 		}
 		
 		// if a table's foreign keys references more than 1 tables, that table is a relationship type
 		else if (fkTableNames.size() > 1) {
-			ErdNode relationship = new ErdNode(tableName,tableName, ErdNodeType.RELATIONSHIP_TYPE, dbAccess.getDetailsOfColumns(tableName));
+			ErdNode relationship = new ErdNode(tableName, tableName, ErdNodeType.RELATIONSHIP_TYPE, dbAccess.getDetailsOfColumns(tableName));
 			
 			while(fkTableNamesItr.hasNext()) {
 				fkTableName = fkTableNamesItr.next();
@@ -146,7 +156,7 @@ public class ERDBuilder {
 	 * @return					ErdNode belonging to the specified table name
 	 * @throws MainException 	
 	 */
-	public ErdNode getErdNodeOfTable (String tableName) throws MainException {
+	private ErdNode getErdNodeOfTable (String tableName) throws MainException {
 		
 		ErdNode node = entityTypes.get(tableName);
 		
