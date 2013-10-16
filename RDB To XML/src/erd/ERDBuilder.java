@@ -236,19 +236,18 @@ public class ERDBuilder {
 			relInCycle1.addLink(new1);
 			relInCycle2.addLink(new2);
 			
-			// add link from the new entities to the relationship in cycle and n
+			// add link from the new entities to the relationship
 			new1.addLink(relInCycle1);
 			new2.addLink(relInCycle2);
-			new1.addLink(n);
-			new2.addLink(n);
+			
+			// add special link from new entities to the superclass - n
+			new1.addSpecialLink(n);
+			new2.addSpecialLink(n);
 			
 			// remove links from n that are connected to relationship in cycle.
 			n.removeLink(relInCycle1);
 			n.removeLink(relInCycle2);
-			
-			// add link from n to the new entities
-			n.addLink(new1);
-			n.addLink(new2);
+
 		} catch (MainException me) {
 			System.out.println(me.getMessage());
 		} catch (Exception e) {
