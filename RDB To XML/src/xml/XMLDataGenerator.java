@@ -14,15 +14,67 @@ import javax.sql.rowset.CachedRowSet;
 import main.MainException;
 import database.DBAccess;
 import orass.ORASSNode;
+import database.ColumnDetail;
+import java.sql.Statement;
 
 public class XMLDataGenerator implements Generator {
+	
+	private DBAccess dbCache;
+	private File file;
+	private PrintWriter writer;
 	@Override
 	public void generate(String dbName, String fileName, ORASSNode root) throws MainException {
 		// TODO Auto-generated method stub
-		privateGenerator(dbName,fileName);
+		dbCache = DBAccess.getInstance();
+		setupFile(dbName, fileName);
+		processNode(root);
+		writer.close();
 	}
 	
-	private void privateGenerator(String dbName, String fileName) throws MainException{
+	private void setupFile(String dbName, String fileName) throws MainException{
+		String filePath = fileName + ".xml";
+
+		// Create file to write XML data
+		file = new File(filePath);
+		file.mkdirs();
+		try{
+			if (file.exists()){
+				file.delete();
+			}
+			file.createNewFile();
+		}catch(IOException e){
+			throw new MainException("IOException: The data output file cannot be created.");
+		}
+		
+		try{
+			writer = new PrintWriter(new FileOutputStream(filePath),true);
+		}  catch(FileNotFoundException e){
+			throw new MainException("FileOutputStream: Cannot find the data output file.");
+		}
+		
+		// Write xml version info.
+		writer.println("<?xml version=\"1.0\"?>");
+				
+		// Write DB name to file
+		writer.println("<" + dbName);
+		writer.println("xmlns=\"http://www.w3schools.com\"");
+		writer.println("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
+		writer.println("xsi:schemaLocation=\""+fileName+".xsd\">");
+	}
+	
+	private void processNode(ORASSNode node) throws MainException{
+		List<ColumnDetail> relCols = node.getAttributes();
+		if(relCols.size()>0){
+			// Join the relationship table with the entity table
+			String relTable=relCols.get(0).getTableName();
+			String entityTable = node.getOriginalName();
+			dbCache.joinTables(relTable, entityTable);
+		} else{
+			
+		}
+	}
+	
+	/*private void privateGenerator(String dbName, String fileName) throws MainException{
 
 		String filePath = fileName + ".xml";
 		PrintWriter  writer = null;
@@ -90,5 +142,5 @@ public class XMLDataGenerator implements Generator {
 		// Write the closing tag for DB
 		writer.println("</"+ dbName+">");
 		writer.close();
-	}
+	}*/
 }

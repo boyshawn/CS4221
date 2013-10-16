@@ -201,6 +201,7 @@ public class DBAccess {
 			stmt = dbConnection.createStatement();
 			results = stmt.executeQuery("SELECT * FROM " + tableName);
 			crs.populate(results);
+			stmt.close();
 			return crs;
 			
 		}catch(SQLException ex){
@@ -210,6 +211,48 @@ public class DBAccess {
 		}catch(Exception ex){
 			ex.printStackTrace();
 			throw new MainException("Exception at DBAccess.getData(tableName) when retrieving data from table " + tableName);
+		}
+	}
+	
+	public CachedRowSet joinTables(String table1, String table2) throws MainException{
+		try{
+			Statement stmt = null;
+			ResultSet results = null;
+			String pkTableName;
+			
+			CachedRowSet crs = new CachedRowSetImpl();
+			List<String> fkColumn = new ArrayList<String>();
+			List<String> pkColumn = new ArrayList<String>();
+			
+			CachedRowSet foreignKeys = this.getForeignKeys(table1);
+			while (foreignKeys.next()){
+				pkTableName = foreignKeys.getString("PKTABLE_NAME");
+				if(pkTableName.equals(table2)){
+					pkColumn.add(foreignKeys.getString("PKCOLUMN_NAME"));
+					fkColumn.add(foreignKeys.getString("FKCOLUMN_NAME"));
+					
+				}
+			}
+			int n = pkColumn.size();
+			if(fkColumn.size()!= n){
+				throw new MainException("Table join error: number of PK in "+table1 +" and number of FK references in "+table2 +" does not match.");
+			}
+			if(n<1){
+				throw new MainException("Table join error: foreign key reference in "+table2+" is not found in "+table1+".");
+			}
+			stmt = dbConnection.createStatement();
+			String query = "SELECT * FROM " + table1 + ", " + table2 + " WHERE ";
+			for(int i=0; i<n-1; i++){
+				query += pkColumn.get(i)+" = " + fkColumn.get(i) + " AND ";
+			}
+			query += pkColumn.get(n-1)+" = " + fkColumn.get(n-1);
+			
+			results = stmt.executeQuery(query);
+			crs.populate(results);
+			stmt.close();
+			return crs;
+		}catch(SQLException ex){
+			throw new MainException("Exception when joining tables "+table1+", "+table2 + ": " +ex.getMessage());
 		}
 	}
 	
