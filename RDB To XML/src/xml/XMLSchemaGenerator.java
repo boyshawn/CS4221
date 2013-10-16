@@ -257,29 +257,6 @@ public class XMLSchemaGenerator implements Generator {
 	}
 	
 	/**
-	 * Print XML schema for primary keys for each table
-	 * @throws MainException	when failed to retrieve primary keys
-	 */
-	private void printPrimaryKeys() throws MainException {
-		Iterator<String> tableNamesItr = dbAccess.getTableNames().iterator();
-		
-		while(tableNamesItr.hasNext()) {
-			String tableName = tableNamesItr.next();
-			List<String> primaryKeys = dbAccess.getPrimaryKeys(tableName);
-			
-			writer.println("\t\t<xs:key name=\""+tableName+"PK"+"\">");
-			writer.println("\t\t\t<xs:selector xpath=\".//"+tableName+"\"/>");
-			
-			Iterator<String> primaryKeysItr = primaryKeys.iterator();
-			while(primaryKeysItr.hasNext()) {
-				writer.println("\t\t\t<xs:field xpath=\""+primaryKeysItr.next()+"\"/>");
-			}
-			
-			writer.println("\t\t</xs:key>");
-		}
-	}
-	
-	/**
 	 * Print XML schema for columns under unique constraint for each table, if any
 	 * @throws MainException	Unable to retrieve columns with unique constraint due to database connection error
 	 */
@@ -301,6 +278,32 @@ public class XMLSchemaGenerator implements Generator {
 			writer.println("\t\t</xs:unique>");
 		}
 	}
+	
+
+	/**
+	 * Print XML schema for primary keys for each table
+	 * @throws MainException	when failed to retrieve primary keys
+	 */
+	/*
+	private void printPrimaryKeys() throws MainException {
+		Iterator<String> tableNamesItr = dbAccess.getTableNames().iterator();
+		
+		while(tableNamesItr.hasNext()) {
+			String tableName = tableNamesItr.next();
+			List<String> primaryKeys = dbAccess.getPrimaryKeys(tableName);
+			
+			writer.println("\t\t<xs:key name=\""+tableName+"PK"+"\">");
+			writer.println("\t\t\t<xs:selector xpath=\".//"+tableName+"\"/>");
+			
+			Iterator<String> primaryKeysItr = primaryKeys.iterator();
+			while(primaryKeysItr.hasNext()) {
+				writer.println("\t\t\t<xs:field xpath=\""+primaryKeysItr.next()+"\"/>");
+			}
+			
+			writer.println("\t\t</xs:key>");
+		}
+	}
+	*/
 	
 	/**
 	 * Print XML schema for foreign keys for each table, if any
