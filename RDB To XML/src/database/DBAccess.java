@@ -256,7 +256,7 @@ public class DBAccess {
 				throw new MainException("Table join error: foreign key reference in "+table2+" is not found in "+table1+".");
 			}
 			stmt = dbConnection.createStatement();
-			String query = "SELECT * FROM " + table1 + ", " + table2 + " WHERE ";
+			String query = "SELECT * FROM " + table1 + " RIGHT JOIN " + table2 + " ON ";
 			for(int i=0; i<n-1; i++){
 				query += pkColumn.get(i)+" = " + fkColumn.get(i) + " AND ";
 			}
