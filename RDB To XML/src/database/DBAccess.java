@@ -160,8 +160,23 @@ public class DBAccess {
 		}
 	}
 	
+	public boolean isBeingReferenced(String tableName) throws MainException {
+		CachedRowSet crs;
+		try {
+			crs = new CachedRowSetImpl();
+			ResultSet rs = dbConnection.getMetaData().getExportedKeys(dbConnection.getCatalog(), null, tableName);
+			crs.populate(rs);
+			if (crs.size() > 0)
+				return true;
+			else
+				return false;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new MainException("Failed to get foreign keys for " + tableName);
+		}
+	}
+	
 	public CachedRowSet getForeignKeys(String tableName) throws MainException {
-		logger.debug("getForeignKeys : " + tableName);
 		CachedRowSet crs;
 		try {
 			crs = new CachedRowSetImpl();
