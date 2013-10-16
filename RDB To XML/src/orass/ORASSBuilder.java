@@ -16,7 +16,9 @@ public class ORASSBuilder{
 	private Map<String, ErdNode> entities;
 	private Map<String, ErdNode> rels;
 	private Map<String, ORASSNode> nodes;
+	private List<String> processedNodes;
 	private Map<String, List<String>> nRels;
+	private Map<ORASSNode, ORASSNode> isaRels;
 	private DBAccess dbCache;
 	
 	public ORASSBuilder(Map<String, ErdNode> erdEntities, Map<String, ErdNode> erdRels) throws MainException{
@@ -24,14 +26,30 @@ public class ORASSBuilder{
 		rels = erdRels;
 		nodes = new HashMap<String, ORASSNode>();
 		dbCache = DBAccess.getInstance();
+		isaRels = new HashMap<ORASSNode, ORASSNode>();
+		processedNodes = new ArrayList<String>();
+		
 	}
 	
 	/*
 	 * This method takes in the root ERD node as input and returns the root of ORASS after processing all ERD nodes.
 	 * */
-	public ORASSNode buildORASS(ErdNode root) throws MainException {
-		ORASSNode rootNode = processNode(root);
-		return rootNode;
+	public List<ORASSNode> buildORASS(ErdNode root) throws MainException {
+		List<ORASSNode> rootNodes = new ArrayList<ORASSNode>();
+		ORASSNode rootNode = processEntity(root);
+		rootNodes.add(rootNode);
+		// Check and process unlinked nodes
+		while (processedNodes.size()<entities.size()){
+			for(int i=0; i<entities.size();i++){
+				ErdNode erNode = entities.get(i);
+				String tName = erNode.getTableName();
+				if(!processedNodes.contains(tName)){
+					ORASSNode unlinkedNode = processEntity(erNode);
+					rootNodes.add(unlinkedNode);
+				}
+			}
+		}
+		return rootNodes;
 	}
 	
 	public Map<String, List<String>> getNaryRels(){
@@ -57,10 +75,16 @@ public class ORASSBuilder{
 	}
 	
 	/*
+	 * Returns a mapping from a subtype (key) to a supertype (object)
+	 * */
+	public Map<ORASSNode, ORASSNode> getIsaRelationships(){
+		return isaRels;
+	}
+	/*
 	 * This method processes an ERD node that represents an entity. 
 	 * It returns the ORASS node that corresponds to this entity.
 	 * */
-	private ORASSNode processNode(ErdNode erNode) throws MainException{
+	private ORASSNode processEntity(ErdNode erNode) throws MainException{
 		String tName = erNode.getTableName();
 		ORASSNode node = createORASSNode(tName, erNode.getOriginalTableName());
 		
@@ -73,14 +97,15 @@ public class ORASSBuilder{
 				for(int j=0; j<attrs.size(); j++){
 					node.addAttribute(attrs.get(j));
 				}
-				
-				ORASSNode child = processNode(relatedNode);
+				processSpecialLinks(erNode, node);
+				ORASSNode child = processEntity(relatedNode);
 				node.addChildren(child);
 			} else { 
 				// The related node is a parent of a weak entity
 				processRelationship(relatedNode, node);
 			}
 		}
+		processedNodes.add(tName);
 		return node;
 	}
 	
@@ -113,7 +138,7 @@ public class ORASSBuilder{
 				ErdNodeType nodeType = relatedNode.getErdNodeType();
 				if(nodeType == ErdNodeType.ENTITY_TYPE || nodeType == ErdNodeType.WEAK_ENTITY_TYPE){
 					// Relationship is connected with an entity: process as normal
-					ORASSNode child = processNode(relatedNode);
+					ORASSNode child = processEntity(relatedNode);
 					// Add the attributes of the relationship to the child entity
 					processRelAttributes(relName,child);
 					// Add the related entity as a child of the parent
@@ -143,7 +168,7 @@ public class ORASSBuilder{
 	/*
 	 * Returns the last ORASSNode in the Nary relationship
 	 * */
-	private ORASSNode processNaryRel(String relName, ORASSNode parent, List<String> entityOrder) throws MainException{
+	private void processNaryRel(String relName, ORASSNode parent, List<String> entityOrder) throws MainException{
 		ORASSNode node1 = parent;
 		for (int i = 0; i< entityOrder.size(); i++){
 			String entityName = entityOrder.get(i);
@@ -159,27 +184,36 @@ public class ORASSBuilder{
 				if(relatedNode.getTableName()!=relName){
 					ErdNodeType nodeType = relatedNode.getErdNodeType();
 					if(nodeType == ErdNodeType.ENTITY_TYPE || nodeType == ErdNodeType.WEAK_ENTITY_TYPE){
-						ORASSNode child = processNode(relatedNode);
+						ORASSNode child = processEntity(relatedNode);
 						node1.addChildren(child);
 					} else { // The related node is a parent of a weak entity
 						processRelationship(relatedNode, node1);
 					}
 				}
-				// process the n-ary rel link
-				if(i<entityOrder.size()-1){
-					// If the node is not the last entity in the n-ary relationship
-					String nextEntity = entityOrder.get(i+1);
-					ORASSNode node2 = createORASSNode(nextEntity, entities.get(nextEntity).getOriginalTableName());
-					node1.addChildren(node2);
-					node1 = node2;
-				} else{
-					// Add the attributes of the N-ary relationship to the last entity in the entity list
-					processRelAttributes(relName, node1);
-				}
 			}
+			// process the n-ary rel link
+			if(i<entityOrder.size()-1){
+				// If the node is not the last entity in the n-ary relationship
+				String nextEntity = entityOrder.get(i+1);
+				ORASSNode node2 = createORASSNode(nextEntity, entities.get(nextEntity).getOriginalTableName());
+				node1.addChildren(node2);
+				node1 = node2;
+			} else{
+				// Add the attributes of the N-ary relationship to the last entity in the entity list
+				processRelAttributes(relName, node1);
+			}
+			processedNodes.add(entityName);
 		}
-
-		return parent;
+	}
+	
+	private void processSpecialLinks(ErdNode erdNode, ORASSNode child){
+		ORASSNode parent;
+		Vector<ErdNode> specialLinks = erdNode.getSpecialLinks();
+		for(int i=0; i<specialLinks.size(); i++){
+			String parentName = specialLinks.get(i).getTableName();
+			parent = createORASSNode(parentName, specialLinks.get(i).getOriginalTableName());
+			isaRels.put(child, parent);
+		}
 	}
 	
 	private ORASSNode createORASSNode (String nodeName, String originalName){
@@ -190,6 +224,5 @@ public class ORASSBuilder{
 		ORASSNode node = nodes.get(nodeName);
 		return node;
 	}
-	
 
 }

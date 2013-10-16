@@ -48,7 +48,7 @@ public class RDBToXML {
 		orassb = new ORASSBuilder(erdb.getEntityTypes(), erdb.getRelationshipTypes());
 	}
 	
-	public ORASSNode buildORASS(ErdNode root) throws MainException {
+	public List<ORASSNode> buildORASS(ErdNode root) throws MainException {
 		return orassb.buildORASS(root);
 	}
 	
