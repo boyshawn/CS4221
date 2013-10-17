@@ -6,7 +6,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.sql.rowset.CachedRowSet;
 
@@ -94,20 +96,30 @@ public class DBAccess {
 			ResultSet results = dbMetadata.getColumns(null, null, tableName, null);
 			
 			List<ColumnDetail> columns = new ArrayList<ColumnDetail>();
-			ColumnDetail column;
-			String colName, colDefault;
-			int colSize, colSQLType;
-			boolean colNullable, colUnique;
-			List<String> uniqueCols = getUniqueColumns(tableName);
+			List<String> uniqueCols    = getUniqueColumns(tableName);
+			CachedRowSet foreignKeys   = getForeignKeys(tableName);
+			Map<String,Map<String,String>> foreignKeyToRefTableAndCol = new HashMap<String,Map<String,String>>();
 			
+			// process foreign keys according to the foreign keys of the table
+			while (foreignKeys.next()) {
+				String fkColumnName = foreignKeys.getString("FKCOLUMN_NAME");
+				String pkColumnName = foreignKeys.getString("PKCOLUMN_NAME");
+				String pkTableName  = foreignKeys.getString("PKTABLE_NAME");
+				Map<String,String> refTableToCol = new HashMap<String,String>();
+				refTableToCol.put(pkTableName, pkColumnName);
+				foreignKeyToRefTableAndCol.put(fkColumnName, refTableToCol);
+			}
+			
+			// process the columns of the table
 			while (results.next()) {
-				colName     = results.getString("COLUMN_NAME");
-				colNullable = results.getInt("NULLABLE") == DatabaseMetaData.columnNullable ? true : false;
-				colSize     = results.getInt("COLUMN_SIZE");
-				colSQLType  = results.getInt("DATA_TYPE");
-				colDefault  = results.getString("COLUMN_DEF");
-				colUnique   = uniqueCols.contains(colName);
-				column = new ColumnDetail(tableName, colName, colDefault, colNullable, colUnique, colSize, colSQLType);
+				String colName      = results.getString("COLUMN_NAME");
+				boolean colNullable = results.getInt("NULLABLE") == DatabaseMetaData.columnNullable ? true : false;
+				boolean colUnique   = uniqueCols.contains(colName);
+				int colSize         = results.getInt("COLUMN_SIZE");
+				int colSQLType      = results.getInt("DATA_TYPE");
+				String colDefault   = results.getString("COLUMN_DEF");
+				Map<String,String> refTableToCol = foreignKeyToRefTableAndCol.get(colName);
+				ColumnDetail column = new ColumnDetail(tableName, colName, refTableToCol, colDefault, colNullable, colUnique, colSize, colSQLType);
 				columns.add(column);
 			}
 			
