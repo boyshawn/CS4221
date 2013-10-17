@@ -32,10 +32,10 @@ public class XMLSchemaGenerator implements Generator {
 	 * @throws MainException	if there is a database connection error which occurred at any time during the XML Schema generation
 	 */
 	@Override
-	public void generate(String dbName, String fileName, List<ORASSNode> root) throws MainException {
+	public void generate(String dbName, String fileName, ORASSNode root) throws MainException {
 		setup(fileName);
 		
-		printDatabase(dbName, root.get(0));
+		printDatabase(dbName, root);
 		
 		finish();
 	}

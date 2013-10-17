@@ -9,6 +9,7 @@ public class ORASSNode {
 	private String name;
 	private String originalName;
 	private List<ColumnDetail> attributes;
+	private List<ColumnDetail> relAttributes;
 	
 	public ORASSNode(String n, String originalTName){
 		children = new ArrayList<ORASSNode>();
@@ -40,8 +41,19 @@ public class ORASSNode {
 			attributes.add(attr);
 		}
 	}
+	public void addRelAttribute(ColumnDetail attr){
+		if(!relAttributes.contains(attr)){
+			relAttributes.add(attr);
+		}
+	}
 	
+	public List<ColumnDetail> getRelAttributes(){
+		return relAttributes;
+	}
 	public List<ColumnDetail> getAttributes(){
-		return attributes;
+		List<ColumnDetail> allAttrs = new ArrayList<ColumnDetail>();
+		allAttrs.addAll(attributes);
+		allAttrs.addAll(relAttributes);
+		return allAttrs;
 	}
 }

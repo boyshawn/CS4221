@@ -227,7 +227,7 @@ public class DBAccess {
 			throw new MainException("Exception at DBAccess.getData(tableName) when retrieving data from table " + tableName);
 		}
 	}
-	
+	/*
 	public CachedRowSet joinTables(String table1, String table2) throws MainException{
 		try{
 			Statement stmt = null;
@@ -267,6 +267,55 @@ public class DBAccess {
 			return crs;
 		}catch(SQLException ex){
 			throw new MainException("Exception when joining tables "+table1+", "+table2 + ": " +ex.getMessage());
+		}
+		
+	}
+	
+	public CachedRowSet getSelectedData(String tableName, List<String> cols) throws MainException{
+		try{
+			ResultSet results = null;
+			CachedRowSet crs = new CachedRowSetImpl();
+			
+			Statement stmt = dbConnection.createStatement();
+			String query = "SELECT ";
+			for (int i=0; i<cols.size(); i++){
+				query+= cols.get(i) + " ";
+			}
+			query += "FROM " + tableName;
+			results = stmt.executeQuery(query);
+			crs.populate(results);
+			stmt.close();
+			return crs;
+			
+		}catch(SQLException ex){
+			ex.printStackTrace();
+			throw new MainException("Exception when retrieving selected data from table " + tableName + " : " + ex.getMessage());
+			
+		}catch(Exception ex){
+			ex.printStackTrace();
+			throw new MainException("Exception at DBAccess.getData(tableName) when retrieving selected data from table " + tableName);
+		}
+	}*/
+	public CachedRowSet getDataForValues(String table1, List<String> values, String table2, List<String> cols) throws MainException{
+		try{
+			int n = cols.size();
+			if(values.size() != n){
+				throw new MainException("Data retrieval Error: number of values in " + table1 + " and columns supplied in "+table2+ " does not match.");
+			}
+			Statement stmt = dbConnection.createStatement();
+			ResultSet results = null;
+			CachedRowSet crs = new CachedRowSetImpl();
+			String query = "SELECT * from " + table2 + " WHERE ";
+			for(int i=0; i<n-1; i++){
+				query+= table2+"."+cols.get(i)+"="+values.get(i) + " AND ";
+			}
+			query += table2+"."+cols.get(n-1)+"="+values.get(n-1);
+			results = stmt.executeQuery(query);
+			crs.populate(results);
+			stmt.close();
+			return crs;
+		}catch(SQLException ex){
+			throw new MainException("Error in retrieving values from "+table2+" for values in " + table1 +" : " +ex.getMessage());
 		}
 	}
 	

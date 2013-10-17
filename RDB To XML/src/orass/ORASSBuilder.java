@@ -34,12 +34,12 @@ public class ORASSBuilder{
 	/*
 	 * This method takes in the root ERD node as input and returns the root of ORASS after processing all ERD nodes.
 	 * */
-	public List<ORASSNode> buildORASS(ErdNode root) throws MainException {
-		List<ORASSNode> rootNodes = new ArrayList<ORASSNode>();
+	public ORASSNode buildORASS(ErdNode root) throws MainException {
+		//List<ORASSNode> rootNodes = new ArrayList<ORASSNode>();
 		ORASSNode rootNode = processEntity(root);
-		rootNodes.add(rootNode);
+		//rootNodes.add(rootNode);
 		// Check and process unlinked nodes
-		while (processedNodes.size()<entities.size()){
+		/*while (processedNodes.size()<entities.size()){
 			for(int i=0; i<entities.size();i++){
 				ErdNode erNode = entities.get(i);
 				String tName = erNode.getTableName();
@@ -48,8 +48,8 @@ public class ORASSBuilder{
 					rootNodes.add(unlinkedNode);
 				}
 			}
-		}
-		return rootNodes;
+		}*/
+		return rootNode;
 	}
 	
 	public Map<String, List<String>> getNaryRels(){
@@ -160,7 +160,7 @@ public class ORASSBuilder{
 			ColumnDetail col = cols.get(i);
 			List<String> foreignKeys = dbCache.getNamesOfForeignKeys(relName);
 			if(!foreignKeys.contains(col.getName())){
-				entityNode.addAttribute(col);
+				entityNode.addRelAttribute(col);
 			}
 		}
 	}

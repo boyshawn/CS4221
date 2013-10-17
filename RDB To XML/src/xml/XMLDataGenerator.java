@@ -6,10 +6,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
-import java.util.Iterator;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
-import java.util.HashMap;
 
 import javax.sql.rowset.CachedRowSet;
 
@@ -24,11 +23,11 @@ public class XMLDataGenerator implements Generator {
 	private File file;
 	private PrintWriter writer;
 	@Override
-	public void generate(String dbName, String fileName, ORASSNode roots) throws MainException {
+	public void generate(String dbName, String fileName, ORASSNode root) throws MainException {
 		// TODO Auto-generated method stub
 		dbCache = DBAccess.getInstance();
 		setupFile(dbName, fileName);
-		printDB(dbName, fileName, roots);
+		printDB(dbName, fileName, root);
 		writer.close();
 	}
 	
@@ -54,7 +53,7 @@ public class XMLDataGenerator implements Generator {
 		}
 	}
 	
-	private void printDB(String dbName, String filename, ORASSNode roots) throws MainException{
+	private void printDB(String dbName, String filename, ORASSNode root) throws MainException{
 		// Write xml version info.
 		writer.println("<?xml version=\"1.0\"?>");
 		// Write DB name to file
@@ -62,39 +61,41 @@ public class XMLDataGenerator implements Generator {
 		writer.println("xmlns=\"http://www.w3schools.com\"");
 		writer.println("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
 		writer.println("xsi:schemaLocation=\""+filename+".xsd\">");
-		for (int i=0; i<roots.size(); i++){
-			printNode(roots.get(i), 1, true);
-		}
+		printNode(root, 1, null);
 		writer.println("</"+dbName+">");
 	}
 	
-	private void printNode(ORASSNode node, int indention, boolean isRoot) throws MainException{
+	private void printNode(ORASSNode node, int indention, CachedRowSet relatedData) throws MainException{
 		String entityName = node.getOriginalName();
-		
 		CachedRowSet crs;
-		List<String> cols = dbCache.getAllColumns(entityName);
-		// Print attributes obtained from relationships
-		List<ColumnDetail> relCols = node.getAttributes();
-		if(relCols.size()>cols.size()){
-			// Join the relationship table with the entity table
-			String relTable=relCols.get(0).getTableName();
-			crs = dbCache.joinTables(relTable, entityName);
-			for(int i=0; i<relCols.size(); i++){
-				String colName = relCols.get(i).getName();
-				if(!cols.contains(colName)){
-					cols.add(colName);
+		if(relatedData==null){
+			// Print attributes obtained from relationships
+			//List<ColumnDetail> relCols = node.getAttributes();
+			/*if(relCols.size()>cols.size()){
+				// Join the relationship table with the entity table
+				String relTable=relCols.get(0).getTableName();
+				crs = dbCache.joinTables(relTable, entityName);
+				for(int i=0; i<relCols.size(); i++){
+					String colName = relCols.get(i).getName();
+					if(!cols.contains(colName)){
+						cols.add(colName);
+					}
 				}
-			}
-		}else {
+			}else {*/
 			crs = dbCache.getData(entityName);
+			//}
+		} else {
+			crs = relatedData;
 		}
+		
+		List<ColumnDetail> cols = node.getAttributes();
 		try{
 			while(crs.next()){
 				printTabs(indention);
 				writer.println("<"+entityName+">");
 				// Print columns belonging to this entity
 				for(int i=0;i<cols.size();i++){
-					String colName = cols.get(i);
+					String colName = cols.get(i).getName();
 					String nextData = crs.getString(colName);
 					printTabs(indention+1);
 					if (crs.wasNull()){
@@ -105,10 +106,29 @@ public class XMLDataGenerator implements Generator {
 					}
 					writer.println("</"+colName+">");
 				}
+				
 				// Print children information
 				List<ORASSNode> children = node.getChildren();
 				for(int i=0; i<children.size(); i++){
-					printNode(children.get(i), indention+1, false);
+					//printNode(children.get(i), indention+1, false);
+					ORASSNode child = children.get(i);
+					String childName = child.getName();
+					
+					List<List<String>> fkRefs = getForeignKeyRefs(node, child);
+					if(fkRefs.size()>2){
+						throw new MainException("There are two sets of foreign key references between " + entityName + " and " + childName);
+					}
+					List<String> fromList = fkRefs.get(0);
+					List<String> toList = fkRefs.get(1);
+					while(crs.next()){
+						List<String> values = new ArrayList<String>();
+						for(int j = 0; j<fromList.size(); j++){
+							values.add(crs.getString(fromList.get(j)));
+						}
+						CachedRowSet matchedData = dbCache.getDataForValues(entityName, values, childName, toList);
+						printNode(child, indention+1, matchedData);
+					}
+					
 				}
 				// Print closing tag
 				printTabs(indention);
@@ -117,6 +137,39 @@ public class XMLDataGenerator implements Generator {
 		}catch(SQLException e){
 			throw new MainException("Error in printing columns for table " + entityName + " : " +e.getMessage());
 		}
+	}
+
+	private List<List<String>> getForeignKeyRefs(ORASSNode node1, ORASSNode node2){
+		List<List<String>> fkRefs = new ArrayList<List<String>>();
+		List<ColumnDetail> cols1 = node1.getAttributes();
+		List<ColumnDetail> cols2 = node2.getAttributes();
+		List<String> fromList = new ArrayList<String>();
+		List<String> toList = new ArrayList<String>();
+
+		String node2Name = node2.getName();
+		
+		for(int i=0; i<cols1.size(); i++){
+			ColumnDetail col1 = cols1.get(i);
+			Map<String, String> node1Refs = col1.getRefTableToColumn();
+			if(node1Refs.containsKey(node2Name)){
+				fromList.add(col1.getName());
+				toList.add(node1Refs.get(node2Name));
+			}
+		}
+		if(fromList.size()<=0){
+			String node1Name = node1.getName();
+			for(int i=0; i<cols2.size(); i++){
+				ColumnDetail col2 = cols2.get(i);
+				Map<String, String> node2Refs = col2.getRefTableToColumn();
+				if(node2Refs.containsKey(node1Name)){
+					fromList.add(col2.getName());
+					toList.add(node2Refs.get(node1Name));
+				}
+			}
+		}
+		fkRefs.add(fromList);
+		fkRefs.add(toList);
+		return fkRefs;
 	}
 
 	/*private void printColumns(CachedRowSet data, List<String> cols, int indention) throws MainException{
