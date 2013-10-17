@@ -32,10 +32,10 @@ public class XMLSchemaGenerator implements Generator {
 	 * @throws MainException	if there is a database connection error which occurred at any time during the XML Schema generation
 	 */
 	@Override
-	public void generate(String dbName, String fileName, ORASSNode root) throws MainException {
+	public void generate(String dbName, String fileName, List<ORASSNode> root) throws MainException {
 		setup(fileName);
 		
-		printDatabase(dbName, root);
+		printDatabase(dbName, root.get(0));
 		
 		finish();
 	}
@@ -270,14 +270,16 @@ public class XMLSchemaGenerator implements Generator {
 	 */
 	private void printUniqueConstraints(ORASSNode node, int numOfTabs) throws MainException {
 		String tableName = node.getName();
-		List<String> uniqueCols = dbAccess.getUniqueColumns(tableName);
 		
 		writer.println(getTabs(numOfTabs)     + "<xs:unique name=\""+tableName+"Uniq"+"\">");
 		writer.println(getTabs(numOfTabs + 1) + "<xs:selector xpath=\".//"+tableName+"\"/>");
 		
-		Iterator<String> uniqueColsItr = uniqueCols.iterator();
-		while(uniqueColsItr.hasNext()) {
-			writer.println(getTabs(numOfTabs + 1) + "<xs:field xpath=\""+uniqueColsItr.next()+"\"/>");
+		List<ColumnDetail> cols = node.getAttributes();
+		Iterator<ColumnDetail> colsItr = cols.iterator();
+		while(colsItr.hasNext()) {
+			ColumnDetail column = colsItr.next();
+			if (column.isUnique())
+				writer.println(getTabs(numOfTabs + 1) + "<xs:field xpath=\""+column.getName()+"\"/>");
 		}
 		
 		writer.println(getTabs(numOfTabs) + "</xs:unique>");

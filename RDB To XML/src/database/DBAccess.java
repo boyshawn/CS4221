@@ -73,20 +73,6 @@ public class DBAccess {
 		}
 	}
 	
-	public List<String> getUniqueColumns(String tableName) throws MainException {
-		List<String> uniqueCols = new ArrayList<String>();
-		try {
-			ResultSet rs = dbConnection.getMetaData().getIndexInfo(null, null, tableName, true, true);
-			while(rs.next()) {
-				uniqueCols.add(rs.getString("COLUMN_NAME"));
-			}
-			return uniqueCols;
-		} catch (SQLException e) {
-			e.printStackTrace();
-			throw new MainException("Failed to get unique columns for " + tableName);
-		}
-	}
-	
 	public List<String> getAllColumns(String tableName) throws MainException {
 		List<String> allCols = new ArrayList<String>();
 		try {
@@ -101,21 +87,6 @@ public class DBAccess {
 		}
 	}
 	
-	public CachedRowSet getColumnsDetails(String tableName) throws MainException {
-		ResultSet results;
-		try {
-			DatabaseMetaData dbMetadata = dbConnection.getMetaData();
-			results = dbMetadata.getColumns(null, null, tableName, null);
-			CachedRowSet cachedRowSet = new CachedRowSetImpl();
-			cachedRowSet.populate(results);
-			return cachedRowSet;	
-		} catch (SQLException e) {
-			e.printStackTrace();
-			throw new MainException("Exception when retrieving detail of columns for table " + tableName + " : " + e.getMessage());
-		}
-		
-	}
-	
 	public List<ColumnDetail> getDetailsOfColumns(String tableName) throws MainException {
 	
 		try {
@@ -123,10 +94,11 @@ public class DBAccess {
 			ResultSet results = dbMetadata.getColumns(null, null, tableName, null);
 			
 			List<ColumnDetail> columns = new ArrayList<ColumnDetail>();
+			ColumnDetail column;
 			String colName, colDefault;
 			int colSize, colSQLType;
-			boolean colNullable;
-			ColumnDetail column;
+			boolean colNullable, colUnique;
+			List<String> uniqueCols = getUniqueColumns(tableName);
 			
 			while (results.next()) {
 				colName     = results.getString("COLUMN_NAME");
@@ -134,7 +106,8 @@ public class DBAccess {
 				colSize     = results.getInt("COLUMN_SIZE");
 				colSQLType  = results.getInt("DATA_TYPE");
 				colDefault  = results.getString("COLUMN_DEF");
-				column = new ColumnDetail(tableName, colName, colDefault, colNullable, colSize, colSQLType);
+				colUnique   = uniqueCols.contains(colName);
+				column = new ColumnDetail(tableName, colName, colDefault, colNullable, colUnique, colSize, colSQLType);
 				columns.add(column);
 			}
 			
@@ -143,6 +116,20 @@ public class DBAccess {
 		} catch (SQLException e) {
 			e.printStackTrace();
 			throw new MainException("Exception when retrieving detail of columns for table " + tableName + " : " + e.getMessage());
+		}
+	}
+	
+	private List<String> getUniqueColumns(String tableName) throws MainException {
+		List<String> uniqueCols = new ArrayList<String>();
+		try {
+			ResultSet rs = dbConnection.getMetaData().getIndexInfo(null, null, tableName, true, true);
+			while(rs.next()) {
+				uniqueCols.add(rs.getString("COLUMN_NAME"));
+			}
+			return uniqueCols;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new MainException("Failed to get unique columns for " + tableName);
 		}
 	}
 	
