@@ -6,16 +6,18 @@ public class ColumnDetail {
 	private String name;
 	private String defaultValue;
 	private boolean isNullable;
+	private boolean isUnique;
 	private int size;
 	private int sqlType;
 	
-	public ColumnDetail(String tableName, String name, String defaultValue, boolean isNullable, int size, int sqlType) {
-		this.tableName = tableName;
-		this.name = name;
+	public ColumnDetail(String tableName, String name, String defaultValue, boolean isNullable, boolean isUnique, int size, int sqlType) {
+		this.tableName    = tableName;
+		this.name         = name;
 		this.defaultValue = defaultValue;
-		this.isNullable = isNullable;
-		this.size = size;
-		this.sqlType = sqlType;
+		this.isNullable   = isNullable;
+		this.isUnique     = isUnique;
+		this.size         = size;
+		this.sqlType      = sqlType;
 	}
 	
 	public String getTableName() {
@@ -32,6 +34,10 @@ public class ColumnDetail {
 
 	public boolean isNullable() {
 		return isNullable;
+	}
+	
+	public boolean isUnique() {
+		return isUnique;
 	}
 
 	public int getSize() {

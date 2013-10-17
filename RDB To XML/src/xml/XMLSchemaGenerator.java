@@ -32,10 +32,10 @@ public class XMLSchemaGenerator implements Generator {
 	 * @throws MainException	if there is a database connection error which occurred at any time during the XML Schema generation
 	 */
 	@Override
-	public void generate(String dbName, String fileName, ORASSNode root) throws MainException {
+	public void generate(String dbName, String fileName, List<ORASSNode> root) throws MainException {
 		setup(fileName);
 		
-		printDatabase(dbName, root);
+		printDatabase(dbName, root.get(0));
 		
 		finish();
 	}
@@ -127,7 +127,7 @@ public class XMLSchemaGenerator implements Generator {
 	 * @param root				the root of the ORASS model
 	 * @throws MainException	if failed to retrieve any information of the database due to a database connection error
 	 */
-	private void printDatabase(String dbName, ORASSNode root) {
+	private void printDatabase(String dbName, ORASSNode root) throws MainException {
 		
 		writer.println("<?xml version=\"1.0\"?>");
 		writer.println("<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"");
@@ -146,8 +146,9 @@ public class XMLSchemaGenerator implements Generator {
 		writer.println("\t\t\t</xs:sequence>");
 		writer.println("\t\t</xs:complexType>");
 
-		// keys, ref, unique
-		//printUniqueConstraints(root, 2);
+		printUniqueConstraints(root, 2);
+		printPrimaryKeys(root, 2);
+		//printForeignKeys(root, null, 2);
 		
 		writer.println("\t</xs:element>");
 		writer.println("</xs:schema>");
@@ -162,7 +163,7 @@ public class XMLSchemaGenerator implements Generator {
 	 */
 	private void printTables(ORASSNode node, int numOfTabs) {
 		
-		String tableName = node.getOriginalName();
+		String tableName = node.getName();
 		List<ORASSNode> children = node.getChildren();
 		Iterator<ORASSNode> itr  = children.iterator();
 		
@@ -183,6 +184,11 @@ public class XMLSchemaGenerator implements Generator {
 		
 	}
 	
+	/**
+	 * Print details of columns belonging to a table
+	 * @param columns		column details of the columns to be printed out
+	 * @param numOfTabs		number of tabs needed for the xs:element tag
+	 */
 	private void printColumns(List<ColumnDetail> columns, int numOfTabs) {
 		
 		Iterator<ColumnDetail> itr = columns.iterator();
@@ -230,7 +236,7 @@ public class XMLSchemaGenerator implements Generator {
 	 * @param sqlDataType	SQL data type of column
 	 * @param colDefault	SQL default value of column
 	 * @return				If 'colDefault' is null, return empty string.
-	 * 						Else returns a string in the form of " default = "*column_default_value*""
+	 * 						Else returns a string in the form of " default = "[column_default_value]""
 	 */
 	private String getColDefaultValuePrint(int sqlDataType, String colDefault) {
 		
@@ -257,67 +263,80 @@ public class XMLSchemaGenerator implements Generator {
 	}
 	
 	/**
-	 * Print XML schema for columns under unique constraint for each table, if any
-	 * @throws MainException	Unable to retrieve columns with unique constraint due to database connection error
+	 * Print unique constraints of a table name corresponding to the node
+	 * @param node				a node from ORASS model
+	 * @param numOfTabs			number of tabs needed for the xs:unique tag
+	 * @throws MainException	if failed to retrieve unique constraints of a table due to database connection error
 	 */
 	private void printUniqueConstraints(ORASSNode node, int numOfTabs) throws MainException {
-		Iterator<String> tableNamesItr = dbAccess.getTableNames().iterator();
+		String tableName = node.getName();
 		
-		while(tableNamesItr.hasNext()) {
-			String tableName = tableNamesItr.next();
-			List<String> uniqueCols = dbAccess.getUniqueColumns(tableName);
-			
-			writer.println("\t\t<xs:unique name=\""+tableName+"Uniq"+"\">");
-			writer.println("\t\t\t<xs:selector xpath=\".//"+tableName+"\"/>");
-			
-			Iterator<String> uniqueColsItr = uniqueCols.iterator();
-			while(uniqueColsItr.hasNext()) {
-				writer.println("\t\t\t<xs:field xpath=\""+uniqueColsItr.next()+"\"/>");
-			}
-			
-			writer.println("\t\t</xs:unique>");
+		writer.println(getTabs(numOfTabs)     + "<xs:unique name=\""+tableName+"Uniq"+"\">");
+		writer.println(getTabs(numOfTabs + 1) + "<xs:selector xpath=\".//"+tableName+"\"/>");
+		
+		List<ColumnDetail> cols = node.getAttributes();
+		Iterator<ColumnDetail> colsItr = cols.iterator();
+		while(colsItr.hasNext()) {
+			ColumnDetail column = colsItr.next();
+			if (column.isUnique())
+				writer.println(getTabs(numOfTabs + 1) + "<xs:field xpath=\""+column.getName()+"\"/>");
+		}
+		
+		writer.println(getTabs(numOfTabs) + "</xs:unique>");
+		
+		List<ORASSNode> children = node.getChildren();
+		Iterator<ORASSNode> itr = children.iterator();
+		while(itr.hasNext()) {
+			ORASSNode child = itr.next();
+			printUniqueConstraints(child, numOfTabs);
 		}
 	}
 	
-
 	/**
-	 * Print XML schema for primary keys for each table
-	 * @throws MainException	when failed to retrieve primary keys
+	 * Print key constraints of a table name corresponding to the node
+	 * @param node				a node from ORASS model
+	 * @param numOfTabs			number of tabs needed for xs:key tag
+	 * @throws MainException	if failed to retrieve primary keys of a table due to database connection error
 	 */
-	/*
-	private void printPrimaryKeys() throws MainException {
-		Iterator<String> tableNamesItr = dbAccess.getTableNames().iterator();
+	private void printPrimaryKeys(ORASSNode node, int numOfTabs) throws MainException {
+		String tableName = node.getName();
+		List<String> primaryKeys = dbAccess.getPrimaryKeys(tableName);
 		
-		while(tableNamesItr.hasNext()) {
-			String tableName = tableNamesItr.next();
-			List<String> primaryKeys = dbAccess.getPrimaryKeys(tableName);
-			
-			writer.println("\t\t<xs:key name=\""+tableName+"PK"+"\">");
-			writer.println("\t\t\t<xs:selector xpath=\".//"+tableName+"\"/>");
-			
-			Iterator<String> primaryKeysItr = primaryKeys.iterator();
-			while(primaryKeysItr.hasNext()) {
-				writer.println("\t\t\t<xs:field xpath=\""+primaryKeysItr.next()+"\"/>");
-			}
-			
-			writer.println("\t\t</xs:key>");
+		writer.println(getTabs(numOfTabs)     + "<xs:key name=\""+tableName+"PK"+"\">");
+		writer.println(getTabs(numOfTabs + 1) + "<xs:selector xpath=\".//"+tableName+"\"/>");
+		
+		Iterator<String> primaryKeysItr = primaryKeys.iterator();
+		while(primaryKeysItr.hasNext()) {
+			writer.println(getTabs(numOfTabs + 1) + "<xs:field xpath=\""+primaryKeysItr.next()+"\"/>");
+		}
+		
+		writer.println(getTabs(numOfTabs) + "</xs:key>");
+		
+		List<ORASSNode> children = node.getChildren();
+		Iterator<ORASSNode> itr = children.iterator();
+		while(itr.hasNext()) {
+			ORASSNode child = itr.next();
+			printPrimaryKeys(child, numOfTabs);
 		}
 	}
-	*/
 	
-	/**
-	 * Print XML schema for foreign keys for each table, if any
-	 * @throws MainException	Unable to retrieve foreign keys due to database connection error
-	 */
 	/*
-	private void printForeignKeys() throws MainException {
-		Iterator<String> tableNamesItr = tableNames.iterator();
+	private void printForeignKeys(ORASSNode currNode, ORASSNode prevNode, int numOfTabs) throws MainException {
 		
-		while(tableNamesItr.hasNext()) {
-			String tableName = tableNamesItr.next();
-			CachedRowSet foreignKeys = dbAccess.getForeignKeys(tableName);
+		String pkTableName = "", currPKTableName = "", fkColName;
+		
+		if (prevNode != null) {
+			String currTableName = currNode.getName();
+			String prevTableName = prevNode.getName();
+			
+			CachedRowSet foreignKeys = dbAccess.getForeignKeys(currTableName);
+			while (foreignKeys.next()) {
+				pkTableName = foreignKeys.getString("PKTABLE_NAME");
+				
+			}
+		}
+		
 			boolean hasStarted = false;
-			String pkTableName = "", currPKTableName = "", fkColName;
 			
 			try {
 				while(foreignKeys.next()) {
