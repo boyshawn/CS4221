@@ -16,6 +16,7 @@ public class RDBToXML {
 	private DBConnector dbc = DBConnector.getInstance();
 	private ERDBuilder erdb;
 	private ORASSBuilder orassb;
+	private List<ORASSNode> orassRoot;
 	
 	public void connectToDB(String address, String port, String dbName, String username, String password) throws MainException {	
 		dbc.openConnection(address, port, dbName, username, password);
@@ -49,7 +50,8 @@ public class RDBToXML {
 	}
 	
 	public List<ORASSNode> buildORASS(ErdNode root) throws MainException {
-		return orassb.buildORASS(root);
+		orassRoot = orassb.buildORASS(root); 
+		return orassRoot;
 	}
 	
 	public Map<String, List<String>> getNaryRels() {
@@ -64,11 +66,11 @@ public class RDBToXML {
 	public void translateToXML(String dbName, String xmlFileName) throws MainException {
 		
 		XMLDataGenerator dataGen = new XMLDataGenerator();
-		dataGen.generate(dbName, xmlFileName);
+		dataGen.generate(dbName, xmlFileName, orassRoot);
 		
 		XMLSchemaGenerator schemaGen = new XMLSchemaGenerator();
 		
-		schemaGen.generate(dbName, xmlFileName);
+		schemaGen.generate(dbName, xmlFileName, orassRoot);
 		
 		dbc.closeConnection();	
 	}	
