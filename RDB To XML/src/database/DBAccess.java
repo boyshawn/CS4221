@@ -271,8 +271,4 @@ public class DBAccess {
 		}
 	}
 	
-	public CachedRowSet getCorrespondingData(String table1, , String value){
-		
-	}
-	
 }
