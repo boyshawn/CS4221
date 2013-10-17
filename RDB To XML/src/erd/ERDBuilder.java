@@ -240,15 +240,28 @@ public class ERDBuilder {
 			String s = erdRel.get(i);
 			for (int j = i + 1; j < erdRel.size(); j++) {
 				String curr = erdRel.get(j);
-				List<String> cycleToBeSplitted = isMatch(
+				List<String> cycleToBeSplit = isMatch(
 						relationshipTypes.get(s).getLinks(), relationshipTypes
 								.get(curr).getLinks());
-				if (cycleToBeSplitted != null) {
-					cycles.add(cycleToBeSplitted);
-					List<String> relInCycle = new ArrayList<String>();
-					relInCycle.add(s);
-					relInCycle.add(curr);
-					relationshipInCycle.add(relInCycle);
+				if (cycleToBeSplit != null) {
+					String e1 = cycleToBeSplit.get(0);
+					String e2 = cycleToBeSplit.get(1);
+					int sizeE1 = entityTypes.get(e1).getLinks().size();
+					int sizeE2 = entityTypes.get(e2).getLinks().size();
+					if (sizeE1 > 2 && sizeE2 == 2) {
+						//split E2
+						setEntityToBeSplitted(e2, -1);
+					} else if (sizeE1 == 2 && sizeE2 > 2) {
+						//split E1
+						setEntityToBeSplitted(e1, -1);
+					} else {
+						// if both entity have links or both does not have links
+						cycles.add(cycleToBeSplit);
+						List<String> relInCycle = new ArrayList<String>();
+						relInCycle.add(s);
+						relInCycle.add(curr);
+						relationshipInCycle.add(relInCycle);
+					}
 				}
 			}
 		}
@@ -281,11 +294,20 @@ public class ERDBuilder {
 		ErdNode new1 = new ErdNode(tableName + "1", tableName, ntype, att);
 		ErdNode new2 = new ErdNode(tableName + "2", tableName, ntype, att);
 
-		// change the link of the relationship in cycle
-		ErdNode relInCycle1 = relationshipTypes.get(relationshipInCycle.get(
-				index).get(0));
-		ErdNode relInCycle2 = relationshipTypes.get(relationshipInCycle.get(
-				index).get(1));
+		ErdNode relInCycle1;
+		ErdNode relInCycle2;
+		
+		if (index == -1) {
+			Vector<ErdNode> rel = n.getLinks();
+			relInCycle1 = rel.get(0);
+			relInCycle2 = rel.get(1);
+		} else {
+			// change the link of the relationship in cycle
+			relInCycle1 = relationshipTypes.get(relationshipInCycle.get(
+					index).get(0));
+			relInCycle2 = relationshipTypes.get(relationshipInCycle.get(
+					index).get(1));
+		}
 
 		try {
 			// remove links from relationship in cycle. connect them to the new entities
