@@ -16,6 +16,7 @@ public class ORASSNode {
 		name = n;
 		attributes = new ArrayList<ColumnDetail>();
 		originalName = originalTName;
+		relAttributes = new ArrayList<ColumnDetail>();
 	}
 	
 	public List<ORASSNode> getChildren(){

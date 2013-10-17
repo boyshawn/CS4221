@@ -11,6 +11,7 @@ import erd.*;
 import main.MainException;
 import database.DBAccess;
 import database.ColumnDetail;
+import org.apache.log4j.Logger;
 
 public class ORASSBuilder{
 	private Map<String, ErdNode> entities;
@@ -20,6 +21,7 @@ public class ORASSBuilder{
 	private Map<String, List<String>> nRels;
 	private Map<ORASSNode, ORASSNode> isaRels;
 	private DBAccess dbCache;
+	private Logger logger = Logger.getLogger(ORASSBuilder.class);
 	
 	public ORASSBuilder(Map<String, ErdNode> erdEntities, Map<String, ErdNode> erdRels) throws MainException{
 		entities = erdEntities;
@@ -100,6 +102,7 @@ public class ORASSBuilder{
 				processSpecialLinks(erNode, node);
 				ORASSNode child = processEntity(relatedNode);
 				node.addChildren(child);
+				logger.debug("add child " + child.getName() + " to " + tName);
 			} else { 
 				// The related node is a parent of a weak entity
 				processRelationship(relatedNode, node);
@@ -149,6 +152,7 @@ public class ORASSBuilder{
 				}
 			}
 		}
+		logger.debug("processed binary relationship " +  relName);
 	}
 	
 	/*
@@ -204,6 +208,7 @@ public class ORASSBuilder{
 			}
 			processedNodes.add(entityName);
 		}
+		logger.debug("processed n-ary relationship " +  relName);
 	}
 	
 	private void processSpecialLinks(ErdNode erdNode, ORASSNode child){
@@ -222,6 +227,7 @@ public class ORASSBuilder{
 			nodes.put(nodeName, node);
 		}
 		ORASSNode node = nodes.get(nodeName);
+		logger.debug("created node : " + nodeName);
 		return node;
 	}
 
