@@ -55,11 +55,12 @@ public class ERDBuilder {
 	}
 	
 	private ErdNode constructNode(String tableName) throws MainException {
-		
-		CachedRowSet foreignKeys = dbAccess.getForeignKeys(tableName);
-		Set<String> fkTableNames = new HashSet<String>();
-		List<String> fkColumns    = new ArrayList<String>();
-		
+
+		List<ColumnDetail> columns = dbAccess.getDetailsOfColumns(tableName);
+		CachedRowSet foreignKeys   = dbAccess.getForeignKeys(tableName);
+		Set<String> fkTableNames   = new HashSet<String>();
+		List<String> fkColumns     = new ArrayList<String>();
+	
 		// store all the table names that are being referenced by 'tableName' and all the foreign keys of 'tableName' 
 		try {
 			while(foreignKeys.next()) {
@@ -87,9 +88,8 @@ public class ERDBuilder {
 			fkTableName = fkTableNamesItr.next();
 			ErdNode fkNode = getErdNodeOfTable(fkTableName);
 			
-			List<String> columns = dbAccess.getAllColumns(tableName);
-			List<String> primaryKey = dbAccess.getPrimaryKeys(tableName);
-			boolean isReferenced = dbAccess.isBeingReferenced(tableName);
+			List<String> primaryKey    = dbAccess.getPrimaryKeys(tableName);
+			boolean isReferenced       = dbAccess.isBeingReferenced(tableName);
 			
 			// if a table's foreign keys reference 1 other table only and 
 			// the table is not being referenced by any other table and if
@@ -100,7 +100,7 @@ public class ERDBuilder {
 			// Note: cases 1,2 and 3 need not be checked for since they comprise of all possible ways
 			if (!isReferenced) {
 				
-				fkNode.addAttributes(dbAccess.getDetailsOfColumns(tableName));
+				fkNode.addAttributes(columns);
 				
 				if (fkNode.getErdNodeType() == ErdNodeType.ENTITY_TYPE || fkNode.getErdNodeType() == ErdNodeType.WEAK_ENTITY_TYPE)
 					entityTypes.put(tableName, fkNode);
@@ -110,27 +110,28 @@ public class ERDBuilder {
 				return fkNode;
 			}
 			
-			// if a table's foreign keys reference 1 other table only and 
-			// the table is being referenced by other table or it has prime attribute
-			// then the table is a weak entity 
-			// EX (foreign key is non prime) or ID (foreign key is proper subset of primary key)
-			else if ((isReferenced || columns.size() > primaryKey.size())){
-
-				ErdNode entity = new ErdNode(tableName, tableName, ErdNodeType.WEAK_ENTITY_TYPE, dbAccess.getDetailsOfColumns(tableName));
-				
+			// if a table's foreign keys reference 1 other table only and
+			// the table is being referenced by other table or it has non-prime attribute and
+			// foreign keys are non-prime and not nullable (EX) or is proper subset of primary key (ID)
+			// then the table is a weak entity
+			// else the table is an entity
+			else {
+				ErdNode entity;
+				if ((isReferenced || columns.size() > primaryKey.size()) && 
+					 ((!hasIntersection(fkColumns, primaryKey) && !isNullableSetOfCols(fkColumns, columns)) || isProperSubset(fkColumns, primaryKey)))
+					entity = new ErdNode(tableName, tableName, ErdNodeType.WEAK_ENTITY_TYPE, columns);
+				else
+					entity = new ErdNode(tableName, tableName, ErdNodeType.ENTITY_TYPE, columns);
 				entity.addLink(fkNode);
 				fkNode.addLink(entity);
 				entityTypes.put(tableName, entity);
 				return entity;
 			}
-			
-			else
-				throw new MainException("ERDBuilder error constructing node");
 		}
 		
 		// if a table's foreign keys references more than 1 tables, that table is a relationship type
 		else if (fkTableNames.size() > 1) {
-			ErdNode relationship = new ErdNode(tableName, tableName, ErdNodeType.RELATIONSHIP_TYPE, dbAccess.getDetailsOfColumns(tableName));
+			ErdNode relationship = new ErdNode(tableName, tableName, ErdNodeType.RELATIONSHIP_TYPE, columns);
 			
 			while(fkTableNamesItr.hasNext()) {
 				fkTableName = fkTableNamesItr.next();
@@ -165,6 +166,63 @@ public class ERDBuilder {
 			node = constructNode(tableName);
 		
 		return node;
+	}
+	
+	private boolean isProperSubset (List<String> subset, List<String> superset) {
+		
+		if (subset.size() >= superset.size())
+			return false;
+		
+		Iterator<String> itr = subset.iterator();
+		while (itr.hasNext()) {
+			String element = itr.next();
+			if (!superset.contains(element))
+				return false;
+		}
+		
+		return true;
+		
+	}
+	
+	/**
+	 * Checks against 'columnDetails' if all columns in 'columnNames' are nullable
+	 * @param columnNames		list of column names
+	 * @param columnDetails		list of column details
+	 * @return					true if all the column names in the 'columnNames' list
+	 */
+	private boolean isNullableSetOfCols(List<String> columnNames, List<ColumnDetail> columnDetails) {
+		Iterator<String> itr = columnNames.iterator();
+		while (itr.hasNext()) {
+			String name = itr.next();
+			Iterator<ColumnDetail> detailItr = columnDetails.iterator();
+			while (detailItr.hasNext()) {
+				ColumnDetail detail = detailItr.next();
+				if (detail.getName().equals(name)) {
+					if (!detail.isNullable())
+						return false;
+					break;
+				}
+			}
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * Checks if list1 and list2 have at least 1 similar element
+	 * @param list1		the 1st list
+	 * @param list2		the 2nd list
+	 * @return			true if the 2 lists have at least 1 similar element
+	 */
+	private boolean hasIntersection (List<String> list1, List<String> list2) {
+		Iterator<String> itr = list1.iterator();
+		while (itr.hasNext()) {
+			String element = itr.next();
+			if (list2.contains(element))
+				return true;
+		}
+		
+		return false;
 	}
 	
 	public Map<String, ErdNode> getEntityTypes() {

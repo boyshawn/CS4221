@@ -139,15 +139,13 @@ public class XMLSchemaGenerator implements Generator {
 		// root element of XML document is the database name
 		writer.println("\t<xs:element name=\""+dbName+"\">");
 		writer.println("\t\t<xs:complexType>");
-		writer.println("\t\t\t<xs:sequence>");
 		
-		printTables(root, 4);
+		printTables(root, 3);
 		
-		writer.println("\t\t\t</xs:sequence>");
 		writer.println("\t\t</xs:complexType>");
 
-		printUniqueConstraints(root, 2);
-		printPrimaryKeys(root, 2);
+		//printUniqueConstraints(root, 2);
+		//printPrimaryKeys(root, 2);
 		//printForeignKeys(root, null, 2);
 		
 		writer.println("\t</xs:element>");
@@ -169,16 +167,13 @@ public class XMLSchemaGenerator implements Generator {
 		
 		writer.println(getTabs(numOfTabs)     + "<xs:element name=\""+tableName+"\" minOccurs=\"1\" maxOccurs=\"unbounded\">");
 		writer.println(getTabs(numOfTabs + 1) + "<xs:complexType>");
-		writer.println(getTabs(numOfTabs + 2) + "<xs:sequence>");
-		
-		printColumns(node.getAttributes(), numOfTabs + 3);
+		printColumns(node.getAttributes(), numOfTabs + 2);
 		
 		while (itr.hasNext()) {
 			ORASSNode child = itr.next();
-			printTables(child, numOfTabs + 3);
+			printTables(child, numOfTabs + 2);
 		}
 		
-		writer.println(getTabs(numOfTabs + 2) + "</xs:sequence>");
 		writer.println(getTabs(numOfTabs + 1) + "</xs:complexType>");
 		writer.println(getTabs(numOfTabs)     + "</xs:element>");
 		
