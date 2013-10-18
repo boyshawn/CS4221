@@ -39,7 +39,7 @@ public class ORASSBuilder{
 	/*
 	 * This method takes in the root ERD node as input and returns the root of ORASS after processing all ERD nodes.
 	 * */
-	public ORASSNode buildORASS(ErdNode root) throws MainException {
+	public ORASSNode buildORASS(ErdNode root) throws Exception {
 		//List<ORASSNode> rootNodes = new ArrayList<ORASSNode>();
 		ORASSNode rootNode = processEntity(root);
 		//rootNodes.add(rootNode);
@@ -98,7 +98,7 @@ public class ORASSBuilder{
 	 * This method processes an ERD node that represents an entity. 
 	 * It returns the ORASS node that corresponds to this entity.
 	 * */
-	private ORASSNode processEntity(ErdNode erNode) throws MainException{
+	private ORASSNode processEntity(ErdNode erNode) throws Exception{
 		
 		String tName = erNode.getTableName();
 		logger.debug("process entity " +  tName);
@@ -116,7 +116,7 @@ public class ORASSBuilder{
 			if(!processedNodes.contains(relatedNode.getTableName())){
 				ErdNodeType nodeType = relatedNode.getErdNodeType();
 				if(nodeType == ErdNodeType.ENTITY_TYPE || nodeType == ErdNodeType.WEAK_ENTITY_TYPE){
-					processSpecialLinks(erNode, node);
+					//processSpecialLinks(erNode, node);
 					ORASSNode child = processEntity(relatedNode);
 					node.addChildren(child);
 					logger.debug("add child " + child.getName() + " to " + tName);
@@ -133,20 +133,30 @@ public class ORASSBuilder{
 	/*
 	 * Call handlers to process binary relationship and n-ary relationship.
 	 * */
-	private void processRelationship(ErdNode relNode, ORASSNode parent) throws MainException{
+	private ORASSNode processRelationship(ErdNode relNode, ORASSNode parent) throws MainException, Exception{
 		String relName = relNode.getTableName();
-		
+		ORASSNode processedNode;
 		if(nRels.containsKey(relName)){
 			// Relationship is an n-ary relationship
-			processNaryRel(relName, parent, nRels.get(relName));
+			processedNode = processNaryRel(relName, parent, nRels.get(relName));
 		}else{
 			// Relationship is binary
-			processBinaryRel(relName, parent);
+			processedNode = processBinaryRel(relName, parent);
 		}
+		List<ErdNode> links = relNode.getLinks();
+		for (int i= 0; i<links.size(); i++){
+			ErdNode relatedNode = links.get(i);
+			ErdNodeType nodeType = relatedNode.getErdNodeType();
+			if(nodeType == ErdNodeType.RELATIONSHIP_TYPE){
+				relatedNode.removeLink(relNode);
+				processRelationship(relatedNode, processedNode);
+			}
+		}
+		return processedNode;
 	}
 	
 
-	private void processBinaryRel(String relName, ORASSNode parent) throws MainException{
+	private ORASSNode processBinaryRel(String relName, ORASSNode parent) throws Exception{
 		Vector<ErdNode> links = rels.get(relName).getLinks(); // links should have only 2 elements
 		
 		if (links.size() > 2){
@@ -172,6 +182,7 @@ public class ORASSBuilder{
 				}
 			}
 		}
+		return parent;
 		//logger.debug("processed binary relationship " +  relName);
 	}
 	
@@ -193,11 +204,11 @@ public class ORASSBuilder{
 	/*
 	 * Returns the last ORASSNode in the Nary relationship
 	 * */
-	private void processNaryRel(String relName, ORASSNode parent, List<String> entityOrder) throws MainException{
+	private ORASSNode processNaryRel(String relName, ORASSNode parent, List<String> entityOrder) throws Exception{
 		ORASSNode node1 = parent;
 		for (int i = 0; i< entityOrder.size(); i++){
 			String entityName = entityOrder.get(i);
-
+			logger.debug("process n-ary entity " + entityName);
 			/*if (i==0 && entityName != parent.getName()){
 				throw new MainException("The parent of N-ary relationship "+ relName+" is inconsistent with the order of the entities specified by the user");
 			}*/
@@ -207,23 +218,24 @@ public class ORASSBuilder{
 			for(int j=0; j < links.size(); j++){
 				ErdNode relatedNode = links.get(j);
 				if(!relatedNode.getTableName().equals(relName)){
-					if(!processedNodes.contains(relatedNode.getTableName())){
 						ErdNodeType nodeType = relatedNode.getErdNodeType();
 						if(nodeType == ErdNodeType.ENTITY_TYPE || nodeType == ErdNodeType.WEAK_ENTITY_TYPE){
-							ORASSNode child = processEntity(relatedNode);
-							node1.addChildren(child);
-							logger.debug("add child " + child.getName() + " to " + entityName);
+							if(!processedNodes.contains(relatedNode.getTableName())){
+								ORASSNode child = processEntity(relatedNode);
+								node1.addChildren(child);
+								logger.debug("add child " + child.getName() + " to " + entityName);
+							}
 						} else { // The related node is a parent of a weak entity
 							processRelationship(relatedNode, node1);
 						}
-					}
+					
 				}
 			}
 			// process the n-ary rel link
 			if(i<entityOrder.size()-1){
 				// If the node is not the last entity in the n-ary relationship
 				String nextEntity = entityOrder.get(i+1);
-				logger.debug("process n-ary entity " + nextEntity);
+			
 				ORASSNode node2 = createORASSNode(nextEntity, erdnodes.get(nextEntity).getOriginalTableName());
 				List<ColumnDetail> attrs = erdnodes.get(nextEntity).getAttributes();
 				for(int j=0; j<attrs.size(); j++){
@@ -233,6 +245,7 @@ public class ORASSBuilder{
 				node1.addChildren(node2);
 				node1.addChildRelation(node2, rels.get(relName).getOriginalTableName());
 				logger.debug("add child " + node2.getName() + " to " + node1.getName());
+				processedNodes.add(node2.getName());
 				node1 = node2;
 			} else{
 				// Add the attributes of the N-ary relationship to the last entity in the entity list
@@ -241,9 +254,10 @@ public class ORASSBuilder{
 			processedNodes.add(entityName);
 		}
 		logger.debug("processed n-ary relationship " +  relName);
+		return parent;
 	}
 	
-	private void processSpecialLinks(ErdNode erdNode, ORASSNode child){
+	/*private void processSpecialLinks(ErdNode erdNode, ORASSNode child){
 		ORASSNode parent;
 		Vector<ErdNode> specialLinks = erdNode.getSpecialLinks();
 		for(int i=0; i<specialLinks.size(); i++){
@@ -251,7 +265,7 @@ public class ORASSBuilder{
 			parent = createORASSNode(parentName, specialLinks.get(i).getOriginalTableName());
 			isaRels.put(child, parent);
 		}
-	}
+	}*/
 	
 	private ORASSNode createORASSNode (String nodeName, String originalName){
 		if(!nodes.containsKey(nodeName)){

@@ -34,6 +34,7 @@ public class XMLDataGenerator implements Generator {
 	private PrintWriter writer;
 	private List<String> tables;
 	private List<NodeRelationship> relationships;
+	private Map<String, List<String>>  keyMaps;
 	//private Map<String, List<ORASSNode>> nRels;
 	private Logger logger = Logger.getLogger(ORASSBuilder.class);
 	
@@ -48,7 +49,7 @@ public class XMLDataGenerator implements Generator {
 		tables = new ArrayList<String>();
 		relationships = new ArrayList<NodeRelationship>();
 		setupTables(root);
-
+		
 		setupFile(dbName, fileName);
 		printDB(dbName, fileName, root);
 		writer.close();
@@ -86,14 +87,58 @@ public class XMLDataGenerator implements Generator {
 		writer.println("xsi:schemaLocation=\""+filename+".xsd\">");
 		//Map<String, List<String>> keyMaps = new HashMap<String, List<String>>();
 		//printNode(root, 1, null, true, keyMaps);
-		
+		ResultSet results = setupData();
+		try{
+			while(results.next()){
+				for(int i=0; i<tables.size(); i++){
+					String tableName = tables.get(i);
+					List<String> pkCols = keyMaps.get(tableName);
+					List<String> pkVals = new ArrayList<String>();
+					for(int j = 0; j<pkCols.size(); j++){
+						pkVals.add(results.getString(pkCols.get(j)));
+					}
+					
+				}
+				
+			}
+		}catch(Exception ex){
+
+		}
 		writer.println("</"+dbName+">");
 	}
 	
+	private void printTable(ORASSNode node, CachedRowSet data, List<String> prevKeyVals, int indention) throws MainException{
+		try{
+			String tableName = node.getOriginalName();
+			List<String> cols = dbCache.getAllColumns(tableName);
+			printTabs(indention);
+			writer.println("<"+tableName+">");
+			for(int i=0;i<cols.size();i++){
+				String colName = cols.get(i);
+				String nextData = data.getString(colName);
+				printTabs(indention+1);
+				if (data.wasNull()){
+					writer.print("<"+colName);
+					writer.print(" xsi:nil=\"true\">");
+				}else{
+					writer.print("<"+colName+">"+nextData);
+				}
+				writer.println("</"+colName+">");
+			}
+			List<ORASSNode> children=
+			printTable(tables.get(tableIndex))
+			printTabs(indention);
+			writer.println("</"+tableName+">");
+		}catch(SQLException ex){
+			throw new MainException("Print table " + tableName);
+		}
+	}
 	
 	private void setupTables(ORASSNode parent) throws MainException{
 		String tName = parent.getOriginalName();
 		tables.add(tName);
+		List<String> pks =dbCache.getPrimaryKeys(tName);
+		keyMaps.put(tName, pks);
 		List<ORASSNode> children = parent.getChildren();
 		for(int i = 0; i<children.size(); i++){
 			ORASSNode child = children.get(i);
@@ -149,8 +194,10 @@ public class XMLDataGenerator implements Generator {
 						}
 						
 						NodeRelationship rel = new NodeRelationship(table1, table2, pkList, fkList);
+						relationships.add(rel);
 					}else{
 						NodeRelationship rel = new NodeRelationship(table1, table2, fkList, pkList);
+						relationships.add(rel);
 					}
 					
 				}catch(SQLException ex){
@@ -161,8 +208,8 @@ public class XMLDataGenerator implements Generator {
 		}
 	}
 	
-	private void setupData(){
-		
+	private ResultSet setupData(){
+		return null;
 	}
 	/*private void printNode(ORASSNode node, int indention, CachedRowSet prevData, boolean isRoot, Map<String, List<String>> keyMaps) throws MainException{
 		String entityName = node.getOriginalName();
