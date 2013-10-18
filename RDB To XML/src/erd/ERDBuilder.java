@@ -320,10 +320,6 @@ public class ERDBuilder {
 			new1.addLink(relInCycle1);
 			new2.addLink(relInCycle2);
 			
-			// add special link from new entities to the superclass - n
-			new1.addSpecialLink(n);
-			new2.addSpecialLink(n);
-			
 			// remove links from n that are connected to relationship in cycle.
 			n.removeLink(relInCycle1);
 			n.removeLink(relInCycle2);
