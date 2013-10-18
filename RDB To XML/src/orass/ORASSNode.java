@@ -46,6 +46,7 @@ public class ORASSNode {
 			attributes.add(attr);
 		}
 	}
+
 	/*public void addRelAttribute(ColumnDetail attr){
 		if(!relAttributes.contains(attr)){
 			relAttributes.add(attr);
