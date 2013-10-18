@@ -1,10 +1,5 @@
 package erd;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -56,8 +51,6 @@ public class ERDBuilder {
 			}
 			
 		}
-		
-		//testErdBuilder(); // remove before submission
 		
 	}
 	
@@ -327,10 +320,6 @@ public class ERDBuilder {
 			new1.addLink(relInCycle1);
 			new2.addLink(relInCycle2);
 			
-			// add special link from new entities to the superclass - n
-			new1.addSpecialLink(n);
-			new2.addSpecialLink(n);
-			
 			// remove links from n that are connected to relationship in cycle.
 			n.removeLink(relInCycle1);
 			n.removeLink(relInCycle2);
@@ -341,87 +330,5 @@ public class ERDBuilder {
 			e.printStackTrace();
 		}
 	}
-	
-	/*
-	private void testErdBuilder() throws MainException {
-		
-		String fileName = "/Users/Janice/Desktop/erdgraph.dot";
-		File file = new File(fileName);
-		
-		try {
-			if (file.exists()) {
-				file.delete();
-			}
-			file.createNewFile();
 
-			PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(file, false)), true);
-			
-			printGraph(writer);
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new MainException("Unable to open test ERD builder file " + fileName);
-		}
-		
-	}
-	
-	private void printGraph(PrintWriter writer) {
-	
-		Set<String> entityNames                = entityTypes.keySet();
-		Set<String> relationshipNames          = relationshipTypes.keySet();
-		Iterator<String> itr;
-		
-		writer.println("digraph G {");
-		writer.println("\tedge [arrowhead=none];");
-		
-		// initialize all entity types in graph
-		itr = entityNames.iterator();
-		while(itr.hasNext()) {
-			String entityName = itr.next();
-			ErdNode node = entityTypes.get(entityName);
-			// create node for entity
-			if (node.getErdNodeType() == ErdNodeType.ENTITY_TYPE)
-				writer.println("\t" + entityName + "[shape=box];");
-			else if (node.getErdNodeType() == ErdNodeType.WEAK_ENTITY_TYPE)
-				writer.println("\t" + entityName + "[shape=Msquare];");
-			
-		}
-		
-		// intialize all relationships in graph
-		itr = relationshipNames.iterator();
-		while(itr.hasNext()) {
-			String relationshipName = itr.next();
-			// create node for entity
-			writer.println("\t" + relationshipName + "[shape=diamond];");
-			
-		}
-		
-		// link
-		itr = entityNames.iterator();
-		while(itr.hasNext()) {
-			String entityName = itr.next();
-			ErdNode node = entityTypes.get(entityName);
-			Vector<ErdNode> links = node.getLinks();
-			
-			for (int i=0; i<links.size(); ++i) {
-				node = links.get(i);
-				writer.println("\t" + entityName + "->" + node.getTableName() + ";");
-			}
-		}
-		
-		itr = relationshipNames.iterator();
-		while(itr.hasNext()) {
-			String relationshipName = itr.next();
-			ErdNode node = relationshipTypes.get(relationshipName);
-			Vector<ErdNode> links = node.getLinks();
-			
-			for (int i=0; i<links.size(); ++i) {
-				node = links.get(i);
-				writer.println("\t" + relationshipName + "->" + node.getTableName() + ";");
-			}
-		}
-		
-		writer.println("}");
-	}
-	*/
 }
