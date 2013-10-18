@@ -148,8 +148,8 @@ public class XMLSchemaGenerator implements Generator {
 		//printPrimaryKeys(root, 2);
 		//printForeignKeys(root, null, 2);
 		
-		writer.println();
 		writer.println("\t</xs:element>");
+		writer.println();
 		writer.println("</xs:schema>");
 		
 	}
