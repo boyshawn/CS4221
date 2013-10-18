@@ -44,16 +44,6 @@ public class ORASSBuilder{
 		ORASSNode rootNode = processEntity(root);
 		//rootNodes.add(rootNode);
 		// Check and process unlinked nodes
-		/*while (processedNodes.size()<entities.size()){
-			for(int i=0; i<entities.size();i++){
-				ErdNode erNode = entities.get(i);
-				String tName = erNode.getTableName();
-				if(!processedNodes.contains(tName)){
-					ORASSNode unlinkedNode = processEntity(erNode);
-					rootNodes.add(unlinkedNode);
-				}
-			}
-		}*/
 		return rootNode;
 	}
 	
@@ -116,7 +106,7 @@ public class ORASSBuilder{
 		List<ColumnDetail> attrs = erNode.getAttributes();
 		for(int j=0; j<attrs.size(); j++){
 			node.addAttribute(attrs.get(j));
-			logger.debug("add attribute " + attrs.get(j).getName() + " to " + tName);
+			//logger.debug("add attribute " + attrs.get(j).getName() + " to " + tName);
 		}
 		processedNodes.add(tName);
 
@@ -195,7 +185,7 @@ public class ORASSBuilder{
 			List<String> foreignKeys = dbCache.getNamesOfForeignKeys(relName);
 			if(!foreignKeys.contains(col.getName())){
 				entityNode.addAttribute(col);
-				logger.debug("add attribute " + col.getName() + " to " + entityNode.getOriginalName());
+				//logger.debug("add attribute " + col.getName() + " to " + entityNode.getOriginalName());
 			}
 		}
 	}
@@ -238,7 +228,7 @@ public class ORASSBuilder{
 				List<ColumnDetail> attrs = erdnodes.get(nextEntity).getAttributes();
 				for(int j=0; j<attrs.size(); j++){
 					node2.addAttribute(attrs.get(j));
-					logger.debug("add attribute " + attrs.get(j).getName() + " to " + nextEntity);
+					//logger.debug("add attribute " + attrs.get(j).getName() + " to " + nextEntity);
 				}
 				node1.addChildren(node2);
 				node1.addChildRelation(node2, rels.get(relName).getOriginalTableName());
