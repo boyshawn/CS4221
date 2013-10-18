@@ -72,4 +72,8 @@ public class RDBToXML {
 		dataGen.generate(dbName, xmlFileName, orassRoot);
 		dbc.closeConnection();	
 	}	
+	
+	public void closeConnection() throws MainException {
+		dbc.closeConnection();
+	}
 }

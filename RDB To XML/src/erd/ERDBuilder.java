@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.util.logging.Logger;
 
 import javax.sql.rowset.CachedRowSet;
 
@@ -97,8 +98,7 @@ public class ERDBuilder {
 			// 2) foreign key is the primary key (1:m attribute) or
 			// 3) foreign key is non-prime (optional m:1 attribute)
 			// then the table is of the same entity type as the table its foreign keys references to (merge both entities)
-			// Note: cases 1,2 and 3 need not be checked for since they comprise of all possible ways
-			if (!isReferenced) {
+			if (!isReferenced && (columns.size() == primaryKey.size() || isEqual(fkColumns, primaryKey) || !hasIntersection(fkColumns, primaryKey))) {
 				
 				fkNode.addAttributes(columns);
 				
@@ -208,6 +208,21 @@ public class ERDBuilder {
 		return true;
 	}
 	
+	private boolean isEqual(List<String> list1, List<String> list2) {
+		Iterator<String> itr1 = list1.iterator();
+		
+		if (list1.size() != list2.size())
+			return false;
+		
+		while(itr1.hasNext()) {
+			String element1 = itr1.next();
+			if(!list2.contains(element1))
+				return false;
+		}
+		
+		return true;
+	}
+	
 	/**
 	 * Checks if list1 and list2 have at least 1 similar element
 	 * @param list1		the 1st list
@@ -265,7 +280,7 @@ public class ERDBuilder {
 				}
 			}
 		}
-		return relationshipInCycle;
+		return cycles;
 	}
 
 	// return a list of entities where the cycle exists
