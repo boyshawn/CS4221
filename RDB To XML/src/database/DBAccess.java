@@ -19,6 +19,8 @@ import main.MainException;
 
 import org.apache.log4j.Logger;
 
+import xml.NodeRelationship;
+
 import com.sun.rowset.CachedRowSetImpl;
 
 public class DBAccess {
@@ -208,14 +210,71 @@ public class DBAccess {
 			throw new MainException("Failed to get the names of foreign keys for " + tableName);
 		}
 	}
-	/*
-	public ResultSet joinTables(List<String> fromTables, List<NodeRelationship> whereClause, Map<String,List<String>> orderBy) {
+	
+	public ResultSet joinTables(List<String> fromTables, List<NodeRelationship> whereClause, Map<String,List<String>> orderBy) throws MainException {
 		String query = "";
 		
-		query += "SELECT * FROM "
+		query += "SELECT * FROM ";
+		
+		Iterator<String> itr = fromTables.iterator();
+		while (itr.hasNext()) {
+			String table = itr.next();
+			query += table;
+			// if it is not the last table
+			if (itr.hasNext())
+				query += ",";
+			
+		}
+		
+		// process where clause
+		query += " WHERE ";
+		Iterator<NodeRelationship> nrItr = whereClause.iterator();
+		while (nrItr.hasNext()) {
+			NodeRelationship nodeRel = nrItr.next();
+			query += nodeRel.getTable1() + "." + nodeRel.getCols1() + "=" + nodeRel.getTable2() + "." + nodeRel.getCols2();
+			// if it is not the last where clause
+			if (nrItr.hasNext())
+				query += " AND ";
+		}
+		
+		// process order by clause
+		query += " ORDER BY ";
+		itr = fromTables.iterator();
+		while (itr.hasNext()) {
+			String table = itr.next();
+			List<String> columnsToOrder = orderBy.get(table);
+			Iterator<String> colItr = columnsToOrder.iterator();
+			while (colItr.hasNext()) {
+				String column = colItr.next();
+				query += table + "." + column;
+				// if it is not the last column of the last table to order by
+				if (colItr.hasNext() || itr.hasNext())
+					query += ",";
+				else
+					query += ";";
+			}
+		}
+		
+		logger.debug("Query to execute : " + query);
+		return executeQuery(query);
 		
 	}
-	*/
+	
+	private ResultSet executeQuery(String query) throws MainException {
+		
+		try {
+			Statement stmt = dbConnection.createStatement();
+			ResultSet results = stmt.executeQuery(query);
+			return results;
+			
+		} catch(SQLException e){
+			e.printStackTrace();
+			throw new MainException("Exception when executing the query : " + query + "\nException message : " +e.getMessage());
+			
+		}
+		
+	}
+	
 	public CachedRowSet getData(String tableName) throws MainException {
 		try{
 			Statement stmt = null;
