@@ -125,12 +125,12 @@ public class XMLDataGenerator implements Generator {
 				}
 				writer.println("</"+colName+">");
 			}
-			List<ORASSNode> children=
-			printTable(tables.get(tableIndex))
+			//List<ORASSNode> children=
+			//printTable(tables.get(tableIndex))
 			printTabs(indention);
 			writer.println("</"+tableName+">");
 		}catch(SQLException ex){
-			throw new MainException("Print table " + tableName);
+			throw new MainException("Print table " + node.getOriginalName());
 		}
 	}
 	

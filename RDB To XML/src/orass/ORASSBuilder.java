@@ -39,7 +39,7 @@ public class ORASSBuilder{
 	/*
 	 * This method takes in the root ERD node as input and returns the root of ORASS after processing all ERD nodes.
 	 * */
-	public ORASSNode buildORASS(ErdNode root) throws Exception {
+	public ORASSNode buildORASS(ErdNode root) throws MainException {
 		//List<ORASSNode> rootNodes = new ArrayList<ORASSNode>();
 		ORASSNode rootNode = processEntity(root);
 		//rootNodes.add(rootNode);
@@ -98,7 +98,7 @@ public class ORASSBuilder{
 	 * This method processes an ERD node that represents an entity. 
 	 * It returns the ORASS node that corresponds to this entity.
 	 * */
-	private ORASSNode processEntity(ErdNode erNode) throws Exception{
+	private ORASSNode processEntity(ErdNode erNode) throws MainException{
 		
 		String tName = erNode.getTableName();
 		logger.debug("process entity " +  tName);
@@ -133,7 +133,7 @@ public class ORASSBuilder{
 	/*
 	 * Call handlers to process binary relationship and n-ary relationship.
 	 * */
-	private ORASSNode processRelationship(ErdNode relNode, ORASSNode parent) throws MainException, Exception{
+	private ORASSNode processRelationship(ErdNode relNode, ORASSNode parent) throws MainException{
 		String relName = relNode.getTableName();
 		ORASSNode processedNode;
 		if(nRels.containsKey(relName)){
@@ -143,7 +143,7 @@ public class ORASSBuilder{
 			// Relationship is binary
 			processedNode = processBinaryRel(relName, parent);
 		}
-		List<ErdNode> links = relNode.getLinks();
+		/*List<ErdNode> links = relNode.getLinks();
 		for (int i= 0; i<links.size(); i++){
 			ErdNode relatedNode = links.get(i);
 			ErdNodeType nodeType = relatedNode.getErdNodeType();
@@ -151,12 +151,12 @@ public class ORASSBuilder{
 				relatedNode.removeLink(relNode);
 				processRelationship(relatedNode, processedNode);
 			}
-		}
+		}*/
 		return processedNode;
 	}
 	
 
-	private ORASSNode processBinaryRel(String relName, ORASSNode parent) throws Exception{
+	private ORASSNode processBinaryRel(String relName, ORASSNode parent) throws MainException{
 		Vector<ErdNode> links = rels.get(relName).getLinks(); // links should have only 2 elements
 		
 		if (links.size() > 2){
@@ -204,7 +204,7 @@ public class ORASSBuilder{
 	/*
 	 * Returns the last ORASSNode in the Nary relationship
 	 * */
-	private ORASSNode processNaryRel(String relName, ORASSNode parent, List<String> entityOrder) throws Exception{
+	private ORASSNode processNaryRel(String relName, ORASSNode parent, List<String> entityOrder) throws MainException{
 		ORASSNode node1 = parent;
 		for (int i = 0; i< entityOrder.size(); i++){
 			String entityName = entityOrder.get(i);
