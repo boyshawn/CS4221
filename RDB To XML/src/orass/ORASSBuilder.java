@@ -67,7 +67,10 @@ public class ORASSBuilder{
 			if (links.size()>2){
 				List<String> relatedEntities = new ArrayList<String>();
 				for(int i = 0; i <links.size(); i++){
-					relatedEntities.add(links.get(i).getTableName());
+					String tName = links.get(i).getTableName();
+					if(entities.keySet().contains(tName)){
+						relatedEntities.add(tName);
+					}
 				}
 				nRels.put(relName, relatedEntities);
 			}
@@ -125,6 +128,7 @@ public class ORASSBuilder{
 				if(nodeType == ErdNodeType.ENTITY_TYPE || nodeType == ErdNodeType.WEAK_ENTITY_TYPE){
 					processSpecialLinks(erNode, node);
 					ORASSNode child = processEntity(relatedNode);
+					node.addChildren(child);
 					logger.debug("add child " + child.getName() + " to " + tName);
 				} else { 
 					// The related node is a parent of a weak entity
@@ -171,7 +175,7 @@ public class ORASSBuilder{
 					// Add the related entity as a child of the parent
 					parent.addChildren(child);
 					parent.addChildRelation(child, rels.get(relName).getOriginalTableName());
-					logger.debug("add child " + child.getName() + " to " + parent);
+					logger.debug("add child " + child.getName() + " to " + parent.getName());
 				}else {
 					// Relationship is related to a relationship ==> Aggregation
 					processRelationship(relatedNode, parent);
