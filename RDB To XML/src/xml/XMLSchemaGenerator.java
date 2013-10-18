@@ -166,7 +166,7 @@ public class XMLSchemaGenerator implements Generator {
 		List<ORASSNode> children = node.getChildren();
 		Iterator<ORASSNode> itr  = children.iterator();
 		
-		writer.println(getTabs(numOfTabs)     + "<xs:element name=\""+tableName+"\" minOccurs=\"1\" maxOccurs=\"unbounded\">");
+		writer.println(getTabs(numOfTabs)     + "<xs:element name=\""+tableName+"\" minOccurs=\"0\" maxOccurs=\"unbounded\">");
 		writer.println(getTabs(numOfTabs + 1) + "<xs:complexType>");
 		printColumns(node.getAttributes(), numOfTabs + 2);
 		
