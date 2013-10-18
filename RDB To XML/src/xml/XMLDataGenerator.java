@@ -17,14 +17,13 @@ import java.util.HashMap;
 import javax.sql.rowset.CachedRowSet;
 //import javax.sql.rowset.JoinRowSet;
 
-import org.apache.log4j.Logger;
+//import org.apache.log4j.Logger;
 
 import main.MainException;
 import database.DBAccess;
-import orass.ORASSBuilder;
 import orass.ORASSNode;
 import database.ColumnDetail;
-import com.sun.rowset.CachedRowSetImpl;
+
 
 
 public class XMLDataGenerator implements Generator {
@@ -35,12 +34,8 @@ public class XMLDataGenerator implements Generator {
 	private List<String> tables;
 	private List<NodeRelationship> relationships;
 	private Map<String, List<String>>  keyMaps;
-	//private Map<String, List<ORASSNode>> nRels;
-	private Logger logger = Logger.getLogger(ORASSBuilder.class);
-	
-	/*public void setNaryRels(Map<String, List<ORASSNode>> naryRels){
-		nRels = naryRels;
-	}*/
+	//private Logger logger = Logger.getLogger(ORASSBuilder.class);
+
 	
 	@Override
 	public void generate(String dbName, String fileName, ORASSNode root) throws MainException {
@@ -48,6 +43,7 @@ public class XMLDataGenerator implements Generator {
 		dbCache = DBAccess.getInstance();
 		tables = new ArrayList<String>();
 		relationships = new ArrayList<NodeRelationship>();
+		keyMaps = new HashMap<String, List<String>>();
 		setupTables(root);
 		
 		setupFile(dbName, fileName);
@@ -90,43 +86,81 @@ public class XMLDataGenerator implements Generator {
 		ResultSet results = setupData();
 		try{
 			while(results.next()){
-				for(int i=0; i<tables.size(); i++){
-					String tableName = tables.get(i);
-					List<String> pkCols = keyMaps.get(tableName);
-					List<String> pkVals = new ArrayList<String>();
-					for(int j = 0; j<pkCols.size(); j++){
-						pkVals.add(results.getString(pkCols.get(j)));
-					}
-					
-				}
-				
+				String tableName = root.getOriginalName();
+				List<String> pkVals = getPKValues(tableName, results);
+				printTable(root, results, pkVals, 1);
 			}
-		}catch(Exception ex){
-
+		}catch(SQLException ex){
+			throw new MainException("Error in printing DB " + dbName + ex.getMessage());
 		}
 		writer.println("</"+dbName+">");
 	}
 	
-	private void printTable(ORASSNode node, CachedRowSet data, List<String> prevKeyVals, int indention) throws MainException{
+	private List<String> getPKValues(String tableName, ResultSet data) throws MainException{
+		List<String> pkVals = new ArrayList<String>();
+		try{
+			List<String> pkCols = keyMaps.get(tableName);
+			
+			for(int j = 0; j<pkCols.size(); j++){
+				pkVals.add(data.getString(pkCols.get(j)));
+			}
+			
+		}catch(SQLException ex){
+			throw new MainException("Error in getting primary key values for "+tableName + " : " + ex.getMessage());
+		}
+		return pkVals;
+	}
+	
+	private boolean isValsEqual(List<String> vals1, List<String> vals2) throws MainException{
+		boolean isEqual = true;
+		if(vals1.size()!=vals2.size()){
+			throw new MainException("The number of primary key values are not consistent.");
+		}
+		for(int i= 0; i<vals1.size(); i++){
+			String val1 = vals1.get(i);
+			String val2 = vals2.get(i);
+			if(val1.equals(val2)){
+				isEqual=false;
+			}
+		}
+		return isEqual;
+	}
+	
+	private List<String> getColNames(ORASSNode node){
+		List<String> cols = new ArrayList<String>();
+		List<ColumnDetail> colDetails  = node.getAttributes();
+		for(int i= 0; i<colDetails.size();i++){
+			cols.add(colDetails.get(i).getName());
+		}
+		return cols;
+	}
+	private void printTable(ORASSNode node, ResultSet data, List<String> prevKeyVals, int indention) throws MainException{
 		try{
 			String tableName = node.getOriginalName();
-			List<String> cols = dbCache.getAllColumns(tableName);
-			printTabs(indention);
-			writer.println("<"+tableName+">");
-			for(int i=0;i<cols.size();i++){
-				String colName = cols.get(i);
-				String nextData = data.getString(colName);
-				printTabs(indention+1);
-				if (data.wasNull()){
-					writer.print("<"+colName);
-					writer.print(" xsi:nil=\"true\">");
-				}else{
-					writer.print("<"+colName+">"+nextData);
+			List<String> cols = getColNames(node);
+			List<String> currKeyVals = getPKValues(tableName, data);
+			if(!isValsEqual(prevKeyVals, currKeyVals)){
+				printTabs(indention);
+				writer.println("<"+tableName+">");
+				for(int i=0;i<cols.size();i++){
+					String colName = cols.get(i);
+					String nextData = data.getString(colName);
+					printTabs(indention+1);
+					if (data.wasNull()){
+						writer.print("<"+colName);
+						writer.print(" xsi:nil=\"true\">");
+					}else{
+						writer.print("<"+colName+">"+nextData);
+					}
+					writer.println("</"+colName+">");
 				}
-				writer.println("</"+colName+">");
 			}
-			//List<ORASSNode> children=
-			//printTable(tables.get(tableIndex))
+			List<ORASSNode> children = node.getChildren();
+			for(int i=0; i<children.size(); i++){
+				ORASSNode child = children.get(i);
+				List<String> pkList = getPKValues(child.getOriginalName(),data);
+				printTable(child, data, pkList, indention+1);
+			}
 			printTabs(indention);
 			writer.println("</"+tableName+">");
 		}catch(SQLException ex){
@@ -144,6 +178,9 @@ public class XMLDataGenerator implements Generator {
 			ORASSNode child = children.get(i);
 			if(parent.hasRelation(child)){
 				String relName = parent.getRelation(child);
+				if(!tables.contains(relName)){
+					tables.add(relName);
+				}
 				CachedRowSet relFK = dbCache.getForeignKeys(relName);
 				try{
 					List<String> pkCols = new ArrayList<String>();
@@ -208,214 +245,9 @@ public class XMLDataGenerator implements Generator {
 		}
 	}
 	
-	private ResultSet setupData(){
-		return null;
-	}
-	/*private void printNode(ORASSNode node, int indention, CachedRowSet prevData, boolean isRoot, Map<String, List<String>> keyMaps) throws MainException{
-		String entityName = node.getOriginalName();
-		
-		try{
-			CachedRowSet crs = new CachedRowSetImpl();
-		if(isRoot){
-			crs = dbCache.getData(entityName);
-			ResultSet copiedData = crs.createShared();
-			prevData = new CachedRowSetImpl();
-			prevData.populate(copiedData);
-		} else {
-			logger.debug("ere");
-			if(prevData.size()==0) return;
-			crs = prevData;
-			logger.debug("number of related data: "+prevData.size());
-		}
-
-		List<String> cols = dbCache.getAllColumns(entityName);
-		
-		
-			while(crs.next()){
-				printTabs(indention);
-				writer.println("<"+entityName+">");
-				// Print columns belonging to this entity
-				for(int i=0;i<cols.size();i++){
-					String colName = cols.get(i);
-					String nextData = crs.getString(colName);
-					printTabs(indention+1);
-					if (crs.wasNull()){
-						writer.print("<"+colName);
-						writer.print(" xsi:nil=\"true\">");
-					}else{
-						writer.print("<"+colName+">"+nextData);
-					}
-					writer.println("</"+colName+">");
-				}
-				
-				// Print children information
-				List<ORASSNode> children = node.getChildren();
-				for(int i=0; i<children.size(); i++){
-					ORASSNode child = children.get(i);
-					//logger.debug("process child" + childName);
-					Map<String, List<String>> newKeyMaps = getRelatedCols(node,child);
-
-					newKeyMaps.putAll(keyMaps);
-					CachedRowSet newData = getForeignKeyData(node, child, prevData, newKeyMaps);
-
-					printNode(child, indention+1, newData,false, newKeyMaps);
-				}
-				// Print closing tag
-				printTabs(indention);
-				writer.println("</"+entityName+">");
-			}
-			crs.close();
-		}catch(SQLException e){
-			throw new MainException("Error in printing columns for table " + entityName + " : " +e.getMessage());
-		}
-	}*/
-
-	private Map<String, List<String>> getRelatedCols(ORASSNode node1, ORASSNode node2) throws MainException{
-		Map<String, List<String>> keyMaps = new HashMap<String, List<String>>();
-		if(node1.hasRelation(node2)){
-			String relName = node1.getRelation(node2);
-			CachedRowSet relFK = dbCache.getForeignKeys(relName);
-			try{
-				List<String> pkCols = new ArrayList<String>();
-				List<String> relCols1 = new ArrayList<String>();
-				List<String> relCols2 = new ArrayList<String>();
-				List<String> cols2 = new ArrayList<String>();
-				
-				while(relFK.next()){
-					String pkTable = relFK.getString("PKTABLE_NAME");
-					if(pkTable.equals(node1.getOriginalName())){
-						pkCols.add(relFK.getString("PKCOLUMN_NAME"));
-						relCols1.add(relFK.getString("FKCOLUMN_NAME"));
-					}
-					if(pkTable.equals(node2.getOriginalName())){
-						cols2.add(relFK.getString("PKCOLUMN_NAME"));
-						relCols2.add(relFK.getString("FKCOLUMN_NAME"));
-					}
-				}
-				keyMaps.put(node1.getOriginalName(), pkCols);
-				keyMaps.put(node2.getOriginalName(), cols2);
-				keyMaps.put(relName+"P", relCols1);
-				keyMaps.put(relName+"C", relCols2);
-				return keyMaps;
-			}catch(SQLException ex){
-				throw new MainException("Error in finding related columns from " + relName + " :" +ex.getMessage());
-			}
-		} else {
-			List<String> pkList = new ArrayList<String>();
-			List<String> fkList = new ArrayList<String>();
-			String table1 = node1.getOriginalName();
-			String table2 = node2.getOriginalName();
-			CachedRowSet table1FKs = dbCache.getForeignKeys(table1);
-			try{
-				while(table1FKs.next()){
-					String pkTable = table1FKs.getString("PKTABLE_NAME");
-					if(pkTable.equals(table2)){
-						pkList.add(table1FKs.getString("PKCOLUMN_NAME"));
-						fkList.add(table1FKs.getString("FKCOLUMN_NAME"));
-					}
-				}
-				if(fkList.size() == 0){
-					CachedRowSet table2FKs = dbCache.getForeignKeys(table2);
-					while(table2FKs.next()){
-						String pkTable = table2FKs.getString("PKTABLE_NAME");
-						if(pkTable.equals(table1)){
-							pkList.add(table2FKs.getString("PKCOLUMN_NAME"));
-							fkList.add(table2FKs.getString("FKCOLUMN_NAME"));
-						}
-					}
-					
-					keyMaps.put(node1.getOriginalName(), pkList);
-					keyMaps.put(node2.getOriginalName(), fkList);
-				}else{
-					keyMaps.put(node1.getOriginalName(), fkList);
-					keyMaps.put(node2.getOriginalName(), pkList);
-				}
-				
-			}catch(SQLException ex){
-
-			}
-		}
-		return keyMaps;
-	}
-	
-	private CachedRowSet getForeignKeyData(ORASSNode node1, ORASSNode node2, CachedRowSet prevData, Map<String, List<String>> keyMaps) throws MainException{
-		CachedRowSet results = prevData;
-		if(node1.hasRelation(node2)){
-			String relName = node1.getRelation(node2);
-			
-			try{
-				
-				//Map<String, List<String>> relCols1;
-				
-				List<String> relCols1 =  keyMaps.get(relName+"P");
-				List<String> relCols2 =  keyMaps.get(relName+"C");
-				List<String> cols2 = keyMaps.get(node2.getOriginalName());
-				//CachedRowSet pkValues = dbCache.getSelectedData(node1.getOriginalName(), pkCols);
-
-				//logger.debug("number of pk values: "+pkValues.size() + "| number of pkCols: " + pkCols.size());
-				/*while(prevData.next()){
-					Map<String, List<String>> prevValues = new HashMap<String, List<String>>();
-					while(tablesItr.hasNext()){
-						String tableName = tablesItr.next();
-						List<String> colNames = keyMaps.get(tableName);
-						List<String> values = new ArrayList<String>();
-						for(int i=0; i<colNames.size(); i++){
-							String currVal = prevData.getString(colNames.get(i));
-							values.add(currVal);
-						}
-						prevValues.put(tableName, values);
-					}*/
-					
-					/*for(int i=0; i< pkCols.size(); i++){
-						values.add(pkValues.getString(pkCols.get(i)));
-					}
-					CachedRowSet joinedTuple = dbCache.getDataForValues(node1.getOriginalName(), values, relName, relCols1, relCols2, node2.getOriginalName(), cols2);
-					results.put(values, joinedTuple);*/
-					
-					//results = dbCache.getDataForValues(prevData, keyMaps, node1.getOriginalName(), relName, relCols1, relCols2, node2.getOriginalName(), cols2);
-					
-			}catch(Exception ex){
-				throw new MainException("Data generator: Error in retrieving foreign keys from " + relName + ex.getMessage());
-			}
-		} else {
-			//logger.debug("here2");
-			//List<String> pkList = new ArrayList<String>();
-			//List<String> fkList = new ArrayList<String>();
-			String table1 = node1.getOriginalName();
-			String table2 = node2.getOriginalName();
-			//CachedRowSet table1FKs = dbCache.getForeignKeys(table1);
-			
-			List<String> cols1 = keyMaps.get(table1);
-			List<String> cols2 = keyMaps.get(table2);
-			//results = dbCache.getDataForValues(prevData, table1, cols1, table2, cols2);
-			/*boolean table2Referenced = false;
-			try{
-				while(table1FKs.next() && ! table2Referenced){
-					String pkTable = table1FKs.getString("PKTABLE_NAME");
-					if(pkTable.equals(table2)){
-						table2Referenced=true;
-					}
-				}
-				if(!table2Referenced){
-					pkList = keyMaps.get(table1);
-					results = dbCache.getDataForValues(prevData, table1, values, table2, fkList);
-				}else{
-					fkList = keyMaps.get(table2);
-					keyValues = dbCache.getSelectedData(node1.getName(), fkList);
-					values = new ArrayList<String>();
-					while(keyValues.next()){
-						values = new ArrayList<String>();
-						for(int i=0; i<fkList.size(); i++){
-							values.add(keyValues.getString(fkList.get(i)));
-						}
-					}
-					results = dbCache.getDataForValues(table1, values, table2, pkList);
-				}
-			}catch(SQLException ex){
-
-			}*/
-		}
-		return results;
+	private ResultSet setupData() throws MainException{
+		ResultSet resultSet = dbCache.joinTables(tables, relationships, keyMaps);
+		return resultSet;
 	}
 	
 	private void printTabs(int indention){
