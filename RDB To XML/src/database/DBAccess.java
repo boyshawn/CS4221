@@ -9,12 +9,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.Set;
+import java.util.Iterator;
 import javax.sql.rowset.CachedRowSet;
-
+import javax.sql.RowSetMetaData;
 import main.MainException;
 
 import org.apache.log4j.Logger;
+
+import sun.tools.javap.Tables;
 
 import com.sun.rowset.CachedRowSetImpl;
 
@@ -269,7 +272,7 @@ public class DBAccess {
 			throw new MainException("Exception when joining tables "+table1+", "+table2 + ": " +ex.getMessage());
 		}
 		
-	}
+	}*/
 	
 	public CachedRowSet getSelectedData(String tableName, List<String> cols) throws MainException{
 		try{
@@ -277,11 +280,12 @@ public class DBAccess {
 			CachedRowSet crs = new CachedRowSetImpl();
 			
 			Statement stmt = dbConnection.createStatement();
-			String query = "SELECT ";
+			String query = "SELECT DISTINCT ";
 			for (int i=0; i<cols.size(); i++){
 				query+= cols.get(i) + " ";
 			}
 			query += "FROM " + tableName;
+			logger.debug(query);
 			results = stmt.executeQuery(query);
 			crs.populate(results);
 			stmt.close();
@@ -295,8 +299,8 @@ public class DBAccess {
 			ex.printStackTrace();
 			throw new MainException("Exception at DBAccess.getData(tableName) when retrieving selected data from table " + tableName);
 		}
-	}*/
-	public CachedRowSet getDataForValues(String table1, List<String> values, String table2, List<String> cols) throws MainException{
+	}
+	/*public CachedRowSet getDataForValues(String table1, List<String> values, String table2, List<String> cols) throws MainException{
 		try{
 			int n = cols.size();
 			if(values.size() != n){
@@ -305,10 +309,11 @@ public class DBAccess {
 			Statement stmt = dbConnection.createStatement();
 			ResultSet results = null;
 			CachedRowSet crs = new CachedRowSetImpl();
-			String query = "SELECT * from " + table2 + " WHERE ";
+			String query = "SELECT DISTINCT * from " + table2 + " WHERE ";
 			for(int i=0; i<n-1; i++){
 				query+= table2+"."+cols.get(i)+"="+values.get(i) + " AND ";
 			}
+			logger.debug("query : " + query);
 			query += table2+"."+cols.get(n-1)+"="+values.get(n-1);
 			results = stmt.executeQuery(query);
 			crs.populate(results);
@@ -319,4 +324,248 @@ public class DBAccess {
 		}
 	}
 	
+	public CachedRowSet getDataForValues(String table1, List<String> values, String relName, List<String> relCols1, List<String> relCols2, String table2, List<String> cols) throws MainException{
+		try{
+			int n = relCols2.size();
+			
+			Statement stmt = dbConnection.createStatement();
+			ResultSet results = null;
+			CachedRowSet crs = new CachedRowSetImpl();
+			String query = "SELECT DISTINCT "+ relName + ".*,"+table2+".* from " + table1 + ", " + relName + ", " + table2 + " WHERE ";
+			for(int i=0; i<relCols1.size(); i++){
+				query+= relName+"."+relCols1.get(i)+"="+values.get(i) + " AND ";
+			}
+			
+			for(int i = 0;i<n-1; i++){
+				query += relName + "." + relCols2.get(i) + "=" + table2 +"." + cols.get(i) + " AND ";
+			}
+			query += relName + "." + relCols2.get(n-1) + "=" + table2 +"." + cols.get(n-1);
+			logger.debug("query : " + query);
+			
+			results = stmt.executeQuery(query);
+			crs.populate(results);
+			stmt.close();
+			return crs;
+		}catch(SQLException ex){
+			throw new MainException("Error in retrieving values from "+table2+" for values in " + table1 +" : " +ex.getMessage());
+		}
+	}
+	
+	public CachedRowSet getDataForValues(Map<String, List<String>> prevValues, String relName, Map<String, List<String>> relCols1, List<String> relCols2, String table2, List<String> cols) throws MainException{
+		try{
+			int n = relCols2.size();
+			
+			Statement stmt = dbConnection.createStatement();
+			ResultSet results = null;
+			CachedRowSet crs = new CachedRowSetImpl();
+			String query = "SELECT DISTINCT "+ relName + ".*,"+table2+".* from " + relName + ", " + table2;
+			Set<String> tables1 = prevValues.keySet();
+			Iterator<String> tablesItr = tables1.iterator();
+			while(tablesItr.hasNext()){
+				query += ", " + tablesItr.next();
+			}
+			query += " WHERE ";
+ 			
+			Set<String> relTables = relCols1.keySet();
+			Iterator<String> relTablesItr = relTables.iterator();
+			while(relTablesItr.hasNext()){
+				List<String> relCols = relCols1.get(relTablesItr.next());
+				List<String> relVals = prevValues.get(relTablesItr.next());
+				for(int i=0; i<relCols.size(); i++){
+					query+= relName+"."+relCols.get(i)+"="+relVals.get(i) + " AND ";
+				}
+			}
+			
+			for(int i = 0;i<n-1; i++){
+				query += relName + "." + relCols2.get(i) + "=" + table2 +"." + cols.get(i) + " AND ";
+			}
+			query += relName + "." + relCols2.get(n-1) + "=" + table2 +"." + cols.get(n-1);
+			logger.debug("query : " + query);
+			
+			results = stmt.executeQuery(query);
+			crs.populate(results);
+			stmt.close();
+			return crs;
+		}catch(SQLException ex){
+			throw new MainException("Error in retrieving values from "+table2+" for values in " + relName +" : " +ex.getMessage());
+		}
+	}*/
+	
+	public CachedRowSet getDataForValues(CachedRowSet prevData, Map<String, List<String>> keyMaps, String parent, String relName, List<String> relCols1, List<String> relCols2, String table2, List<String> cols) throws MainException{
+		try{
+			int n = relCols2.size();
+			logger.debug("here1");
+			// Process previous data
+			RowSetMetaData rsmd = (RowSetMetaData)prevData.getMetaData();
+			int numOfCols = rsmd.getColumnCount();
+			logger.debug("num of cols = " + numOfCols);
+			// Map column names to table names
+			Map<String, List<String>> colMaps = new HashMap<String, List<String>>();
+			for(int i = 1; i<=numOfCols; i++){
+				String tableName = rsmd.getTableName(i);
+				if(!colMaps.keySet().contains(tableName)){
+					List<String> newCols = new ArrayList<String>();
+					colMaps.put(tableName, newCols);
+				}
+				List<String> colNames = colMaps.get(tableName);
+				String colName = rsmd.getColumnName(i);
+				//if(!colNames.contains(colName)){
+					colNames.add(colName);
+				//}
+			}
+			logger.debug("here2");
+			// Map tuples to table names
+			Map<String, List<String>> valMaps = new HashMap<String, List<String>>();
+			while(prevData.next()){
+				for(int i=1; i<=numOfCols; i++){
+					String tableName = rsmd.getTableName(i);
+					if(!valMaps.keySet().contains(tableName)){
+						List<String> newVals = new ArrayList<String>();
+						valMaps.put(tableName, newVals);
+					}
+					List<String> vals = valMaps.get(tableName);
+					String data="\""+ prevData.getString(i) +"\"";
+					vals.add(data);
+				}
+			}
+			
+			logger.debug("here3");
+			Statement stmt = dbConnection.createStatement();
+			ResultSet results = null;
+			CachedRowSet crs = new CachedRowSetImpl();
+			
+			boolean hasTable = false;
+			String query = "SELECT DISTINCT * FROM ";
+			
+			Set<String> tables1 = colMaps.keySet();
+			
+			if(!tables1.contains(relName)){
+				query+= relName;
+				hasTable = true;
+			}
+			
+			if(!tables1.contains(table2)){
+				if(!hasTable){
+					query+= table2;
+					hasTable =true;
+				}else{
+					query+= ", " + table2;
+				}
+			}
+			
+			Iterator<String> tablesItr = tables1.iterator();
+			while(tablesItr.hasNext()){
+				query += ", " + tablesItr.next();
+			}
+			query += " WHERE ";
+			logger.debug("here4");
+			Set<String> prevTables = valMaps.keySet();
+			Iterator<String> valuesItr = prevTables.iterator();
+			while(valuesItr.hasNext()){
+				String tName = valuesItr.next();
+				logger.debug("tName1 " + tName);
+				List<String> relCols = colMaps.get(tName);
+				List<String> relVals = valMaps.get(tName);
+				logger.debug("relCols size " + relCols.size() + " relVals size " + relVals.size());
+				for(int i=0; i<relCols.size(); i++){
+					String colName = relCols.get(i);
+					List<String> keys = keyMaps.get(tName);
+					logger.debug("tName " + tName);
+					if(keys.contains(colName))
+						query+= tName+"."+colName+"="+relVals.get(i) + " AND ";
+				}
+			}
+			logger.debug("here5");
+			
+			List<String> parentCols = keyMaps.get(parent);
+			for(int i=0; i<relCols1.size(); i++){
+				query += relName +"."+relCols1.get(i)+"=" +parent + "." + parentCols.get(i) + " AND ";
+			}
+			
+			for(int i = 0;i<n-1; i++){
+				query += relName + "." + relCols2.get(i) + "=" + table2 +"." + cols.get(i) + " AND ";
+			}
+			query += relName + "." + relCols2.get(n-1) + "=" + table2 +"." + cols.get(n-1);
+			logger.debug("query : " + query);
+			
+			results = stmt.executeQuery(query);
+			crs.populate(results);
+			stmt.close();
+			return crs;
+		}catch(SQLException ex){
+			throw new MainException("Error in retrieving values from "+table2+" for values in " + relName +" : " +ex.getMessage());
+		}
+	}
+	
+	public CachedRowSet getDataForValues(CachedRowSet prevData, String table1, List<String> cols1, String table2, List<String> cols2) throws MainException{
+		try{
+			int n = cols2.size();
+			
+			// Process previous data
+			RowSetMetaData rsmd = (RowSetMetaData)prevData.getMetaData();
+			int numOfCols = rsmd.getColumnCount();
+
+			// Map column names to table names
+			Map<String, List<String>> colMaps = new HashMap<String, List<String>>();
+			for(int i = 0; i<numOfCols; i++){
+				String tableName = rsmd.getTableName(i);
+				if(!colMaps.keySet().contains(tableName)){
+					List<String> newCols = new ArrayList<String>();
+					colMaps.put(tableName, newCols);
+				}
+				List<String> colNames = colMaps.get(tableName);
+				colNames.add(rsmd.getColumnName(i));
+			}
+
+			// Map tuples to table names
+			Map<String, List<String>> valMaps = new HashMap<String, List<String>>();
+			while(prevData.next()){
+				for(int i=0; i<numOfCols; i++){
+					String tableName = rsmd.getTableName(i);
+					if(!valMaps.keySet().contains(tableName)){
+						List<String> newVals = new ArrayList<String>();
+						valMaps.put(tableName, newVals);
+					}
+					List<String> vals = valMaps.get(tableName);
+					vals.add(prevData.getString(i));
+				}
+			}
+
+			Statement stmt = dbConnection.createStatement();
+			ResultSet results = null;
+			CachedRowSet crs = new CachedRowSetImpl();
+			String query = "SELECT DISTINCT * from " + table2;
+
+
+			Set<String> tables1 = colMaps.keySet();
+			Iterator<String> tablesItr = tables1.iterator();
+			while(tablesItr.hasNext()){
+				query += ", " + tablesItr.next();
+			}
+			query += " WHERE ";
+			Set<String> prevTables = valMaps.keySet();
+			Iterator<String> valuesItr = prevTables.iterator();
+			while(valuesItr.hasNext()){
+				String tName = valuesItr.next();
+				List<String> relCols = colMaps.get(tName);
+				List<String> relVals = valMaps.get(tName);
+				for(int i=0; i<relCols.size(); i++){
+					query+= tName+"."+relCols.get(i)+"="+relVals.get(i) + " AND ";
+				}
+			}
+			
+			for(int i=0; i<n-1; i++){
+				query+= table2+"."+cols2.get(i)+"="+cols1.get(i) + " AND ";
+			}
+			
+			query += table2+"."+cols2.get(n-1)+"="+cols1.get(n-1);
+			logger.debug("query : " + query);
+			results = stmt.executeQuery(query);
+			crs.populate(results);
+			stmt.close();
+			return crs;
+		}catch(SQLException ex){
+			throw new MainException("Error in retrieving values from "+table2+" for values in " + table1 +" : " +ex.getMessage());
+		}
+	}
 }

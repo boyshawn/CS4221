@@ -16,6 +16,7 @@ import org.apache.log4j.Logger;
 public class ORASSBuilder{
 	private Map<String, ErdNode> entities;
 	private Map<String, ErdNode> rels;
+	private Map<String, ErdNode> erdnodes;
 	private Map<String, ORASSNode> nodes;
 	private List<String> processedNodes;
 	private Map<String, List<String>> nRels;
@@ -30,7 +31,9 @@ public class ORASSBuilder{
 		dbCache = DBAccess.getInstance();
 		isaRels = new HashMap<ORASSNode, ORASSNode>();
 		processedNodes = new ArrayList<String>();
-		
+		erdnodes = new HashMap<String, ErdNode>();
+		erdnodes.putAll(entities);
+		erdnodes.putAll(rels);
 	}
 	
 	/*
@@ -82,33 +85,54 @@ public class ORASSBuilder{
 	public Map<ORASSNode, ORASSNode> getIsaRelationships(){
 		return isaRels;
 	}
+	
+	/*public Map<String, List<ORASSNode>> getNaryRelsNodes(){
+		Map<String, List<ORASSNode>> naryRelsNodes = new HashMap<String, List<ORASSNode>>();
+		Set<String> naryRelSet = nRels.keySet();
+		Iterator<String> naryRelSetItr = naryRelSet.iterator();
+		while(naryRelSetItr.hasNext()){
+			String relName = naryRelSetItr.next();
+			List<String> linkedNodes = nRels.get(relName);
+			List<ORASSNode> linkedORASS = new ArrayList<ORASSNode>();
+			for(int i=0; i<linkedNodes.size(); i++){
+				linkedORASS.add(nodes.get(linkedNodes.get(i)));
+			}
+			naryRelsNodes.put(relName, linkedORASS);
+		}
+		return naryRelsNodes;
+	}*/
 	/*
 	 * This method processes an ERD node that represents an entity. 
 	 * It returns the ORASS node that corresponds to this entity.
 	 * */
 	private ORASSNode processEntity(ErdNode erNode) throws MainException{
-		String tName = erNode.getTableName();
-		ORASSNode node = createORASSNode(tName, erNode.getOriginalTableName());
 		
-		Vector<ErdNode> links = entities.get(tName).getLinks();
-		for(int i=0; i<links.size(); i++){
-			ErdNode relatedNode = links.get(i);
-			ErdNodeType nodeType = relatedNode.getErdNodeType();
-			if(nodeType == ErdNodeType.ENTITY_TYPE || nodeType == ErdNodeType.WEAK_ENTITY_TYPE){
-				List<ColumnDetail> attrs = erNode.getAttributes();
-				for(int j=0; j<attrs.size(); j++){
-					node.addAttribute(attrs.get(j));
-				}
-				processSpecialLinks(erNode, node);
-				ORASSNode child = processEntity(relatedNode);
-				node.addChildren(child);
-				logger.debug("add child " + child.getName() + " to " + tName);
-			} else { 
-				// The related node is a parent of a weak entity
-				processRelationship(relatedNode, node);
-			}
+		String tName = erNode.getTableName();
+		logger.debug("process entity " +  tName);
+		ORASSNode node = createORASSNode(tName, erNode.getOriginalTableName());
+		List<ColumnDetail> attrs = erNode.getAttributes();
+		for(int j=0; j<attrs.size(); j++){
+			node.addAttribute(attrs.get(j));
+			logger.debug("add attribute " + attrs.get(j).getName() + " to " + tName);
 		}
 		processedNodes.add(tName);
+
+		Vector<ErdNode> links = erdnodes.get(tName).getLinks();
+		for(int i=0; i<links.size(); i++){
+			ErdNode relatedNode = links.get(i);
+			if(!processedNodes.contains(relatedNode.getTableName())){
+				ErdNodeType nodeType = relatedNode.getErdNodeType();
+				if(nodeType == ErdNodeType.ENTITY_TYPE || nodeType == ErdNodeType.WEAK_ENTITY_TYPE){
+					processSpecialLinks(erNode, node);
+					ORASSNode child = processEntity(relatedNode);
+					logger.debug("add child " + child.getName() + " to " + tName);
+				} else { 
+					// The related node is a parent of a weak entity
+					processRelationship(relatedNode, node);
+				}
+			}
+		}
+
 		return node;
 	}
 	
@@ -137,22 +161,24 @@ public class ORASSBuilder{
 		
 		for(int i=0; i<links.size(); i++){
 			ErdNode relatedNode = links.get(i);
-			if(relatedNode.getTableName()!=parent.getName()){
+			if(relatedNode.getTableName()!=parent.getName() && !processedNodes.contains(relatedNode.getTableName())){
 				ErdNodeType nodeType = relatedNode.getErdNodeType();
 				if(nodeType == ErdNodeType.ENTITY_TYPE || nodeType == ErdNodeType.WEAK_ENTITY_TYPE){
 					// Relationship is connected with an entity: process as normal
-					ORASSNode child = processEntity(relatedNode);
+					ORASSNode child = nodes.get(relatedNode.getTableName());
 					// Add the attributes of the relationship to the child entity
 					processRelAttributes(relName,child);
 					// Add the related entity as a child of the parent
 					parent.addChildren(child);
-				}else { 
+					parent.addChildRelation(child, rels.get(relName).getOriginalTableName());
+					logger.debug("add child " + child.getName() + " to " + parent);
+				}else {
 					// Relationship is related to a relationship ==> Aggregation
 					processRelationship(relatedNode, parent);
 				}
 			}
 		}
-		logger.debug("processed binary relationship " +  relName);
+		//logger.debug("processed binary relationship " +  relName);
 	}
 	
 	/*
@@ -164,7 +190,8 @@ public class ORASSBuilder{
 			ColumnDetail col = cols.get(i);
 			List<String> foreignKeys = dbCache.getNamesOfForeignKeys(relName);
 			if(!foreignKeys.contains(col.getName())){
-				entityNode.addRelAttribute(col);
+				entityNode.addAttribute(col);
+				logger.debug("add attribute " + col.getName() + " to " + entityNode.getOriginalName());
 			}
 		}
 	}
@@ -177,21 +204,24 @@ public class ORASSBuilder{
 		for (int i = 0; i< entityOrder.size(); i++){
 			String entityName = entityOrder.get(i);
 
-			if (i==0 && entityName != parent.getName()){
-				throw new MainException("The parent of N-ary relationship "+ relName+"is inconsistent with the order of the entities specified by the user");
-			}
+			/*if (i==0 && entityName != parent.getName()){
+				throw new MainException("The parent of N-ary relationship "+ relName+" is inconsistent with the order of the entities specified by the user");
+			}*/
 			
-			Vector<ErdNode> links = entities.get(entityName).getLinks();
+			Vector<ErdNode> links = erdnodes.get(entityName).getLinks();
 			// process the links connected to this node other than the n-ary rel link
 			for(int j=0; j < links.size(); j++){
 				ErdNode relatedNode = links.get(j);
-				if(relatedNode.getTableName()!=relName){
-					ErdNodeType nodeType = relatedNode.getErdNodeType();
-					if(nodeType == ErdNodeType.ENTITY_TYPE || nodeType == ErdNodeType.WEAK_ENTITY_TYPE){
-						ORASSNode child = processEntity(relatedNode);
-						node1.addChildren(child);
-					} else { // The related node is a parent of a weak entity
-						processRelationship(relatedNode, node1);
+				if(!relatedNode.getTableName().equals(relName)){
+					if(!processedNodes.contains(relatedNode.getTableName())){
+						ErdNodeType nodeType = relatedNode.getErdNodeType();
+						if(nodeType == ErdNodeType.ENTITY_TYPE || nodeType == ErdNodeType.WEAK_ENTITY_TYPE){
+							ORASSNode child = processEntity(relatedNode);
+							node1.addChildren(child);
+							logger.debug("add child " + child.getName() + " to " + entityName);
+						} else { // The related node is a parent of a weak entity
+							processRelationship(relatedNode, node1);
+						}
 					}
 				}
 			}
@@ -199,8 +229,16 @@ public class ORASSBuilder{
 			if(i<entityOrder.size()-1){
 				// If the node is not the last entity in the n-ary relationship
 				String nextEntity = entityOrder.get(i+1);
-				ORASSNode node2 = createORASSNode(nextEntity, entities.get(nextEntity).getOriginalTableName());
+				logger.debug("process n-ary entity " + nextEntity);
+				ORASSNode node2 = createORASSNode(nextEntity, erdnodes.get(nextEntity).getOriginalTableName());
+				List<ColumnDetail> attrs = erdnodes.get(nextEntity).getAttributes();
+				for(int j=0; j<attrs.size(); j++){
+					node2.addAttribute(attrs.get(j));
+					logger.debug("add attribute " + attrs.get(j).getName() + " to " + nextEntity);
+				}
 				node1.addChildren(node2);
+				node1.addChildRelation(node2, rels.get(relName).getOriginalTableName());
+				logger.debug("add child " + node2.getName() + " to " + node1.getName());
 				node1 = node2;
 			} else{
 				// Add the attributes of the N-ary relationship to the last entity in the entity list
@@ -225,9 +263,9 @@ public class ORASSBuilder{
 		if(!nodes.containsKey(nodeName)){
 			ORASSNode node = new ORASSNode(nodeName, originalName);
 			nodes.put(nodeName, node);
+			//logger.debug("created node : " + nodeName);
 		}
 		ORASSNode node = nodes.get(nodeName);
-		logger.debug("created node : " + nodeName);
 		return node;
 	}
 
