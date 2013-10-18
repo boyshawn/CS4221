@@ -162,7 +162,7 @@ public class XMLSchemaGenerator implements Generator {
 	 */
 	private void printTables(ORASSNode node, int numOfTabs) {
 		
-		String tableName = node.getName();
+		String tableName = node.getOriginalName();
 		List<ORASSNode> children = node.getChildren();
 		Iterator<ORASSNode> itr  = children.iterator();
 		
