@@ -57,7 +57,7 @@ public class ERDBuilder {
 			
 		}
 		
-		testErdBuilder(); // remove before submission
+		//testErdBuilder(); // remove before submission
 		
 	}
 	
@@ -342,6 +342,7 @@ public class ERDBuilder {
 		}
 	}
 	
+	/*
 	private void testErdBuilder() throws MainException {
 		
 		String fileName = "/Users/Janice/Desktop/erdgraph.dot";
@@ -422,4 +423,5 @@ public class ERDBuilder {
 		
 		writer.println("}");
 	}
+	*/
 }
