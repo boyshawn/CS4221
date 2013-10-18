@@ -29,17 +29,18 @@ import database.ColumnDetail;
 
 
 public class XMLDataGenerator implements Generator {
-	
+
 	private DBAccess dbCache;
 	private File file;
 	private PrintWriter writer;
 	private List<String> tables;
 	private List<NodeRelationship> relationships;
 	private Map<String, List<String>>  keyMaps;
+	private Map<String, List<String>> prevVals;
+	private List<String> currTables;
 	private Map<String, Boolean> printed;
- 	private Logger logger = Logger.getLogger(XMLDataGenerator.class);
+	private Logger logger = Logger.getLogger(XMLDataGenerator.class);
 
-	
 	@Override
 	public void generate(String dbName, String fileName, ORASSNode root) throws MainException {
 		// TODO Auto-generated method stub
@@ -49,12 +50,12 @@ public class XMLDataGenerator implements Generator {
 		keyMaps = new HashMap<String, List<String>>();
 		printed = new HashMap<String, Boolean>();
 		setupTables(root);
-		
+
 		setupFile(dbName, fileName);
 		printDB(dbName, fileName, root);
 		writer.close();
 	}
-	
+
 	private void setupFile(String dbName, String fileName) throws MainException{
 		String filePath = fileName + ".xml";
 
@@ -69,14 +70,14 @@ public class XMLDataGenerator implements Generator {
 		}catch(IOException e){
 			throw new MainException("IOException: The data output file cannot be created.");
 		}
-		
+
 		try{
 			writer = new PrintWriter(new FileOutputStream(filePath),true);
 		}  catch(FileNotFoundException e){
 			throw new MainException("FileOutputStream: Cannot find the data output file.");
 		}
 	}
-	
+
 	private void printDB(String dbName, String filename, ORASSNode root) throws MainException{
 		// Write xml version info.
 		writer.println("<?xml version=\"1.0\"?>");
@@ -87,37 +88,88 @@ public class XMLDataGenerator implements Generator {
 		writer.println("xsi:schemaLocation=\""+filename+".xsd\">");
 
 		ResultSet results = setupData();
-		String tableName = root.getOriginalName();
-		List<String> pkVals = getPKValues(tableName, results);
+
+
+		prevVals = new HashMap<String, List<String>>();
+		currTables = new ArrayList<String>();
 		try{
+			String tableName = root.getOriginalName();
+			currTables.add(tableName); 
 			while(results.next()){
-				pkVals = printTable(root, results, pkVals, 1, printed.get(tableName));
-				printed.put(tableName,true);
+				if(!printed.get(tableName)){
+					List<String> pkVals = getPKValues(tableName, results);
+					prevVals.put(tableName, pkVals);
+				}
+
+				printTable(root, results, 1, printed.get(tableName));
+				//printed.put(tableName,true);
 			}
 		}catch(SQLException ex){
 			throw new MainException("Error in printing DB " + dbName + ex.getMessage());
 		}
 		writer.println("</"+dbName+">");
 	}
-	
+
+
 	private List<String> getPKValues(String tableName, ResultSet data) throws MainException{
-		List<String> pkVals = new ArrayList<String>();
-		try{
-			List<String> pkCols = keyMaps.get(tableName);
-			
-			for(int j = 0; j<pkCols.size(); j++){
-				pkVals.add(data.getString(pkCols.get(j)));
+
+		//logger.debug("start");
+			List<String> pkVals = new ArrayList<String>();
+			try{
+				List<String> pkCols = keyMaps.get(tableName);
+				
+				for(int j = 0; j<pkCols.size(); j++){
+					pkVals.add(data.getString(pkCols.get(j)));
+				}
+				//logger.debug("Table: " + tableName + "; keysize: " + pkCols.size()+"; valsize: "+pkVals.size());
+			}catch(SQLException ex){
+				throw new MainException("Error in getting primary key values for "+tableName + " : " + ex.getMessage());
 			}
-			
-		}catch(SQLException ex){
-			throw new MainException("Error in getting primary key values for "+tableName + " : " + ex.getMessage());
-		}
 		return pkVals;
 	}
 	
+	/*private Map<String, List<String>> getPKValues(List<String> tableNames, ResultSet data) throws MainException{
+		Map<String, List<String>> allPKVals = new HashMap<String, List<String>>();
+		logger.debug("start");
+		for(int i=0; i<tableNames.size(); i++){
+			String tableName = tableNames.get(i);
+			List<String> pkVals = new ArrayList<String>();
+			try{
+				List<String> pkCols = keyMaps.get(tableName);
+				
+				for(int j = 0; j<pkCols.size(); j++){
+					pkVals.add(data.getString(pkCols.get(j)));
+				}
+				logger.debug("Table: " + tableName + "; keysize: " + pkCols.size()+"; valsize: "+pkVals.size());
+				allPKVals.put(tableName, pkVals);
+			}catch(SQLException ex){
+				throw new MainException("Error in getting primary key values for "+tableName + " : " + ex.getMessage());
+			}
+		}
+		return allPKVals;
+	}*/
+
+	private String getFirstChangedTable(Map<String, List<String>> vals1, Map<String, List<String>> vals2, List<String> currTables) throws MainException{
+		int n =currTables.size();
+		String firstTable = "";
+		boolean isEqual = true;
+		int i=0;
+		while(isEqual && i<n){
+			firstTable = currTables.get(i);
+			List<String> tVals1 = vals1.get(firstTable);
+			List<String> tVals2 = vals2.get(firstTable);
+			logger.debug("Table: " + firstTable+"; map1 size=" + vals1.size() + "; map2 size= " +vals2.size());
+			isEqual = isValsEqual(tVals1, tVals2);
+			i++;
+		}
+		if(isEqual){
+			firstTable=currTables.get(n-1);
+		}
+		logger.debug("first changed table: " +firstTable);
+		return firstTable;
+	}
 	private boolean isValsEqual(List<String> vals1, List<String> vals2) throws MainException{
 		boolean isEqual = true;
-
 		for(int i= 0; i<vals1.size(); i++){
 			String val1 = vals1.get(i);
 			String val2 = vals2.get(i);
@@ -128,7 +180,7 @@ public class XMLDataGenerator implements Generator {
 		}
 		return isEqual;
 	}
-	
+
 	private List<String> getColNames(ORASSNode node){
 		List<String> cols = new ArrayList<String>();
 		List<ColumnDetail> colDetails  = node.getAttributes();
@@ -137,24 +189,25 @@ public class XMLDataGenerator implements Generator {
 		}
 		return cols;
 	}
-	
+
 	private void resetPrinted(){
-		Set<String> tablesP = printed.keySet();
-		Iterator<String> tablePItr = tablesP.iterator();
-		while(tablePItr.hasNext()){
-			String tName = tablePItr.next();
-			printed.put(tName, false);
+		for(int i=0; i<tables.size(); i++){
+			printed.put(tables.get(i), false);
 		}
 	}
-	
-	private List<String> printTable(ORASSNode node, ResultSet data, List<String> prevKeyVals, int indention, boolean tPrinted) throws MainException{
+
+	private void printTable(ORASSNode node, ResultSet data, int indention, boolean tPrinted) throws MainException{
 		try{
 			String tableName = node.getOriginalName();
 			List<String> cols = getColNames(node);
-			List<String> currKeyVals = getPKValues(tableName, data);
-			boolean sameVal= isValsEqual(prevKeyVals, currKeyVals);
-
-			if(!sameVal || !tPrinted){
+			List<String> pkVals = getPKValues(tableName, data);
+			Map<String, List<String>> currKeyVals = new HashMap<String, List<String>>();
+			currKeyVals.putAll(prevVals);
+			currKeyVals.put(tableName, pkVals);
+			
+			String firstChanged = getFirstChangedTable(prevVals, currKeyVals, currTables);
+			
+			if(firstChanged.equals(tableName)){
 				//logger.debug("should print " +tableName);
 				printTabs(indention);
 				writer.println("<"+tableName+">");
@@ -170,25 +223,39 @@ public class XMLDataGenerator implements Generator {
 					}
 					writer.println("</"+colName+">");
 				}
-				printed.put(tableName, true);
 			}
+			prevVals = currKeyVals;
 			List<ORASSNode> children = node.getChildren();
 			for(int i=0; i<children.size(); i++){
 				ORASSNode child = children.get(i);
 				String childName = child.getOriginalName();
-				List<String> pkList = getPKValues(childName,data);
-				pkList = printTable(child, data, pkList, indention+1, printed.get(childName));
+				/*List<String> newTables = new ArrayList<String>();
+				newTables.addAll(currTables);
+				if(! newTables.contains(childName)){
+					newTables.add(childName);
+				}*/
+				//if(!currTables.contains(childName)){
+					currTables.add(childName);
+				//}
+				Boolean childPrinted = printed.get(childName);
+				if(!childPrinted){
+					List<String> childKeyVals = getPKValues(childName, data);
+					prevVals.put(childName, childKeyVals);
+				}
+				printTable(child, data, indention+1, childPrinted);
 			}
-			if(!sameVal && !tPrinted){
+			//firstChanged = getFirstChangedTable(prevVals, currKeyVals, currTables);
+			if(firstChanged.equals(tableName)){
 				printTabs(indention);
 				writer.println("</"+tableName+">");
+				printed.put(tableName, true);
 			}
-			return currKeyVals;
+			
 		}catch(SQLException ex){
 			throw new MainException("Print table " + node.getOriginalName());
 		}
 	}
-	
+
 	private void setupTables(ORASSNode parent) throws MainException{
 		String tName = parent.getOriginalName();
 		tables.add(tName);
@@ -208,7 +275,7 @@ public class XMLDataGenerator implements Generator {
 					List<String> relCols1 = new ArrayList<String>();
 					List<String> relCols2 = new ArrayList<String>();
 					List<String> cols2 = new ArrayList<String>();
-					
+
 					while(relFK.next()){
 						String pkTable = relFK.getString("PKTABLE_NAME");
 						if(pkTable.equals(parent.getOriginalName())){
@@ -250,14 +317,14 @@ public class XMLDataGenerator implements Generator {
 								fkList.add(table2FKs.getString("FKCOLUMN_NAME"));
 							}
 						}
-						
+
 						NodeRelationship rel = new NodeRelationship(table1, table2, pkList, fkList);
 						relationships.add(rel);
 					}else{
 						NodeRelationship rel = new NodeRelationship(table1, table2, fkList, pkList);
 						relationships.add(rel);
 					}
-					
+
 				}catch(SQLException ex){
 
 				}
@@ -265,18 +332,18 @@ public class XMLDataGenerator implements Generator {
 			setupTables(child);
 		}
 		
-		resetPrinted();
 	}
-	
+
 	private ResultSet setupData() throws MainException{
 		ResultSet resultSet = dbCache.joinTables(tables, relationships, keyMaps);
+		resetPrinted();
 		return resultSet;
 	}
-	
+
 	private void printTabs(int indention){
 		for(int i=0; i<indention; i++){
 			writer.print("\t");
 		}
-		
+
 	}
 }
