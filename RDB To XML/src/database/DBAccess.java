@@ -7,17 +7,17 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Iterator;
-import javax.sql.rowset.CachedRowSet;
+
 import javax.sql.RowSetMetaData;
+import javax.sql.rowset.CachedRowSet;
+
 import main.MainException;
 
 import org.apache.log4j.Logger;
-
-import sun.tools.javap.Tables;
 
 import com.sun.rowset.CachedRowSetImpl;
 
@@ -208,7 +208,14 @@ public class DBAccess {
 			throw new MainException("Failed to get the names of foreign keys for " + tableName);
 		}
 	}
-	
+	/*
+	public ResultSet joinTables(List<String> fromTables, List<NodeRelationship> whereClause, Map<String,List<String>> orderBy) {
+		String query = "";
+		
+		query += "SELECT * FROM "
+		
+	}
+	*/
 	public CachedRowSet getData(String tableName) throws MainException {
 		try{
 			Statement stmt = null;
