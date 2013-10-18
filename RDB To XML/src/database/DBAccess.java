@@ -233,6 +233,9 @@ public class DBAccess {
 			List<String> cols2 = nodeRel.getCols2();
 			for(int i=0; i<cols1.size(); i++){
 				query += nodeRel.getTable1() + "." + cols1.get(i) + "=" + nodeRel.getTable2() + "." + cols2.get(i);
+				if(i!=cols1.size()-1){
+					query += " AND ";
+				}
 			}
 			
 			// if it is not the last where clause
