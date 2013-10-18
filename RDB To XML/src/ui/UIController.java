@@ -254,6 +254,11 @@ public class UIController {
 	class CancelListener implements ActionListener {
 
 		public void actionPerformed(ActionEvent e) {
+			try {
+				r.closeConnection();
+			} catch (MainException me) {
+				System.out.println(me.getMessage());
+			}
 			main.showMainPane();
 		}
 	}
