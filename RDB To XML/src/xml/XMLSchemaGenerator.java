@@ -148,8 +148,8 @@ public class XMLSchemaGenerator implements Generator {
 		//printPrimaryKeys(root, 2);
 		//printForeignKeys(root, null, 2);
 		
-		writer.println();
 		writer.println("\t</xs:element>");
+		writer.println();
 		writer.println("</xs:schema>");
 		
 	}
@@ -162,7 +162,7 @@ public class XMLSchemaGenerator implements Generator {
 	 */
 	private void printTables(ORASSNode node, int numOfTabs) {
 		
-		String tableName = node.getName();
+		String tableName = node.getOriginalName();
 		List<ORASSNode> children = node.getChildren();
 		Iterator<ORASSNode> itr  = children.iterator();
 		
@@ -199,8 +199,13 @@ public class XMLSchemaGenerator implements Generator {
 			
 			xml = "";	
 			
+			
+			xml += getTabs(numOfTabs) + "<xs:element name=\""+column.getName()+"\" type=\""+colType+"\" nillable=\""+column.isNullable()+"\""+xmlColDefault +"/>";
+			writer.println(xml);
+			
 			// if the column size is 0 or the SQL column type is not translated to xs:string
 			// then xs:element has a "type" attribute and there is no restriction added to xs:element
+			/*
 			if (column.getSize() == 0 || !colType.equals("xs:string")) {
 				xml += getTabs(numOfTabs) + "<xs:element name=\""+column.getName()+"\" type=\""+colType+"\" nillable=\""+column.isNullable()+"\""+xmlColDefault;
 				
@@ -222,6 +227,7 @@ public class XMLSchemaGenerator implements Generator {
 				writer.println(getTabs(numOfTabs + 1) + "</xs:simpleType>");
 				writer.println(getTabs(numOfTabs)     + "</xs:element>");
 			}
+			*/
 			
 		}
 	}
