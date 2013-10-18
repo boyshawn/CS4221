@@ -81,8 +81,7 @@ public class XMLDataGenerator implements Generator {
 		writer.println("xmlns=\"http://www.w3schools.com\"");
 		writer.println("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
 		writer.println("xsi:schemaLocation=\""+filename+".xsd\">");
-		//Map<String, List<String>> keyMaps = new HashMap<String, List<String>>();
-		//printNode(root, 1, null, true, keyMaps);
+
 		ResultSet results = setupData();
 		try{
 			while(results.next()){

@@ -40,9 +40,9 @@ public class ORASSBuilder{
 	 * This method takes in the root ERD node as input and returns the root of ORASS after processing all ERD nodes.
 	 * */
 	public ORASSNode buildORASS(ErdNode root) throws MainException {
-		//List<ORASSNode> rootNodes = new ArrayList<ORASSNode>();
+
 		ORASSNode rootNode = processEntity(root);
-		//rootNodes.add(rootNode);
+
 		// Check and process unlinked nodes
 		return rootNode;
 	}
@@ -78,22 +78,7 @@ public class ORASSBuilder{
 	public Map<ORASSNode, ORASSNode> getIsaRelationships(){
 		return isaRels;
 	}
-	
-	/*public Map<String, List<ORASSNode>> getNaryRelsNodes(){
-		Map<String, List<ORASSNode>> naryRelsNodes = new HashMap<String, List<ORASSNode>>();
-		Set<String> naryRelSet = nRels.keySet();
-		Iterator<String> naryRelSetItr = naryRelSet.iterator();
-		while(naryRelSetItr.hasNext()){
-			String relName = naryRelSetItr.next();
-			List<String> linkedNodes = nRels.get(relName);
-			List<ORASSNode> linkedORASS = new ArrayList<ORASSNode>();
-			for(int i=0; i<linkedNodes.size(); i++){
-				linkedORASS.add(nodes.get(linkedNodes.get(i)));
-			}
-			naryRelsNodes.put(relName, linkedORASS);
-		}
-		return naryRelsNodes;
-	}*/
+
 	/*
 	 * This method processes an ERD node that represents an entity. 
 	 * It returns the ORASS node that corresponds to this entity.
@@ -143,15 +128,6 @@ public class ORASSBuilder{
 			// Relationship is binary
 			processedNode = processBinaryRel(relName, parent);
 		}
-		/*List<ErdNode> links = relNode.getLinks();
-		for (int i= 0; i<links.size(); i++){
-			ErdNode relatedNode = links.get(i);
-			ErdNodeType nodeType = relatedNode.getErdNodeType();
-			if(nodeType == ErdNodeType.RELATIONSHIP_TYPE){
-				relatedNode.removeLink(relNode);
-				processRelationship(relatedNode, processedNode);
-			}
-		}*/
 		return processedNode;
 	}
 	
@@ -169,7 +145,7 @@ public class ORASSBuilder{
 				ErdNodeType nodeType = relatedNode.getErdNodeType();
 				if(nodeType == ErdNodeType.ENTITY_TYPE || nodeType == ErdNodeType.WEAK_ENTITY_TYPE){
 					// Relationship is connected with an entity: process as normal
-					ORASSNode child = nodes.get(relatedNode.getTableName());
+					ORASSNode child = createORASSNode(relatedNode.getTableName(), relatedNode.getOriginalTableName());
 					// Add the attributes of the relationship to the child entity
 					processRelAttributes(relName,child);
 					// Add the related entity as a child of the parent
@@ -191,12 +167,11 @@ public class ORASSBuilder{
 	 * */
 	private void processRelAttributes(String relName, ORASSNode entityNode) throws MainException{
 		List<ColumnDetail> cols = dbCache.getDetailsOfColumns(relName);
+		List<String> foreignKeys = dbCache.getNamesOfForeignKeys(relName);
 		for(int i = 0; i< cols.size(); i++){
 			ColumnDetail col = cols.get(i);
-			List<String> foreignKeys = dbCache.getNamesOfForeignKeys(relName);
 			if(!foreignKeys.contains(col.getName())){
 				entityNode.addAttribute(col);
-				//logger.debug("add attribute " + col.getName() + " to " + entityNode.getOriginalName());
 			}
 		}
 	}
@@ -209,9 +184,9 @@ public class ORASSBuilder{
 		for (int i = 0; i< entityOrder.size(); i++){
 			String entityName = entityOrder.get(i);
 			logger.debug("process n-ary entity " + entityName);
-			/*if (i==0 && entityName != parent.getName()){
+			if (i==0 && entityName != parent.getName()){
 				throw new MainException("The parent of N-ary relationship "+ relName+" is inconsistent with the order of the entities specified by the user");
-			}*/
+			}
 			
 			Vector<ErdNode> links = erdnodes.get(entityName).getLinks();
 			// process the links connected to this node other than the n-ary rel link
