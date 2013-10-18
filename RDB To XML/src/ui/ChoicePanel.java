@@ -24,7 +24,9 @@ public class ChoicePanel extends JPanel {
 	private TranslatePanel t;
 	private GridBagConstraints c;
 	private int currLine = 0;
-
+	private List<JPanel> panellist = new ArrayList<JPanel>();
+	private List<JLabel> labellist = new ArrayList<JLabel>();
+	
 	public ChoicePanel(TranslatePanel t) {
 		super();
 		this.t = t;
@@ -107,8 +109,10 @@ public class ChoicePanel extends JPanel {
 			List<String> listS) {
 		c.gridx = 0;
 		c.gridy = ++currLine;
+		c.anchor = GridBagConstraints.WEST;
 		JLabel relation = new JLabel("Relation name: " + relName);
 		add(relation, c);
+		labellist.add(relation);
 
 		JButton changeOrderButton = new JButton("Change Order");
 		JLabel currOrder = new JLabel("");
@@ -124,7 +128,8 @@ public class ChoicePanel extends JPanel {
 		orderPanel.add(changeOrderButton);
 		orderPanel.add(currOrder);
 		add(orderPanel, c);
-
+		
+		panellist.add(orderPanel);
 		Pair<JButton, JLabel> p = new Pair(changeOrderButton, currOrder);
 		return p;
 	}
@@ -186,5 +191,19 @@ public class ChoicePanel extends JPanel {
 			comboList.add(combo);
 		}
 		return comboList;
+	}
+	
+	public void cleanUp() {
+		currLine = 2;
+		for (int i = 0; i < labellist.size(); i++) {
+			remove(labellist.get(i));
+			revalidate();
+			repaint();
+		}
+		for (int i = 0; i < panellist.size(); i++) {
+			remove(panellist.get(i));
+			revalidate();
+			repaint();
+		}
 	}
 }

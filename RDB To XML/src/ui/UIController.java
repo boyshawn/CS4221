@@ -25,6 +25,7 @@ import javax.swing.UIManager;
 import main.MainException;
 import main.RDBToXML;
 import erd.ErdNode;
+import erd.ErdNodeType;
 
 public class UIController {
 	private MainPanel main;
@@ -89,20 +90,6 @@ public class UIController {
 						r.translateToERD();
 						List<List<String>> cycles = r.checkCycle();
 
-						// TESTING***********************//
-						/*List<List<String>> cycles = new ArrayList<List<String>>();
-						List<String> list1 = new ArrayList<String>();
-						list1.add("entity1");
-						list1.add("entity2");
-
-						List<String> list2 = new ArrayList<String>();
-						list2.add("entity3");
-						list2.add("entity4");
-
-						cycles.add(list1);
-						cycles.add(list2);*/
-						// ***************************//
-
 						if (cycles.size() != 0) {
 							cycleCombo = choice.addSplitCyclePanel(cycles);
 						}
@@ -110,24 +97,19 @@ public class UIController {
 						r.translateToORASS();
 
 						// set up the choice panel
+						choice.cleanUp();
 						Map<String, ErdNode> rootMap = r.getERDEntityTypes();
-						String[] root = rootMap.keySet().toArray(new String[0]);
+						List<String> rootTemp = new ArrayList<String>(rootMap.keySet());
+						List<String> rootEntity = new ArrayList<String>();
+						for (int i = 0; i < rootTemp.size(); i++) {
+							if (rootMap.get(rootTemp.get(i)).getErdNodeType() == ErdNodeType.ENTITY_TYPE) {
+								rootEntity.add(rootTemp.get(i));
+							}
+						}
+						String[] root = rootEntity.toArray(new String[0]);
 						choice.setRootList(root);
 
 						nary = r.getNaryRels();
-
-						// TESTING************************//
-						/*List<String> temp = new ArrayList<String>();
-						List<String> temp2 = new ArrayList<String>();
-						temp.add("a");
-						temp.add("b");
-						temp.add("c");
-						temp2.add("student");
-						temp2.add("course");
-						temp2.add("prof");
-						nary.put("REL1", temp);
-						nary.put("REL2", temp2);*/
-						// ***************************//
 
 						for (Map.Entry<String, List<String>> entry : nary
 								.entrySet()) {
@@ -206,9 +188,7 @@ public class UIController {
 							});
 
 						}
-
 						choice.addNextCancelButton();
-
 						main.getMainFrame().setContentPane(
 								main.getChoicePanel());
 						main.getMainFrame().validate();
@@ -262,18 +242,8 @@ public class UIController {
 					}
 				}
 	
-				// TESTING***************************//
-				/*
-				 * List<String> a = nary.get("REL1"); for (int j = 0; j < a.size();
-				 * j++) { System.out.println(a.get(j)); }
-				 * 
-				 * List<String> b = nary.get("REL2"); for (int j = 0; j < b.size();
-				 * j++) { System.out.println(b.get(j)); }
-				 */
-				// *********************************//
-	
 				r.setOrders(nary);
-	
+				translate.emptiedField();
 				main.getMainFrame().setContentPane(choice.getTranslatePane());
 				main.getMainFrame().validate();
 			}
@@ -283,7 +253,6 @@ public class UIController {
 	class CancelListener implements ActionListener {
 
 		public void actionPerformed(ActionEvent e) {
-			choice = new ChoicePanel(translate);
 			main.showMainPane();
 		}
 	}
