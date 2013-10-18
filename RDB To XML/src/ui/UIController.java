@@ -87,6 +87,8 @@ public class UIController {
 						main.emptiedField();
 						main.setErrorMsg(" ");
 
+						choice.cleanUp();
+						
 						r.translateToERD();
 						List<List<String>> cycles = r.checkCycle();
 
@@ -97,7 +99,6 @@ public class UIController {
 						r.translateToORASS();
 
 						// set up the choice panel
-						choice.cleanUp();
 						Map<String, ErdNode> rootMap = r.getERDEntityTypes();
 						List<String> rootTemp = new ArrayList<String>(rootMap.keySet());
 						List<String> rootEntity = new ArrayList<String>();

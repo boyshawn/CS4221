@@ -26,6 +26,8 @@ public class ChoicePanel extends JPanel {
 	private int currLine = 0;
 	private List<JPanel> panellist = new ArrayList<JPanel>();
 	private List<JLabel> labellist = new ArrayList<JLabel>();
+	private List<JPanel> cycleCombolist = new ArrayList<JPanel>();
+	private List<JLabel> cyclelabel = new ArrayList<JLabel>();
 	
 	public ChoicePanel(TranslatePanel t) {
 		super();
@@ -136,8 +138,7 @@ public class ChoicePanel extends JPanel {
 
 	public void addNextCancelButton() {
 		c.gridx = 2;
-		currLine = currLine + 1;
-		c.gridy = ++currLine;
+		c.gridy = 30;
 		c.anchor = GridBagConstraints.EAST;
 		c.fill = GridBagConstraints.NONE;
 		JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.TRAILING));
@@ -167,9 +168,11 @@ public class ChoicePanel extends JPanel {
 	public List<JComboBox> addSplitCyclePanel(List<List<String>> listCycle) {
 		c.gridx = 0;
 		c.gridy = ++currLine;
+		c.anchor = GridBagConstraints.WEST;
 		JLabel cycleLabel = new JLabel(
 				"Cycle(s) detected! Choose which entity to split");
 		add(cycleLabel, c);
+		cyclelabel.add(cycleLabel);
 
 		List<JComboBox> comboList = new ArrayList<JComboBox>();
 		for (int i = 0; i < listCycle.size(); i++) {
@@ -189,12 +192,23 @@ public class ChoicePanel extends JPanel {
 			add(split, c);
 
 			comboList.add(combo);
+			cycleCombolist.add(split);
 		}
 		return comboList;
 	}
 	
 	public void cleanUp() {
 		currLine = 2;
+		for (int i = 0; i < cycleCombolist.size(); i++) {
+			remove(cycleCombolist.get(i));
+			revalidate();
+			repaint();
+		}
+		for (int i = 0; i < cyclelabel.size(); i++) {
+			remove(cyclelabel.get(i));
+			revalidate();
+			repaint();
+		}
 		for (int i = 0; i < labellist.size(); i++) {
 			remove(labellist.get(i));
 			revalidate();
