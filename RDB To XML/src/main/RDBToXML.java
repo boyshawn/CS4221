@@ -65,13 +65,11 @@ public class RDBToXML {
 	// XML
 	public void translateToXML(String dbName, String xmlFileName) throws MainException {
 		
-		XMLDataGenerator dataGen = new XMLDataGenerator();
-		dataGen.generate(dbName, xmlFileName, orassRoot);
-		
 		XMLSchemaGenerator schemaGen = new XMLSchemaGenerator();
-		
 		schemaGen.generate(dbName, xmlFileName, orassRoot);
 		
+		XMLDataGenerator dataGen = new XMLDataGenerator();
+		dataGen.generate(dbName, xmlFileName, orassRoot);
 		dbc.closeConnection();	
 	}	
 }
