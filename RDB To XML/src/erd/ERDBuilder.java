@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.util.logging.Logger;
 
 import javax.sql.rowset.CachedRowSet;
 
@@ -265,7 +266,7 @@ public class ERDBuilder {
 				}
 			}
 		}
-		return relationshipInCycle;
+		return cycles;
 	}
 
 	// return a list of entities where the cycle exists

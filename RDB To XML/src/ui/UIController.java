@@ -224,10 +224,19 @@ public class UIController {
 						check = false; 
 			}
 			
-			if (!check) {
+			boolean check2 = true;
+			for (int i = 0; i < cycleCombo.size(); i++) {
+				if (cycleCombo.get(i).getSelectedItem().toString().equals(rootString))
+						check2 = false;
+			}
+			
+			if (check == false) {
 				JOptionPane.showMessageDialog(choice,
 						rootString + " must be the root of the n-ary relation",
 						"ERROR",JOptionPane.ERROR_MESSAGE);
+			} else if (check2 == false) {
+				JOptionPane.showMessageDialog(choice,
+						"Cannot split the root", "ERROR", JOptionPane.ERROR_MESSAGE);
 			} else {
 				Map<String, ErdNode> rootMap = r.getERDEntityTypes();
 				try {
