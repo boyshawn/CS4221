@@ -255,7 +255,7 @@ public class ERDBuilder {
 						//split E1
 						setEntityToBeSplitted(e1, -1);
 					} else {
-						// if both entity have links or both does not have links
+						// if both does not have links
 						cycles.add(cycleToBeSplit);
 						List<String> relInCycle = new ArrayList<String>();
 						relInCycle.add(s);
