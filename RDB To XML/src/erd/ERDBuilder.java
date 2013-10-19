@@ -374,9 +374,7 @@ public class ERDBuilder {
 		String new2S = tableName + "2";
 		ErdNode new1 = new ErdNode(new1S, tableName, ntype, att);
 		ErdNode new2 = new ErdNode(new2S, tableName, ntype, att);
-		// put the new entities to the map
-		entityTypes.put(new1S, new1);
-		entityTypes.put(new2S, new2);
+		
 		System.out.println("CREATE: " + new1.getTableName());
 		System.out.println("CREATE: " + new2.getTableName());
 
@@ -410,6 +408,9 @@ public class ERDBuilder {
 			// add link from the new entities to the relationship
 			new1.addLink(relInCycle1);
 			new2.addLink(relInCycle2);
+			// put the new entities to the map
+			entityTypes.put(new1S, new1);
+			entityTypes.put(new2S, new2);
 		} catch (MainException me) {
 			System.out.println(me.getMessage());
 		} catch (Exception e) {
