@@ -393,8 +393,8 @@ public class XMLDataGenerator implements Generator {
 	}
 
 	private ResultSet setupData() throws MainException{
-		//ResultSet resultSet = dbCache.joinTables(colMaps, tables, relationships, keyMaps, nodeTables);
-		ResultSet resultSet = dbCache.joinTables(tables, relationships, keyMaps, nodeTables);
+		ResultSet resultSet = dbCache.joinTables(colMaps, tables, relationships, keyMaps, nodeTables);
+		//ResultSet resultSet = dbCache.joinTables(tables, relationships, keyMaps, nodeTables);
 		//resetNeedClosing();
 		return resultSet;
 	}
