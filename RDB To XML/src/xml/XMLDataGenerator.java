@@ -17,7 +17,7 @@ import java.util.HashMap;
 import javax.sql.rowset.CachedRowSet;
 //import javax.sql.rowset.JoinRowSet;
 
-import org.apache.log4j.Logger;
+//import org.apache.log4j.Logger;
 
 import main.MainException;
 import database.DBAccess;
@@ -40,7 +40,7 @@ public class XMLDataGenerator implements Generator {
 	private List<String> currTables;
 
 	private Map<Integer, Boolean> needClosing;
-	private Logger logger = Logger.getLogger(XMLDataGenerator.class);
+	//private Logger logger = Logger.getLogger(XMLDataGenerator.class);
 
 	@Override
 	public void generate(String dbName, String fileName, ORASSNode root) throws MainException {
