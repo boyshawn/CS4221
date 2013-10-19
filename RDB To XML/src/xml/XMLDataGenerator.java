@@ -102,7 +102,7 @@ public class XMLDataGenerator implements Generator {
 			while(results.next()){
 				if(!currTables.contains(tableName)){
 					currTables.add(tableName); 
-					List<String> pkVals = getAllValues(tableName, results);
+					List<String> pkVals = getAllValues(root, results);
 					prevVals.put(tableName, pkVals);
 				}
 
@@ -115,21 +115,30 @@ public class XMLDataGenerator implements Generator {
 		writer.println("</"+dbName+">");
 	}
 
-	private List<String> getAllValues(String tableName, ResultSet data) throws MainException{
+	private List<String> getAllValues(ORASSNode node, ResultSet data) throws MainException{
 
 		//logger.info("start");
 		List<String> allVals = new ArrayList<String>();
 		try{
-			List<String> allCols = colMaps.get(tableName);
+			List<ColumnDetail> allCols = node.getAttributes();
 
 			for(int j = 0; j<allCols.size(); j++){
-				String val = data.getString(allCols.get(j));
-				logger.info("Table: " +tableName+"; key =" +allCols.get(j) +"; val=" + val);
+				ColumnDetail col = allCols.get(j);
+				String colName = col.getName();
+				String tableName = col.getTableName();
+				String val;
+				if(isNameChanged(tableName)){
+					val = data.getString(tableName+colName);
+				}else{
+					val = data.getString(colName);
+				}
+				
+				logger.info("Table: " +tableName+"; key =" +colName +"; val=" + val);
 				allVals.add(val);
 			}
 			//logger.info("Table: " + tableName + "; keysize: " + pkCols.size()+"; valsize: "+pkVals.size());
 		}catch(SQLException ex){
-			throw new MainException("Error in getting primary key values for "+tableName + " : " + ex.getMessage());
+			throw new MainException("Error in getting primary key values for "+node.getName() + " : " + ex.getMessage());
 		}
 		return allVals;
 	}
@@ -203,8 +212,9 @@ public class XMLDataGenerator implements Generator {
 	private void printTable(ORASSNode node, ResultSet data, int indentation) throws MainException{
 		try{
 			String tableName = node.getName();
-			List<String> cols = getColNames(node);
-			List<String> pkVals = getAllValues(tableName, data);
+			//List<String> cols = getColNames(node);
+			List<ColumnDetail> cols = node.getAttributes();
+			List<String> pkVals = getAllValues(node, data);
 			Map<String, List<String>> currVals = new HashMap<String, List<String>>();
 			currVals.putAll(prevVals);
 			currVals.put(tableName, pkVals);
@@ -218,14 +228,16 @@ public class XMLDataGenerator implements Generator {
 				printTabs(indentation);
 				writer.println("<"+node.getOriginalName()+">");
 				for(int i=0;i<cols.size();i++){
-					String colName = cols.get(i);
-					
+					ColumnDetail col = cols.get(i);
+					String colName = col.getName();
+					String tName = col.getTableName();
 					String nextData;
-					if(checkNameChanged(tableName)){
-						nextData= data.getString(tableName+colName);
+					if(isNameChanged(tName)){
+						nextData= data.getString(node.getOriginalName()+colName);
 					}else{
 						nextData = data.getString(colName);
 					}
+					logger.info("NEXT DATA: "+nextData);
 					printTabs(indentation+1);
 					if (data.wasNull()){
 						writer.print("<"+colName);
@@ -244,7 +256,7 @@ public class XMLDataGenerator implements Generator {
 				String childName = child.getName();
 
 				if(!currTables.contains(childName)){
-					List<String> childKeyVals = getAllValues(childName, data);
+					List<String> childKeyVals = getAllValues(child, data);
 					prevVals.put(childName, childKeyVals);
 					currTables.add(childName);
 				}
@@ -252,7 +264,7 @@ public class XMLDataGenerator implements Generator {
 			}
 			printClosingTag(node, data, pkVals, indentation);
 		}catch(SQLException ex){
-			throw new MainException("Print table " + node.getName());
+			throw new MainException("Print table " + node.getName()+" : "+ ex.getMessage());
 		}
 	}
 
@@ -265,7 +277,7 @@ public class XMLDataGenerator implements Generator {
 				writer.println("</"+node.getOriginalName()+">");
 			}else if(!data.isLast()){
 				data.next();
-				List<String> pkVals = getAllValues(tableName, data);
+				List<String> pkVals = getAllValues(node, data);
 				boolean isEqual = isValsEqual(previousVals,pkVals);
 				if(!isEqual){
 					printTabs(indentation);
@@ -292,12 +304,13 @@ public class XMLDataGenerator implements Generator {
 		return false;
 	}
 
-	private boolean checkNameChanged(String tName){
+	private boolean isNameChanged(String tName){
 		for(int i=0; i<tables.size(); i++){
 			String newName = tables.get(i).get(1);
 			if(newName.equals(tName)){
 				String oldName = tables.get(i).get(0);
-				return newName.equals(oldName);
+				logger.debug("new name: "+newName+"; old name: " +oldName);
+				return !newName.equals(oldName);
 			}
 		}
 		return false;
@@ -327,6 +340,8 @@ public class XMLDataGenerator implements Generator {
 					nameMapping.add(relName);
 					tables.add(nameMapping);
 				}
+				List<String> allRelCols = dbCache.getAllColumns(relName);
+				colMaps.put(relName, allRelCols);
 				CachedRowSet relFK = dbCache.getForeignKeys(relName);
 				try{
 					List<String> pkCols = new ArrayList<String>();

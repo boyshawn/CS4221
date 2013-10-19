@@ -227,7 +227,7 @@ public class DBAccess {
 			boolean isSameName = (originalTableName.equals(tableName));
 			while (columnsItr.hasNext()) {
 				String column = columnsItr.next();
-				query += originalTableName + "." + column;
+				query += tableName + "." + column;
 				// if table name is different from original table name
 				if (!isSameName)
 					query += " AS " + tableName + column + " ";
@@ -236,7 +236,7 @@ public class DBAccess {
 			}
 			
 			// Add columns into FROM clause
-			if (!isSameName)
+			if (isSameName)
 				fromClause += tableName;
 			else
 				fromClause += originalTableName + " AS " + tableName;
