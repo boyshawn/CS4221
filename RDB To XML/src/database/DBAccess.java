@@ -209,19 +209,24 @@ public class DBAccess {
 		}
 	}
 	
-	public ResultSet joinTables(List<String> fromTables, List<NodeRelationship> whereClause, Map<String,List<String>> orderBy, List<String> nodeTables) throws MainException {
+	public ResultSet joinTables(List<List<String>> fromTables, List<NodeRelationship> whereClause, Map<String,List<String>> orderBy, List<String> nodeTables) throws MainException {
 		String query = "";
 		
 		query += "SELECT * FROM ";
 		
-		Iterator<String> itr = fromTables.iterator();
+		Iterator<List<String>> itr = fromTables.iterator();
 		while (itr.hasNext()) {
-			String table = itr.next();
-			query += table;
+			List<String> table = itr.next();
+			String originalTableName = table.get(0);
+			String tableName        = table.get(1);
+			if (originalTableName.equals(tableName))
+				query += tableName;
+			else
+				query += originalTableName + " AS " + tableName;
+
 			// if it is not the last table
 			if (itr.hasNext())
 				query += ",";
-			
 		}
 		
 		// process where clause
@@ -245,9 +250,9 @@ public class DBAccess {
 		
 		// process order by clause
 		query += " ORDER BY ";
-		itr = nodeTables.iterator();
-		while (itr.hasNext()) {
-			String table = itr.next();
+		Iterator<String> stringItr = nodeTables.iterator();
+		while (stringItr.hasNext()) {
+			String table = stringItr.next();
 			List<String> columnsToOrder = orderBy.get(table);
 			Iterator<String> colItr = columnsToOrder.iterator();
 			while (colItr.hasNext()) {
