@@ -101,10 +101,15 @@ public class UIController {
 								List<String> toBeRemove = cycles.get(i);
 								// remove it from root choices
 								notARoot.add(toBeRemove.get(0));
+								String newEnt1 = toBeRemove.get(0) + "1";
+								String newEnt2 = toBeRemove.get(0) + "2";
+								notARoot.add(newEnt1);
+								notARoot.add(newEnt2);
 							}
+							
 						}
 						
-//						if (cycles.size() != 0) {
+//						if (cycles.size() != 0){
 //							cycleCombo = choice.addSplitCyclePanel(cycles);
 //						}
 
