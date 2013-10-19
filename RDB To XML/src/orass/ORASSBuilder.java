@@ -86,12 +86,12 @@ public class ORASSBuilder{
 	private ORASSNode processEntity(ErdNode erNode) throws MainException{
 		
 		String tName = erNode.getTableName();
-		logger.debug("process entity " +  tName);
+		logger.info("process entity " +  tName);
 		ORASSNode node = createORASSNode(tName, erNode.getOriginalTableName());
 		List<ColumnDetail> attrs = erNode.getAttributes();
 		for(int j=0; j<attrs.size(); j++){
 			node.addAttribute(attrs.get(j));
-			//logger.debug("add attribute " + attrs.get(j).getName() + " to " + tName);
+			//logger.info("add attribute " + attrs.get(j).getName() + " to " + tName);
 		}
 		processedNodes.add(tName);
 
@@ -104,7 +104,7 @@ public class ORASSBuilder{
 					//processSpecialLinks(erNode, node);
 					ORASSNode child = processEntity(relatedNode);
 					node.addChildren(child);
-					logger.debug("add child " + child.getName() + " to " + tName);
+					logger.info("add child " + child.getName() + " to " + tName);
 				} else { 
 					// The related node is a parent of a weak entity
 					processRelationship(relatedNode, node);
@@ -151,7 +151,7 @@ public class ORASSBuilder{
 					// Add the related entity as a child of the parent
 					parent.addChildren(child);
 					parent.addChildRelation(child, rels.get(relName).getOriginalTableName());
-					logger.debug("add child " + child.getName() + " to " + parent.getName());
+					logger.info("add child " + child.getName() + " to " + parent.getName());
 				}else {
 					// Relationship is related to a relationship ==> Aggregation
 					processRelationship(relatedNode, parent);
@@ -159,7 +159,7 @@ public class ORASSBuilder{
 			}
 		}
 		return parent;
-		//logger.debug("processed binary relationship " +  relName);
+		//logger.info("processed binary relationship " +  relName);
 	}
 	
 	/*
@@ -183,7 +183,7 @@ public class ORASSBuilder{
 		ORASSNode node1 = parent;
 		for (int i = 0; i< entityOrder.size(); i++){
 			String entityName = entityOrder.get(i);
-			logger.debug("process n-ary entity " + entityName);
+			logger.info("process n-ary entity " + entityName);
 			if (i==0 && entityName != parent.getName()){
 				throw new MainException("The parent of N-ary relationship "+ relName+" is inconsistent with the order of the entities specified by the user");
 			}
@@ -198,7 +198,7 @@ public class ORASSBuilder{
 							if(!processedNodes.contains(relatedNode.getTableName())){
 								ORASSNode child = processEntity(relatedNode);
 								node1.addChildren(child);
-								logger.debug("add child " + child.getName() + " to " + entityName);
+								logger.info("add child " + child.getName() + " to " + entityName);
 							}
 						} else { // The related node is a parent of a weak entity
 							processRelationship(relatedNode, node1);
@@ -215,11 +215,11 @@ public class ORASSBuilder{
 				List<ColumnDetail> attrs = erdnodes.get(nextEntity).getAttributes();
 				for(int j=0; j<attrs.size(); j++){
 					node2.addAttribute(attrs.get(j));
-					//logger.debug("add attribute " + attrs.get(j).getName() + " to " + nextEntity);
+					//logger.info("add attribute " + attrs.get(j).getName() + " to " + nextEntity);
 				}
 				node1.addChildren(node2);
 				node1.addChildRelation(node2, rels.get(relName).getOriginalTableName());
-				logger.debug("add child " + node2.getName() + " to " + node1.getName());
+				logger.info("add child " + node2.getName() + " to " + node1.getName());
 				processedNodes.add(node2.getName());
 				node1 = node2;
 			} else{
@@ -228,7 +228,7 @@ public class ORASSBuilder{
 			}
 			processedNodes.add(entityName);
 		}
-		logger.debug("processed n-ary relationship " +  relName);
+		logger.info("processed n-ary relationship " +  relName);
 		return parent;
 	}
 	
@@ -236,7 +236,7 @@ public class ORASSBuilder{
 		if(!nodes.containsKey(nodeName)){
 			ORASSNode node = new ORASSNode(nodeName, originalName);
 			nodes.put(nodeName, node);
-			//logger.debug("created node : " + nodeName);
+			//logger.info("created node : " + nodeName);
 		}
 		ORASSNode node = nodes.get(nodeName);
 		return node;

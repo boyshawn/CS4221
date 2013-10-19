@@ -192,7 +192,7 @@ public class DBAccess {
 	}
 	
 	public List<String> getNamesOfForeignKeys(String tableName) throws MainException {
-		logger.debug("getForeignKeys : " + tableName);
+		logger.info("getForeignKeys : " + tableName);
 		CachedRowSet crs;
 		List<String> FKNames = new ArrayList<String>();
 		try {
@@ -266,7 +266,7 @@ public class DBAccess {
 			}
 		}
 		
-		logger.debug("Query to execute : " + query);
+		logger.info("Query to execute : " + query);
 		return executeQuery(query);
 		
 	}

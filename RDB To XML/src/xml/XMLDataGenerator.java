@@ -16,8 +16,7 @@ import java.util.HashMap;
 
 import javax.sql.rowset.CachedRowSet;
 //import javax.sql.rowset.JoinRowSet;
-
-//import org.apache.log4j.Logger;
+import org.apache.log4j.Logger;
 
 import main.MainException;
 import database.DBAccess;
@@ -36,11 +35,12 @@ public class XMLDataGenerator implements Generator {
 	private List<NodeRelationship> relationships;
 	private Map<String, List<String>>  keyMaps;
 	private Map<String, List<String>> prevVals;
+	private Map<String, List<String>> colMaps;
 	//private Map<String, List<String>> currVals;
 	private List<String> currTables;
 
-	private Map<Integer, Boolean> needClosing;
-	//private Logger logger = Logger.getLogger(XMLDataGenerator.class);
+	//private Map<Integer, Boolean> needClosing;
+	private Logger logger = Logger.getLogger(XMLDataGenerator.class);
 
 	@Override
 	public void generate(String dbName, String fileName, ORASSNode root) throws MainException {
@@ -50,7 +50,8 @@ public class XMLDataGenerator implements Generator {
 		nodeTables = new ArrayList<String>();
 		relationships = new ArrayList<NodeRelationship>();
 		keyMaps = new HashMap<String, List<String>>();
-		needClosing = new HashMap<Integer, Boolean>();
+		colMaps = new HashMap<String, List<String>>();
+		//needClosing = new HashMap<Integer, Boolean>();
 		setupTables(root);
 
 		setupFile(dbName, fileName);
@@ -117,15 +118,17 @@ public class XMLDataGenerator implements Generator {
 
 	private List<String> getPKValues(String tableName, ResultSet data) throws MainException{
 
-		//logger.debug("start");
+		//logger.info("start");
 		List<String> pkVals = new ArrayList<String>();
 		try{
 			List<String> pkCols = keyMaps.get(tableName);
 
 			for(int j = 0; j<pkCols.size(); j++){
-				pkVals.add(data.getString(pkCols.get(j)));
+				String val = data.getString(pkCols.get(j));
+				logger.info("Table: " +tableName+"; key =" +pkCols.get(j) +"; val=" + val);
+				pkVals.add(val);
 			}
-			//logger.debug("Table: " + tableName + "; keysize: " + pkCols.size()+"; valsize: "+pkVals.size());
+			//logger.info("Table: " + tableName + "; keysize: " + pkCols.size()+"; valsize: "+pkVals.size());
 		}catch(SQLException ex){
 			throw new MainException("Error in getting primary key values for "+tableName + " : " + ex.getMessage());
 		}
@@ -141,14 +144,14 @@ public class XMLDataGenerator implements Generator {
 			firstTable = currTables.get(i);
 			List<String> tVals1 = vals1.get(firstTable);
 			List<String> tVals2 = vals2.get(firstTable);
-			//logger.debug("Table: " + firstTable+"; map1 size=" + vals1.size() + "; map2 size= " +vals2.size());
+			//logger.info("Table: " + firstTable+"; map1 size=" + vals1.size() + "; map2 size= " +vals2.size());
 			isEqual = isValsEqual(tVals1, tVals2);
 			i++;
 		}
 		if(isEqual){
 			firstTable=currTables.get(n-1);
 		}
-		//logger.debug("first changed table: " +firstTable);
+		logger.info("first changed table: " +firstTable);
 		return firstTable;
 	}
 	private boolean isValsEqual(List<String> vals1, List<String> vals2) throws MainException{
@@ -156,7 +159,7 @@ public class XMLDataGenerator implements Generator {
 		for(int i= 0; i<vals1.size(); i++){
 			String val1 = vals1.get(i);
 			String val2 = vals2.get(i);
-			//logger.debug("val1=" + val1 + "; val2= " +val2);
+			//logger.info("val1=" + val1 + "; val2= " +val2);
 			if(!val1.equals(val2)){
 				isEqual=false;
 			}
@@ -173,11 +176,11 @@ public class XMLDataGenerator implements Generator {
 		return cols;
 	}
 
-	private void resetNeedClosing(){
+	/*private void resetNeedClosing(){
 		for(int i=0; i<nodeTables.size(); i++){
 			needClosing.put(i,false);
 		}
-	}
+	}*/
 
 	private void printTable(ORASSNode node, ResultSet data, int indentation) throws MainException{
 		try{
@@ -190,15 +193,21 @@ public class XMLDataGenerator implements Generator {
 
 			String firstChanged = getFirstChangedTable(prevVals, currVals, currTables);
 
-			int tableIndex = nodeTables.indexOf(tableName);
+			//int tableIndex = nodeTables.indexOf(tableName);
 			if(firstChanged.equals(tableName)){
-				//logger.debug("should print " +tableName);
+				//logger.info("should print " +tableName);
 
 				printTabs(indentation);
 				writer.println("<"+node.getOriginalName()+">");
 				for(int i=0;i<cols.size();i++){
 					String colName = cols.get(i);
-					String nextData = data.getString(colName);
+					
+					String nextData;
+					if(checkNameChanged(tableName)){
+						nextData= data.getString(tableName+colName);
+					}else{
+						nextData = data.getString(colName);
+					}
 					printTabs(indentation+1);
 					if (data.wasNull()){
 						writer.print("<"+colName);
@@ -208,7 +217,7 @@ public class XMLDataGenerator implements Generator {
 					}
 					writer.println("</"+colName+">");
 				}
-				needClosing.put(tableIndex, true);
+				//needClosing.put(tableIndex, true);
 			}
 			prevVals = currVals;
 			List<ORASSNode> children = node.getChildren();
@@ -265,6 +274,16 @@ public class XMLDataGenerator implements Generator {
 		return false;
 	}
 
+	private boolean checkNameChanged(String tName){
+		for(int i=0; i<tables.size(); i++){
+			String newName = tables.get(i).get(1);
+			if(newName.equals(tName)){
+				String oldName = tables.get(i).get(0);
+				return newName.equals(oldName);
+			}
+		}
+		return false;
+	}
 	private void setupTables(ORASSNode parent) throws MainException{
 		String tName = parent.getOriginalName();
 		String newName = parent.getName();
@@ -277,6 +296,8 @@ public class XMLDataGenerator implements Generator {
 		nodeTables.add(newName);
 		List<String> pks =dbCache.getPrimaryKeys(tName);
 		keyMaps.put(newName, pks);
+		List<String> allCols = dbCache.getAllColumns(tName);
+		colMaps.put(newName, allCols);
 		List<ORASSNode> children = parent.getChildren();
 		for(int i = 0; i<children.size(); i++){
 			ORASSNode child = children.get(i);
@@ -354,8 +375,8 @@ public class XMLDataGenerator implements Generator {
 	}
 
 	private ResultSet setupData() throws MainException{
-		ResultSet resultSet = dbCache.joinTables(tables, relationships, keyMaps, nodeTables);
-		resetNeedClosing();
+		ResultSet resultSet = dbCache.joinTables(colMaps, tables, relationships, keyMaps, nodeTables);
+		//resetNeedClosing();
 		return resultSet;
 	}
 
