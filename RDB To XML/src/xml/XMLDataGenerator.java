@@ -31,7 +31,7 @@ public class XMLDataGenerator implements Generator {
 	private DBAccess dbCache;
 	private File file;
 	private PrintWriter writer;
-	private List<String> tables;
+	private List<List<String>> tables;
 	private List<String> nodeTables;
 	private List<NodeRelationship> relationships;
 	private Map<String, List<String>>  keyMaps;
@@ -46,7 +46,7 @@ public class XMLDataGenerator implements Generator {
 	public void generate(String dbName, String fileName, ORASSNode root) throws MainException {
 		// TODO Auto-generated method stub
 		dbCache = DBAccess.getInstance();
-		tables = new ArrayList<String>();
+		tables = new ArrayList<List<String>>();
 		nodeTables = new ArrayList<String>();
 		relationships = new ArrayList<NodeRelationship>();
 		keyMaps = new HashMap<String, List<String>>();
@@ -96,7 +96,7 @@ public class XMLDataGenerator implements Generator {
 		//currVals = new HashMap<String, List<String>>();
 		currTables = new ArrayList<String>();
 		try{
-			String tableName = root.getOriginalName();
+			String tableName = root.getName();
 
 			while(results.next()){
 				if(!currTables.contains(tableName)){
@@ -181,7 +181,7 @@ public class XMLDataGenerator implements Generator {
 
 	private void printTable(ORASSNode node, ResultSet data, int indentation) throws MainException{
 		try{
-			String tableName = node.getOriginalName();
+			String tableName = node.getName();
 			List<String> cols = getColNames(node);
 			List<String> pkVals = getPKValues(tableName, data);
 			Map<String, List<String>> currVals = new HashMap<String, List<String>>();
@@ -195,7 +195,7 @@ public class XMLDataGenerator implements Generator {
 				//logger.debug("should print " +tableName);
 
 				printTabs(indentation);
-				writer.println("<"+tableName+">");
+				writer.println("<"+node.getOriginalName()+">");
 				for(int i=0;i<cols.size();i++){
 					String colName = cols.get(i);
 					String nextData = data.getString(colName);
@@ -214,7 +214,7 @@ public class XMLDataGenerator implements Generator {
 			List<ORASSNode> children = node.getChildren();
 			for(int i=0; i<children.size(); i++){
 				ORASSNode child = children.get(i);
-				String childName = child.getOriginalName();
+				String childName = child.getName();
 
 				if(!currTables.contains(childName)){
 					List<String> childKeyVals = getPKValues(childName, data);
@@ -225,29 +225,29 @@ public class XMLDataGenerator implements Generator {
 			}
 			printClosingTag(node, data, pkVals, indentation);
 		}catch(SQLException ex){
-			throw new MainException("Print table " + node.getOriginalName());
+			throw new MainException("Print table " + node.getName());
 		}
 	}
 
 	private void printClosingTag(ORASSNode node, ResultSet data, List<String> previousVals, int indentation) throws MainException{
-		String tableName = node.getOriginalName();
+		String tableName = node.getName();
 		try{
 			List<ORASSNode> children = node.getChildren();
 			if(children.isEmpty() || children.size()==0){
 				printTabs(indentation);
-				writer.println("</"+tableName+">");
+				writer.println("</"+node.getOriginalName()+">");
 			}else if(!data.isLast()){
 				data.next();
 				List<String> pkVals = getPKValues(tableName, data);
 				boolean isEqual = isValsEqual(previousVals,pkVals);
 				if(!isEqual){
 					printTabs(indentation);
-					writer.println("</"+tableName+">");
+					writer.println("</"+node.getOriginalName()+">");
 				}
 				data.previous();
 			}else{
 				printTabs(indentation);
-				writer.println("</"+tableName+">");
+				writer.println("</"+node.getOriginalName()+">");
 			}
 
 		}catch(SQLException ex){
@@ -257,7 +257,13 @@ public class XMLDataGenerator implements Generator {
 
 	private void setupTables(ORASSNode parent) throws MainException{
 		String tName = parent.getOriginalName();
-		tables.add(tName);
+		String originalName = parent.getName();
+		if(!tables.contains(tName)){
+			List<String> nameMapping = new ArrayList(2);
+			nameMapping.add(tName);
+			nameMapping.add(originalName);
+			tables.add(nameMapping);
+		}
 		nodeTables.add(tName);
 		List<String> pks =dbCache.getPrimaryKeys(tName);
 		keyMaps.put(tName, pks);
@@ -267,7 +273,10 @@ public class XMLDataGenerator implements Generator {
 			if(parent.hasRelation(child)){
 				String relName = parent.getRelation(child);
 				if(!tables.contains(relName)){
-					tables.add(relName);
+					List<String> nameMapping = new ArrayList(2);
+					nameMapping.add(relName);
+					nameMapping.add(relName);
+					tables.add(nameMapping);
 				}
 				CachedRowSet relFK = dbCache.getForeignKeys(relName);
 				try{
@@ -287,8 +296,8 @@ public class XMLDataGenerator implements Generator {
 							relCols2.add(relFK.getString("FKCOLUMN_NAME"));
 						}
 					}
-					NodeRelationship rel = new NodeRelationship(parent.getOriginalName(), relName, pkCols, relCols1);
-					NodeRelationship rel2 = new NodeRelationship(child.getOriginalName(),relName, cols2, relCols2);
+					NodeRelationship rel = new NodeRelationship(parent.getName(), relName, pkCols, relCols1);
+					NodeRelationship rel2 = new NodeRelationship(child.getName(), relName, cols2, relCols2);
 					relationships.add(rel);
 					relationships.add(rel2);
 				}catch(SQLException ex){
@@ -318,10 +327,10 @@ public class XMLDataGenerator implements Generator {
 							}
 						}
 
-						NodeRelationship rel = new NodeRelationship(table1, table2, pkList, fkList);
+						NodeRelationship rel = new NodeRelationship(parent.getName(), child.getName(), pkList, fkList);
 						relationships.add(rel);
 					}else{
-						NodeRelationship rel = new NodeRelationship(table1, table2, fkList, pkList);
+						NodeRelationship rel = new NodeRelationship(parent.getName(), child.getName(), fkList, pkList);
 						relationships.add(rel);
 					}
 
