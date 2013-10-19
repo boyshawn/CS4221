@@ -141,11 +141,13 @@ public class ORASSBuilder{
 		
 		for(int i=0; i<links.size(); i++){
 			ErdNode relatedNode = links.get(i);
-			if(relatedNode.getTableName()!=parent.getName() && !processedNodes.contains(relatedNode.getTableName())){
+			logger.info("Relationship: "+relName+" related node name: "+relatedNode.getTableName());
+			if(!relatedNode.getTableName().equals(parent.getName()) && !processedNodes.contains(relatedNode.getTableName())){
 				ErdNodeType nodeType = relatedNode.getErdNodeType();
 				if(nodeType == ErdNodeType.ENTITY_TYPE || nodeType == ErdNodeType.WEAK_ENTITY_TYPE){
 					// Relationship is connected with an entity: process as normal
 					ORASSNode child = createORASSNode(relatedNode.getTableName(), relatedNode.getOriginalTableName());
+					logger.info("process rel entity: "+child.getName());
 					// Add the attributes of the relationship to the child entity
 					processRelAttributes(relName,child);
 					// Add the related entity as a child of the parent

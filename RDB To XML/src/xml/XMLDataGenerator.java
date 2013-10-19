@@ -102,7 +102,7 @@ public class XMLDataGenerator implements Generator {
 			while(results.next()){
 				if(!currTables.contains(tableName)){
 					currTables.add(tableName); 
-					List<String> pkVals = getPKValues(tableName, results);
+					List<String> pkVals = getAllValues(tableName, results);
 					prevVals.put(tableName, pkVals);
 				}
 
@@ -115,6 +115,24 @@ public class XMLDataGenerator implements Generator {
 		writer.println("</"+dbName+">");
 	}
 
+	private List<String> getAllValues(String tableName, ResultSet data) throws MainException{
+
+		//logger.info("start");
+		List<String> allVals = new ArrayList<String>();
+		try{
+			List<String> allCols = colMaps.get(tableName);
+
+			for(int j = 0; j<allCols.size(); j++){
+				String val = data.getString(allCols.get(j));
+				logger.info("Table: " +tableName+"; key =" +allCols.get(j) +"; val=" + val);
+				allVals.add(val);
+			}
+			//logger.info("Table: " + tableName + "; keysize: " + pkCols.size()+"; valsize: "+pkVals.size());
+		}catch(SQLException ex){
+			throw new MainException("Error in getting primary key values for "+tableName + " : " + ex.getMessage());
+		}
+		return allVals;
+	}
 
 	private List<String> getPKValues(String tableName, ResultSet data) throws MainException{
 
@@ -186,7 +204,7 @@ public class XMLDataGenerator implements Generator {
 		try{
 			String tableName = node.getName();
 			List<String> cols = getColNames(node);
-			List<String> pkVals = getPKValues(tableName, data);
+			List<String> pkVals = getAllValues(tableName, data);
 			Map<String, List<String>> currVals = new HashMap<String, List<String>>();
 			currVals.putAll(prevVals);
 			currVals.put(tableName, pkVals);
@@ -226,7 +244,7 @@ public class XMLDataGenerator implements Generator {
 				String childName = child.getName();
 
 				if(!currTables.contains(childName)){
-					List<String> childKeyVals = getPKValues(childName, data);
+					List<String> childKeyVals = getAllValues(childName, data);
 					prevVals.put(childName, childKeyVals);
 					currTables.add(childName);
 				}
@@ -247,7 +265,7 @@ public class XMLDataGenerator implements Generator {
 				writer.println("</"+node.getOriginalName()+">");
 			}else if(!data.isLast()){
 				data.next();
-				List<String> pkVals = getPKValues(tableName, data);
+				List<String> pkVals = getAllValues(tableName, data);
 				boolean isEqual = isValsEqual(previousVals,pkVals);
 				if(!isEqual){
 					printTabs(indentation);
@@ -375,7 +393,8 @@ public class XMLDataGenerator implements Generator {
 	}
 
 	private ResultSet setupData() throws MainException{
-		ResultSet resultSet = dbCache.joinTables(colMaps, tables, relationships, keyMaps, nodeTables);
+		//ResultSet resultSet = dbCache.joinTables(colMaps, tables, relationships, keyMaps, nodeTables);
+		ResultSet resultSet = dbCache.joinTables(tables, relationships, keyMaps, nodeTables);
 		//resetNeedClosing();
 		return resultSet;
 	}
