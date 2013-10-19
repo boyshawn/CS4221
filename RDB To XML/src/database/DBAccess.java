@@ -259,7 +259,7 @@ public class DBAccess {
 				String column = colItr.next();
 				query += table + "." + column;
 				// if it is not the last column of the last table to order by
-				if (colItr.hasNext() || itr.hasNext())
+				if (colItr.hasNext() || stringItr.hasNext())
 					query += ",";
 				else
 					query += ";";

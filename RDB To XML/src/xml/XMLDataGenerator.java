@@ -254,26 +254,36 @@ public class XMLDataGenerator implements Generator {
 			throw new MainException("Error in getting data for printing the closing tag.");
 		}
 	}
+	
+	private boolean checkTableExist(String tName){
+		for(int i=0; i<tables.size();i++){
+			String newName = tables.get(i).get(1);
+			if(tName.equals(newName)){
+				return true;
+			}
+		}
+		return false;
+	}
 
 	private void setupTables(ORASSNode parent) throws MainException{
 		String tName = parent.getOriginalName();
-		String originalName = parent.getName();
-		if(!tables.contains(tName)){
-			List<String> nameMapping = new ArrayList(2);
+		String newName = parent.getName();
+		if(!checkTableExist(newName)){
+			List<String> nameMapping = new ArrayList<String>();
 			nameMapping.add(tName);
-			nameMapping.add(originalName);
+			nameMapping.add(newName);
 			tables.add(nameMapping);
 		}
-		nodeTables.add(tName);
+		nodeTables.add(newName);
 		List<String> pks =dbCache.getPrimaryKeys(tName);
-		keyMaps.put(tName, pks);
+		keyMaps.put(newName, pks);
 		List<ORASSNode> children = parent.getChildren();
 		for(int i = 0; i<children.size(); i++){
 			ORASSNode child = children.get(i);
 			if(parent.hasRelation(child)){
 				String relName = parent.getRelation(child);
-				if(!tables.contains(relName)){
-					List<String> nameMapping = new ArrayList(2);
+				if(!checkTableExist(relName)){
+					List<String> nameMapping = new ArrayList<String>();
 					nameMapping.add(relName);
 					nameMapping.add(relName);
 					tables.add(nameMapping);
