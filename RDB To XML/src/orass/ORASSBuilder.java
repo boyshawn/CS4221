@@ -91,7 +91,7 @@ public class ORASSBuilder{
 		List<ColumnDetail> attrs = erNode.getAttributes();
 		for(int j=0; j<attrs.size(); j++){
 			node.addAttribute(attrs.get(j));
-			//logger.info("add attribute " + attrs.get(j).getName() + " to " + tName);
+			logger.info("add attribute " + attrs.get(j).getName() + " to " + tName);
 		}
 		processedNodes.add(tName);
 
@@ -142,18 +142,19 @@ public class ORASSBuilder{
 		for(int i=0; i<links.size(); i++){
 			ErdNode relatedNode = links.get(i);
 			logger.info("Relationship: "+relName+" related node name: "+relatedNode.getTableName());
-			if(!relatedNode.getTableName().equals(parent.getName()) && !processedNodes.contains(relatedNode.getTableName())){
+			if(!relatedNode.getTableName().equals(parent.getName())){
 				ErdNodeType nodeType = relatedNode.getErdNodeType();
 				if(nodeType == ErdNodeType.ENTITY_TYPE || nodeType == ErdNodeType.WEAK_ENTITY_TYPE){
 					// Relationship is connected with an entity: process as normal
-					ORASSNode child = createORASSNode(relatedNode.getTableName(), relatedNode.getOriginalTableName());
-					logger.info("process rel entity: "+child.getName());
-					// Add the attributes of the relationship to the child entity
-					processRelAttributes(relName,child);
-					// Add the related entity as a child of the parent
-					parent.addChildren(child);
-					parent.addChildRelation(child, rels.get(relName).getOriginalTableName());
-					logger.info("add child " + child.getName() + " to " + parent.getName());
+					if(!processedNodes.contains(relatedNode.getTableName())){
+						ORASSNode child = processEntity(relatedNode);
+						// Add the attributes of the relationship to the child entity
+						processRelAttributes(relName,child);
+						// Add the related entity as a child of the parent
+						parent.addChildren(child);
+						parent.addChildRelation(child, rels.get(relName).getOriginalTableName());
+						logger.info("add child " + child.getName() + " to " + parent.getName());
+					}
 				}else {
 					// Relationship is related to a relationship ==> Aggregation
 					processRelationship(relatedNode, parent);
@@ -217,7 +218,7 @@ public class ORASSBuilder{
 				List<ColumnDetail> attrs = erdnodes.get(nextEntity).getAttributes();
 				for(int j=0; j<attrs.size(); j++){
 					node2.addAttribute(attrs.get(j));
-					//logger.info("add attribute " + attrs.get(j).getName() + " to " + nextEntity);
+					logger.info("add attribute " + attrs.get(j).getName() + " to " + nextEntity);
 				}
 				node1.addChildren(node2);
 				node1.addChildRelation(node2, rels.get(relName).getOriginalTableName());
