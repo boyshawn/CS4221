@@ -34,6 +34,14 @@ public class ORASSBuilder{
 		erdnodes = new HashMap<String, ErdNode>();
 		erdnodes.putAll(entities);
 		erdnodes.putAll(rels);
+		
+		/*Set<String> erd = erdnodes.keySet();
+		Iterator<String> erdItr = erd.iterator();
+		String tables="";
+		while(erdItr.hasNext()){
+			tables += erdItr.next() + "-";
+		}
+		logger.info(tables);*/
 	}
 	
 	/*
@@ -91,7 +99,7 @@ public class ORASSBuilder{
 		List<ColumnDetail> attrs = erNode.getAttributes();
 		for(int j=0; j<attrs.size(); j++){
 			node.addAttribute(attrs.get(j));
-			logger.info("add attribute " + attrs.get(j).getName() + " to " + tName);
+			//logger.info("add attribute " + attrs.get(j).getName() + " to " + tName);
 		}
 		processedNodes.add(tName);
 
@@ -218,7 +226,7 @@ public class ORASSBuilder{
 				List<ColumnDetail> attrs = erdnodes.get(nextEntity).getAttributes();
 				for(int j=0; j<attrs.size(); j++){
 					node2.addAttribute(attrs.get(j));
-					logger.info("add attribute " + attrs.get(j).getName() + " to " + nextEntity);
+					//logger.info("add attribute " + attrs.get(j).getName() + " to " + nextEntity);
 				}
 				node1.addChildren(node2);
 				node1.addChildRelation(node2, rels.get(relName).getOriginalTableName());
