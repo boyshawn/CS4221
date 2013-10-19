@@ -209,25 +209,45 @@ public class DBAccess {
 		}
 	}
 	
-	public ResultSet joinTables(List<List<String>> fromTables, List<NodeRelationship> whereClause, Map<String,List<String>> orderBy, List<String> nodeTables) throws MainException {
-		String query = "";
+	public ResultSet joinTables(Map<String, List<String>> selectClause, List<List<String>> fromTables, List<NodeRelationship> whereClause, Map<String,List<String>> orderBy, List<String> nodeTables) throws MainException {
+		String query = "", fromClause = "";
 		
-		query += "SELECT * FROM ";
-		
-		Iterator<List<String>> itr = fromTables.iterator();
-		while (itr.hasNext()) {
-			List<String> table = itr.next();
+		// Process SELECT and FROM clause at the same time
+		query += "SELECT ";
+		fromClause += " FROM ";
+		Iterator<List<String>>listItr = fromTables.iterator();
+		while (listItr.hasNext()) {
+			List<String> table       = listItr.next();
 			String originalTableName = table.get(0);
-			String tableName        = table.get(1);
-			if (originalTableName.equals(tableName))
-				query += tableName;
+			String tableName         = table.get(1);
+			
+			// Add columns of tables into SELECT clause
+			List<String> columnsToSelect = selectClause.get(tableName);
+			Iterator<String> columnsItr  = columnsToSelect.iterator();
+			boolean isSameName = (originalTableName.equals(tableName));
+			while (columnsItr.hasNext()) {
+				String column = columnsItr.next();
+				query += originalTableName + "." + column;
+				// if table name is different from original table name
+				if (!isSameName)
+					query += " AS " + tableName + column + " ";
+				if (columnsItr.hasNext())
+					query += ",";
+			}
+			
+			// Add columns into FROM clause
+			if (!isSameName)
+				fromClause += tableName;
 			else
-				query += originalTableName + " AS " + tableName;
+				fromClause += originalTableName + " AS " + tableName;
 
 			// if it is not the last table
-			if (itr.hasNext())
+			if (listItr.hasNext()) {
 				query += ",";
+				fromClause += ",";
+			}
 		}
+		query += fromClause;
 		
 		// process where clause
 		query += " WHERE ";
