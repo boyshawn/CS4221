@@ -93,21 +93,29 @@ public class ERDBuilder {
 			
 			// if a table's foreign keys reference 1 other table only and 
 			// the table is not being referenced by any other table and if
-			// 1) it is an all-key relation / foreign key is part of primary key (m:m attribute) or 
-			// 2) foreign key is the primary key (optional m:1 attribute) or
-			// 3) foreign key is non-prime (1:m attribute)
+			// 1) it is an all-key relation / foreign key is part of primary key (non-foreign key is m:m attribute) or 
+			// 2) foreign key is non-prime (non-foreign key is 1:m attribute) or
+			// 3) foreign key is the primary key (optional m:1 attribute) 
 			// then the table is of the same entity type as the table its foreign keys references to (merge both entities)
 			boolean isMultiVal1 = (columns.size() == primaryKey.size());
 			boolean isMultiVal2 = (!hasIntersection(fkColumns, primaryKey));
-			if (!isReferenced && (isMultiVal1 || isEqual(fkColumns, primaryKey) || isMultiVal2)) {
+			if (!isReferenced && (isMultiVal1 || isMultiVal2 || isEqual(fkColumns, primaryKey))) {
 				
-				fkNode.addAttributes(columns);
-				if (isMultiVal1 || isMultiVal2) {
-					Iterator<ColumnDetail> colItr = columns.iterator();
-					while (colItr.hasNext()) {
-						ColumnDetail column = colItr.next();
+				Iterator<ColumnDetail> colItr = columns.iterator();
+				while (colItr.hasNext()) {
+					ColumnDetail column = colItr.next();
+					Iterator<String> fkItr = fkColumns.iterator();
+					while (fkItr.hasNext()) {
+						String fkName = fkItr.next();
+						if (!column.getName().equals(fkName)) {
+							// if there is multi valued attributes, mark those values that are not foreign keys as multi valued
+							if (isMultiVal1 || isMultiVal2)
+								column.setIsMultiValued(true);
+							fkNode.addAttribute(column);
+						}
 					}
 				}
+				
 				
 				if (fkNode.getErdNodeType() == ErdNodeType.ENTITY_TYPE || fkNode.getErdNodeType() == ErdNodeType.WEAK_ENTITY_TYPE)
 					entityTypes.put(tableName, fkNode);
