@@ -259,7 +259,6 @@ public class UIController {
 				Map<String, ErdNode> rootMap = r.getERDEntityTypes();
 				try {
 					r.buildORASS(rootMap.get(rootString));
-					System.out.println("successful");
 					if (cycleCombo.size() != 0) {
 						for (int i = 0; i < cycleCombo.size(); i++) {
 							r.setEntityToBeSplitted(cycleCombo.get(i).getSelectedItem()
@@ -295,6 +294,8 @@ public class UIController {
 	class PrevListener implements ActionListener {
 
 		public void actionPerformed(ActionEvent e) {
+			translate.emptiedField();
+			translate.setErrorMsg(" ");
 			main.getMainFrame().setContentPane(main.getChoicePanel());
 			main.getMainFrame().validate();
 		}
@@ -339,7 +340,6 @@ public class UIController {
 		public void actionPerformed(ActionEvent e) {
 			String xmlName, path;
 			InputFormatValidator v = new InputFormatValidator();
-
 			xmlName = translate.getFilename();
 			path = translate.getPath();
 
@@ -362,7 +362,6 @@ public class UIController {
 						translate.displaySuccessfulMsg();
 						translate.emptiedField();
 						translate.setErrorMsg(" ");
-						choice = new ChoicePanel(translate);
 						// open the files generated
 						try {
 							Desktop.getDesktop().open(new File(fName + ".xml"));
