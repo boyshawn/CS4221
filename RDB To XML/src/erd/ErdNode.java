@@ -173,11 +173,13 @@ public class ErdNode {
 		
 		while(itr.hasNext()) {
 			ColumnDetail columnToAdd = itr.next();
-			Iterator<ColumnDetail> attrsItr = attributes.iterator();
 			
+			Iterator<ColumnDetail> attrsItr = attributes.iterator();
 			while (attrsItr.hasNext()) {
 				ColumnDetail columnDetail = attrsItr.next();
-				if(columnDetail.getName().equals(columnToAdd.getName())) {
+				// get original name of attribute which the foreign key references to
+				String columnName = columnDetail.getRefTableToColumn().get(tableName);
+				if(columnDetail.getName().equals(columnName)) {
 					isDuplicate = true;
 					break;
 				}
