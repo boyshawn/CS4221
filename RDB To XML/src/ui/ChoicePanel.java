@@ -28,7 +28,7 @@ public class ChoicePanel extends JPanel {
 	private List<JLabel> labellist = new ArrayList<JLabel>();
 	private List<JPanel> cycleCombolist = new ArrayList<JPanel>();
 	private List<JLabel> cyclelabel = new ArrayList<JLabel>();
-	
+
 	public ChoicePanel(TranslatePanel t) {
 		super();
 		this.t = t;
@@ -43,7 +43,7 @@ public class ChoicePanel extends JPanel {
 		c.gridy = 1;
 		c.weightx = 1;
 		c.insets = new Insets(3, 3, 3, 3);
-		
+
 		JLabel chooseLabel = new JLabel("Choose the most important entity");
 		add(chooseLabel, c);
 
@@ -64,7 +64,7 @@ public class ChoicePanel extends JPanel {
 		for (int i = 0; i < rootList.length; i++) {
 			rootCombo.addItem(rootList[i]);
 		}
-		//rootCombo.setSelectedIndex(0);
+		// rootCombo.setSelectedIndex(0);
 	}
 
 	public JPanel getTranslatePane() {
@@ -74,8 +74,7 @@ public class ChoicePanel extends JPanel {
 	public JComboBox getRootCombo() {
 		if (rootCombo == null) {
 			rootCombo = new JComboBox(rootList);
-			rootCombo
-					.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXX");
+			rootCombo.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXX");
 			rootCombo.setSelectedIndex(0);
 		}
 		return rootCombo;
@@ -130,7 +129,7 @@ public class ChoicePanel extends JPanel {
 		orderPanel.add(changeOrderButton);
 		orderPanel.add(currOrder);
 		add(orderPanel, c);
-		
+
 		panellist.add(orderPanel);
 		Pair<JButton, JLabel> p = new Pair(changeOrderButton, currOrder);
 		return p;
@@ -177,26 +176,50 @@ public class ChoicePanel extends JPanel {
 		List<JComboBox> comboList = new ArrayList<JComboBox>();
 		for (int i = 0; i < listCycle.size(); i++) {
 			List<String> curr = listCycle.get(i);
-			c.gridx = 0;
-			c.gridy = ++currLine;
-			c.fill = GridBagConstraints.NONE;
-			c.anchor = GridBagConstraints.WEST;
-			JComboBox combo = new JComboBox(
-					curr.toArray(new String[curr.size()]));
-			
-			int temp = i + 1;
-			String currNum = Integer.toString(temp);
-			JPanel split = new JPanel(new FlowLayout(FlowLayout.TRAILING));
-			split.add(new JLabel(currNum + ". "));
-			split.add(combo);
-			add(split, c);
 
-			comboList.add(combo);
-			cycleCombolist.add(split);
+			if (curr.size() > 2) {
+				for (int j = 0; j < curr.size() - 1; j++) {
+					c.gridx = 0;
+					c.gridy = ++currLine;
+					c.fill = GridBagConstraints.NONE;
+					c.anchor = GridBagConstraints.WEST;
+					JComboBox combo = new JComboBox(
+							curr.toArray(new String[curr.size()]));
+					int temp = i + 1;
+					String currNum = Integer.toString(temp);
+					JPanel split = new JPanel(new FlowLayout(
+							FlowLayout.TRAILING));
+					int temp2 = j+1;
+					String currSubNum = Integer.toString(temp2);
+					split.add(new JLabel(currNum + "." + currSubNum));
+					split.add(combo);
+					add(split, c);
+					comboList.add(combo);
+					cycleCombolist.add(split);
+				}
+			} else {
+				c.gridx = 0;
+				c.gridy = ++currLine;
+				c.fill = GridBagConstraints.NONE;
+				c.anchor = GridBagConstraints.WEST;
+				JComboBox combo = new JComboBox(curr.toArray(new String[curr
+						.size()]));
+
+				int temp = i + 1;
+				String currNum = Integer.toString(temp);
+				JPanel split = new JPanel(new FlowLayout(FlowLayout.TRAILING));
+				split.add(new JLabel(currNum + ". "));
+
+				split.add(combo);
+				add(split, c);
+				
+				comboList.add(combo);
+				cycleCombolist.add(split);
+			}
 		}
 		return comboList;
 	}
-	
+
 	public void cleanUp() {
 		currLine = 2;
 		for (int i = 0; i < cycleCombolist.size(); i++) {

@@ -39,6 +39,7 @@ public class UIController {
 	private Map<String, List<String>> nary;
 	private Map<JButton, String> mapButtonRelationName;
 	private List<JComboBox> cycleCombo;
+	private List<List<String>> cycles;
 
 	public UIController(MainPanel main, ChoicePanel choice,
 			TranslatePanel translate, RDBToXML r) {
@@ -90,7 +91,7 @@ public class UIController {
 						choice.cleanUp();
 						
 						r.translateToERD();
-						List<List<String>> cycles = r.checkCycle();
+						cycles = r.checkCycle();
 						
 						List<String> notARoot = new ArrayList<String>();
 						
@@ -100,14 +101,12 @@ public class UIController {
 								List<String> toBeRemove = cycles.get(i);
 								// remove it from root choices
 								notARoot.add(toBeRemove.get(0));
-								//remove it from the cycles list
-								cycles.remove(toBeRemove);
 							}
 						}
 						
-						if (cycles.size() != 0) {
-							cycleCombo = choice.addSplitCyclePanel(cycles);
-						}
+//						if (cycles.size() != 0) {
+//							cycleCombo = choice.addSplitCyclePanel(cycles);
+//						}
 
 						r.translateToORASS();
 
@@ -234,6 +233,16 @@ public class UIController {
 			String rootString = choice.getRootCombo().getSelectedItem()
 					.toString();
 			
+			for(int i = 0; i < cycles.size(); i++) {
+				if(cycles.get(i).contains(rootString)) {
+					for(int j = 0; j < cycles.get(i).size(); j++) {
+						if (!cycles.get(i).get(j).equals(rootString)) {
+							r.setEntityToBeSplitted(cycles.get(i).get(j), i);
+						}
+					}
+				}
+			}
+			
 			boolean check = true;
 			List<List<String>> list = new ArrayList<List<String>>(nary.values());
 			for (int i = 0; i < list.size(); i++) {
@@ -242,19 +251,33 @@ public class UIController {
 						check = false; 
 			}
 			
-			boolean check2 = true;
-			for (int i = 0; i < cycleCombo.size(); i++) {
-				if (cycleCombo.get(i).getSelectedItem().toString().equals(rootString))
-						check2 = false;
-			}
+//			boolean check2 = true;
+//			List<String> c = new ArrayList<String>();
+//			for (int i = 0; i < cycleCombo.size(); i++) {
+//				String x = cycleCombo.get(i).getSelectedItem().toString();
+//				c.add(x);
+//				if (x.equals(rootString)) {
+//						check2 = false;
+//				}					
+//			}
+			
+//			HashSet<String> hashSet = new HashSet<String>();
+//			boolean dupli = false;
+//			for (String s : c) {
+//				if (hashSet.contains(s))
+//					dupli = true; // contains
+//									// duplicates
+//				else
+//					hashSet.add(s);
+//			}
 			
 			if (check == false) {
 				JOptionPane.showMessageDialog(choice,
 						rootString + " must be the root of the n-ary relation",
 						"ERROR",JOptionPane.ERROR_MESSAGE);
-			} else if (check2 == false) {
-				JOptionPane.showMessageDialog(choice,
-						"Cannot split the root", "ERROR", JOptionPane.ERROR_MESSAGE);
+//			} else if (check2 == false) {
+//				JOptionPane.showMessageDialog(choice,
+//						"Cannot split the root", "ERROR", JOptionPane.ERROR_MESSAGE);
 			} else {
 				Map<String, ErdNode> rootMap = r.getERDEntityTypes();
 				try {

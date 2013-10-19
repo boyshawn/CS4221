@@ -266,7 +266,40 @@ public class ERDBuilder {
 						relationshipTypes.get(s).getLinks(), relationshipTypes
 								.get(curr).getLinks());
 				if (cycleToBeSplit != null) {
-					String e1 = cycleToBeSplit.get(0);
+					boolean dependsOnRoot = true;
+					String doNotSplit = null;
+					for (int z = 0; z < cycleToBeSplit.size(); z++) {
+						// if there is one entity linked to other relationships,
+						// split all other entity but keep this one
+						if (entityTypes.get(cycleToBeSplit.get(z)).getLinks().size() > 2) {
+							doNotSplit = cycleToBeSplit.get(z);
+							dependsOnRoot = false;
+							break;
+						}
+					}
+					
+					if (dependsOnRoot == true) {
+						cycles.add(cycleToBeSplit);
+					} else {
+						// split everything but the doNotSplit entity
+						for (int z = 0; z < cycleToBeSplit.size(); z++) {
+							String e = cycleToBeSplit.get(z);
+							if (!e.equals(doNotSplit)) {
+								setEntityToBeSplitted(e, -1);
+								List<String> notARoot = new ArrayList<String>();
+								notARoot.add(e);
+								cycles.add(notARoot);
+							}
+						}
+					}
+					
+				}
+				List<String> relInCycle = new ArrayList<String>();
+				relInCycle.add(s);
+				relInCycle.add(curr);
+				relationshipInCycle.add(relInCycle);
+					
+					/*String e1 = cycleToBeSplit.get(0);
 					String e2 = cycleToBeSplit.get(1);
 					int sizeE1 = entityTypes.get(e1).getLinks().size();
 					int sizeE2 = entityTypes.get(e2).getLinks().size();
@@ -289,8 +322,8 @@ public class ERDBuilder {
 						relInCycle.add(s);
 						relInCycle.add(curr);
 						relationshipInCycle.add(relInCycle);
-					}
-				}
+					}*/
+				
 			}
 		}
 		return cycles;
@@ -299,59 +332,76 @@ public class ERDBuilder {
 	// return a list of entities where the cycle exists
 	private List<String> isMatch(Vector<ErdNode> a, Vector<ErdNode> b) {
 		if (a.size() == b.size()) {
-			if ((a.get(0).equals(b.get(0)) && a.get(1).equals(b.get(1)))
-					|| (a.get(0).equals(b.get(1)) && a.get(1).equals(b.get(0)))) {
-				String entity1 = a.get(0).getTableName();
-				String entity2 = a.get(1).getTableName();
-				List<String> result = new ArrayList<String>();
-				result.add(entity1);
-				result.add(entity2);
+			List<String> result = new ArrayList<String>();
+			for (int i = 0; i < a.size(); i++) {
+				if (b.contains(a.get(i))) {
+					result.add(a.get(i).getTableName());
+				}
+			}
+			if (result.size() >= 2) {
 				return result;
 			}
+//			if ((a.get(0).equals(b.get(0)) && a.get(1).equals(b.get(1)))
+//					|| (a.get(0).equals(b.get(1)) && a.get(1).equals(b.get(0)))) {
+//				String entity1 = a.get(0).getTableName();
+//				String entity2 = a.get(1).getTableName();
+//				List<String> result = new ArrayList<String>();
+//				result.add(entity1);
+//				result.add(entity2);
+//				return result;
+//			}
 		}
 		return null;
 	}
 	
 	public void setEntityToBeSplitted(String entityName, int index) {
+		System.out.println("SPLIT: " + entityName);
 		ErdNode n = entityTypes.get(entityName);
 		String tableName = n.getTableName();
 		ErdNodeType ntype = n.getErdNodeType();
 		List<ColumnDetail> att = n.getAttributes();
 
 		// create 2 new entities
-		ErdNode new1 = new ErdNode(tableName + "1", tableName, ntype, att);
-		ErdNode new2 = new ErdNode(tableName + "2", tableName, ntype, att);
+		String new1S = tableName + "1";
+		String new2S = tableName + "2";
+		ErdNode new1 = new ErdNode(new1S, tableName, ntype, att);
+		ErdNode new2 = new ErdNode(new2S, tableName, ntype, att);
+		// put the new entities to the map
+		entityTypes.put(new1S, new1);
+		entityTypes.put(new2S, new2);
+		System.out.println("CREATE: " + new1.getTableName());
+		System.out.println("CREATE: " + new2.getTableName());
 
 		ErdNode relInCycle1;
 		ErdNode relInCycle2;
 		
-		if (index == -1) {
+		//if (index == -1) {
 			Vector<ErdNode> rel = n.getLinks();
 			relInCycle1 = rel.get(0);
 			relInCycle2 = rel.get(1);
-		} else {
-			// change the link of the relationship in cycle
-			relInCycle1 = relationshipTypes.get(relationshipInCycle.get(
-					index).get(0));
-			relInCycle2 = relationshipTypes.get(relationshipInCycle.get(
-					index).get(1));
-		}
-
+//		} else {
+//			// change the link of the relationship in cycle
+//			relInCycle1 = relationshipTypes.get(relationshipInCycle.get(
+//					index).get(0));
+//			relInCycle2 = relationshipTypes.get(relationshipInCycle.get(
+//					index).get(1));
+//		}
+			
+		System.out.println("RELATION IN THE CYCLE 1: " + relInCycle1.getTableName());
+		System.out.println("RELATION IN THE CYCLE 2: " + relInCycle2.getTableName());
 		try {
 			// remove links from relationship in cycle. connect them to the new entities
 			relInCycle1.removeLink(n);
 			relInCycle2.removeLink(n);
-			relInCycle1.addLink(new1);
-			relInCycle2.addLink(new2);
-			
-			// add link from the new entities to the relationship
-			new1.addLink(relInCycle1);
-			new2.addLink(relInCycle2);
-			
 			// remove links from n that are connected to relationship in cycle.
 			n.removeLink(relInCycle1);
 			n.removeLink(relInCycle2);
-
+			//connect them to the new entities
+			relInCycle1.addLink(new1);
+			relInCycle2.addLink(new2);
+			// add link from the new entities to the relationship
+			new1.addLink(relInCycle1);
+			new2.addLink(relInCycle2);
 		} catch (MainException me) {
 			System.out.println(me.getMessage());
 		} catch (Exception e) {
