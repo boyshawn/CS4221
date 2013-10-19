@@ -294,6 +294,8 @@ public class UIController {
 	class PrevListener implements ActionListener {
 
 		public void actionPerformed(ActionEvent e) {
+			translate.emptiedField();
+			translate.setErrorMsg(" ");
 			main.getMainFrame().setContentPane(main.getChoicePanel());
 			main.getMainFrame().validate();
 		}
