@@ -132,27 +132,6 @@ public class XMLDataGenerator implements Generator {
 		return pkVals;
 	}
 
-	/*private Map<String, List<String>> getPKValues(List<String> tableNames, ResultSet data) throws MainException{
-		Map<String, List<String>> allPKVals = new HashMap<String, List<String>>();
-		logger.debug("start");
-		for(int i=0; i<tableNames.size(); i++){
-			String tableName = tableNames.get(i);
-			List<String> pkVals = new ArrayList<String>();
-			try{
-				List<String> pkCols = keyMaps.get(tableName);
-
-				for(int j = 0; j<pkCols.size(); j++){
-					pkVals.add(data.getString(pkCols.get(j)));
-				}
-				logger.debug("Table: " + tableName + "; keysize: " + pkCols.size()+"; valsize: "+pkVals.size());
-				allPKVals.put(tableName, pkVals);
-			}catch(SQLException ex){
-				throw new MainException("Error in getting primary key values for "+tableName + " : " + ex.getMessage());
-			}
-		}
-		return allPKVals;
-	}*/
-
 	private String getFirstChangedTable(Map<String, List<String>> vals1, Map<String, List<String>> vals2, List<String> currTables) throws MainException{
 		int n =currTables.size();
 		String firstTable = "";
@@ -169,7 +148,7 @@ public class XMLDataGenerator implements Generator {
 		if(isEqual){
 			firstTable=currTables.get(n-1);
 		}
-		logger.debug("first changed table: " +firstTable);
+		//logger.debug("first changed table: " +firstTable);
 		return firstTable;
 	}
 	private boolean isValsEqual(List<String> vals1, List<String> vals2) throws MainException{
@@ -200,7 +179,7 @@ public class XMLDataGenerator implements Generator {
 		}
 	}
 
-	private void printTable(ORASSNode node, ResultSet data, int indention) throws MainException{
+	private void printTable(ORASSNode node, ResultSet data, int indentation) throws MainException{
 		try{
 			String tableName = node.getOriginalName();
 			List<String> cols = getColNames(node);
@@ -214,12 +193,13 @@ public class XMLDataGenerator implements Generator {
 			int tableIndex = nodeTables.indexOf(tableName);
 			if(firstChanged.equals(tableName)){
 				//logger.debug("should print " +tableName);
-				printTabs(indention);
+
+				printTabs(indentation);
 				writer.println("<"+tableName+">");
 				for(int i=0;i<cols.size();i++){
 					String colName = cols.get(i);
 					String nextData = data.getString(colName);
-					printTabs(indention+1);
+					printTabs(indentation+1);
 					if (data.wasNull()){
 						writer.print("<"+colName);
 						writer.print(" xsi:nil=\"true\">");
@@ -235,66 +215,44 @@ public class XMLDataGenerator implements Generator {
 			for(int i=0; i<children.size(); i++){
 				ORASSNode child = children.get(i);
 				String childName = child.getOriginalName();
-				/*List<String> newTables = new ArrayList<String>();
-				newTables.addAll(currTables);
-				if(! newTables.contains(childName)){
-					newTables.add(childName);
-				}*/
-				//if(!currTables.contains(childName)){
 
-				//}
-				//Boolean childPrinted = currTables.contains(childName);
 				if(!currTables.contains(childName)){
 					List<String> childKeyVals = getPKValues(childName, data);
 					prevVals.put(childName, childKeyVals);
 					currTables.add(childName);
 				}
-				printTable(child, data, indention+1);
+				printTable(child, data, indentation+1);
 			}
-			//firstChanged = getFirstChangedTable(prevVals, currVals, currTables);
-			/*if(firstChanged.equals(tableName)){
-				printTabs(indention);
-				writer.println("</"+tableName+">");
-				printed.put(tableName, true);
-			}*/
-			printClosingTag(tableName);
+			printClosingTag(node, data, pkVals, indentation);
 		}catch(SQLException ex){
 			throw new MainException("Print table " + node.getOriginalName());
 		}
 	}
 
-	private void printClosingTag(String tableName){
-		int tableIndex = nodeTables.indexOf(tableName);
-		logger.debug("table index: " +tableIndex);
-		/*if(tableIndex == nodeTables.size()-1){
-			printTabs(tableIndex+1);
-			writer.println("</"+tableName+">");
-		} else {*/
-		Boolean needPrintClosing = needClosing.get(tableIndex);
-		if(needPrintClosing){
-			Boolean alsoNeedClosing = true;
-			int i=tableIndex;
-			while(alsoNeedClosing && i< needClosing.size()){
-				alsoNeedClosing = needClosing.get(i);
-				i++;
-			}
-			int lastNeedClosing = i-1;
-			logger.debug("first need closing: "+ tableIndex+nodeTables.get(tableIndex)+ "; last need closing: "+lastNeedClosing +nodeTables.get(lastNeedClosing));
-			/*for(int j=lastNeedClosing; j>=tableIndex; j--){
-				if(needClosing.get(j)){
-					printTabs(j+1);
-					writer.println("</"+nodeTables.get(j)+">");
-					needClosing.put(j, false);
-				}
-			}*/
-			if(lastNeedClosing==tableIndex){
-				printTabs(tableIndex+1);
+	private void printClosingTag(ORASSNode node, ResultSet data, List<String> previousVals, int indentation) throws MainException{
+		String tableName = node.getOriginalName();
+		try{
+			List<ORASSNode> children = node.getChildren();
+			if(children.isEmpty() || children.size()==0){
+				printTabs(indentation);
 				writer.println("</"+tableName+">");
-				needClosing.put(tableIndex, false);
-				logger.debug("Reset need closing for "+tableIndex);
+			}else if(!data.isLast()){
+				data.next();
+				List<String> pkVals = getPKValues(tableName, data);
+				boolean isEqual = isValsEqual(previousVals,pkVals);
+				if(!isEqual){
+					printTabs(indentation);
+					writer.println("</"+tableName+">");
+				}
+				data.previous();
+			}else{
+				printTabs(indentation);
+				writer.println("</"+tableName+">");
 			}
+
+		}catch(SQLException ex){
+			throw new MainException("Error in getting data for printing the closing tag.");
 		}
-		//}
 	}
 
 	private void setupTables(ORASSNode parent) throws MainException{
@@ -382,8 +340,8 @@ public class XMLDataGenerator implements Generator {
 		return resultSet;
 	}
 
-	private void printTabs(int indention){
-		for(int i=0; i<indention; i++){
+	private void printTabs(int indentation){
+		for(int i=0; i<indentation; i++){
 			writer.print("\t");
 		}
 

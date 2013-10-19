@@ -232,16 +232,6 @@ public class ORASSBuilder{
 		return parent;
 	}
 	
-	/*private void processSpecialLinks(ErdNode erdNode, ORASSNode child){
-		ORASSNode parent;
-		Vector<ErdNode> specialLinks = erdNode.getSpecialLinks();
-		for(int i=0; i<specialLinks.size(); i++){
-			String parentName = specialLinks.get(i).getTableName();
-			parent = createORASSNode(parentName, specialLinks.get(i).getOriginalTableName());
-			isaRels.put(child, parent);
-		}
-	}*/
-	
 	private ORASSNode createORASSNode (String nodeName, String originalName){
 		if(!nodes.containsKey(nodeName)){
 			ORASSNode node = new ORASSNode(nodeName, originalName);
