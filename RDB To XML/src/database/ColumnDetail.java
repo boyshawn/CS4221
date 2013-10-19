@@ -10,6 +10,7 @@ public class ColumnDetail {
 	private String defaultValue;
 	private boolean isNullable;
 	private boolean isUnique;
+	private boolean isMultiValued;
 	private int size;
 	private int sqlType;
 	
@@ -56,4 +57,11 @@ public class ColumnDetail {
 		return sqlType;
 	}	
 	
+	public void setIsMultiValued(boolean isMVD){
+		isMultiValued = isMVD;
+	}
+	
+	public boolean isMultiValued(){
+		return isMultiValued;
+	}
 }
