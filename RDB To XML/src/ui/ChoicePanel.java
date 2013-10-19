@@ -43,7 +43,7 @@ public class ChoicePanel extends JPanel {
 		c.gridy = 1;
 		c.weightx = 1;
 		c.insets = new Insets(3, 3, 3, 3);
-
+		
 		JLabel chooseLabel = new JLabel("Choose the most important entity");
 		add(chooseLabel, c);
 

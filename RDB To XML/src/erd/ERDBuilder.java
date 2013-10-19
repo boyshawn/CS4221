@@ -265,9 +265,15 @@ public class ERDBuilder {
 					if (sizeE1 > 2 && sizeE2 == 2) {
 						//split E2
 						setEntityToBeSplitted(e2, -1);
+						List<String> notARoot = new ArrayList<String>();
+						notARoot.add(e2);
+						cycles.add(notARoot);
 					} else if (sizeE1 == 2 && sizeE2 > 2) {
 						//split E1
 						setEntityToBeSplitted(e1, -1);
+						List<String> notARoot = new ArrayList<String>();
+						notARoot.add(e1);
+						cycles.add(notARoot);
 					} else {
 						// if both does not have links
 						cycles.add(cycleToBeSplit);

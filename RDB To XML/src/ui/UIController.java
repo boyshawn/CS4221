@@ -91,7 +91,20 @@ public class UIController {
 						
 						r.translateToERD();
 						List<List<String>> cycles = r.checkCycle();
-
+						
+						List<String> notARoot = new ArrayList<String>();
+						
+						for (int i = 0; i < cycles.size(); i++) {
+							// if the cycle has been split by ERD
+							if (cycles.get(i).size() == 1) {
+								List<String> toBeRemove = cycles.get(i);
+								// remove it from root choices
+								notARoot.add(toBeRemove.get(0));
+								//remove it from the cycles list
+								cycles.remove(toBeRemove);
+							}
+						}
+						
 						if (cycles.size() != 0) {
 							cycleCombo = choice.addSplitCyclePanel(cycles);
 						}
@@ -105,6 +118,11 @@ public class UIController {
 						for (int i = 0; i < rootTemp.size(); i++) {
 							if (rootMap.get(rootTemp.get(i)).getErdNodeType() == ErdNodeType.ENTITY_TYPE) {
 								rootEntity.add(rootTemp.get(i));
+							}
+						}
+						for (int i = 0; i < notARoot.size(); i++) {
+							if (rootEntity.contains(notARoot.get(i))) {
+								rootEntity.remove(notARoot.get(i));
 							}
 						}
 						String[] root = rootEntity.toArray(new String[0]);
@@ -241,21 +259,23 @@ public class UIController {
 				Map<String, ErdNode> rootMap = r.getERDEntityTypes();
 				try {
 					r.buildORASS(rootMap.get(rootString));
-				} catch (MainException me) {
-					System.out.println(me.getMessage());
-				}
-	
-				if (cycleCombo.size() != 0) {
-					for (int i = 0; i < cycleCombo.size(); i++) {
-						r.setEntityToBeSplitted(cycleCombo.get(i).getSelectedItem()
-								.toString(), i);
+					System.out.println("successful");
+					if (cycleCombo.size() != 0) {
+						for (int i = 0; i < cycleCombo.size(); i++) {
+							r.setEntityToBeSplitted(cycleCombo.get(i).getSelectedItem()
+									.toString(), i);
+						}
 					}
+		
+					r.setOrders(nary);
+					translate.emptiedField();
+					main.getMainFrame().setContentPane(choice.getTranslatePane());
+					main.getMainFrame().validate();
+				} catch (MainException me) {
+					JOptionPane.showMessageDialog(choice,
+							me.getMessage(),
+							"ERROR",JOptionPane.ERROR_MESSAGE);
 				}
-	
-				r.setOrders(nary);
-				translate.emptiedField();
-				main.getMainFrame().setContentPane(choice.getTranslatePane());
-				main.getMainFrame().validate();
 			}
 		}
 	}
