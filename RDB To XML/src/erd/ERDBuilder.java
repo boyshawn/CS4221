@@ -273,39 +273,13 @@ public class ERDBuilder {
 				List<String> cycleToBeSplit = isMatch(
 						relationshipTypes.get(s).getLinks(), relationshipTypes
 								.get(curr).getLinks());
-				if (cycleToBeSplit != null) {
-					boolean dependsOnRoot = true;
-					String doNotSplit = null;
-					for (int z = 0; z < cycleToBeSplit.size(); z++) {
-						// if there is one entity linked to other relationships,
-						// split all other entity but keep this one
-						if (entityTypes.get(cycleToBeSplit.get(z)).getLinks().size() > 2) {
-							doNotSplit = cycleToBeSplit.get(z);
-							dependsOnRoot = false;
-							break;
-						}
-					}
-					
-					if (dependsOnRoot == true) {
+				if (cycleToBeSplit != null) {					
 						cycles.add(cycleToBeSplit);
-					} else {
-						// split everything but the doNotSplit entity
-						for (int z = 0; z < cycleToBeSplit.size(); z++) {
-							String e = cycleToBeSplit.get(z);
-							if (!e.equals(doNotSplit)) {
-								setEntityToBeSplitted(e, -1);
-								List<String> notARoot = new ArrayList<String>();
-								notARoot.add(e);
-								cycles.add(notARoot);
-							}
-						}
-					}
-					
+						List<String> relInCycle = new ArrayList<String>();
+						relInCycle.add(s);
+						relInCycle.add(curr);
+						relationshipInCycle.add(relInCycle);
 				}
-				List<String> relInCycle = new ArrayList<String>();
-				relInCycle.add(s);
-				relInCycle.add(curr);
-				relationshipInCycle.add(relInCycle);
 					
 					/*String e1 = cycleToBeSplit.get(0);
 					String e2 = cycleToBeSplit.get(1);
@@ -382,7 +356,9 @@ public class ERDBuilder {
 		ErdNode relInCycle2;
 		
 		//if (index == -1) {
+		
 			Vector<ErdNode> rel = n.getLinks();
+			System.out.println(rel.size());
 			relInCycle1 = rel.get(0);
 			relInCycle2 = rel.get(1);
 //		} else {
@@ -408,6 +384,9 @@ public class ERDBuilder {
 			// add link from the new entities to the relationship
 			new1.addLink(relInCycle1);
 			new2.addLink(relInCycle2);
+			// add link from the new entities to their parent
+			new1.addISALink(n);
+			new2.addISALink(n);
 			// put the new entities to the map
 			entityTypes.put(new1S, new1);
 			entityTypes.put(new2S, new2);

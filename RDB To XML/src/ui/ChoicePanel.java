@@ -22,16 +22,16 @@ public class ChoicePanel extends JPanel {
 	private JButton nextButton;
 	private JButton cancelButton;
 	private TranslatePanel t;
+	private NaryPanel np;
 	private GridBagConstraints c;
 	private int currLine = 0;
-	private List<JPanel> panellist = new ArrayList<JPanel>();
-	private List<JLabel> labellist = new ArrayList<JLabel>();
 	private List<JPanel> cycleCombolist = new ArrayList<JPanel>();
 	private List<JLabel> cyclelabel = new ArrayList<JLabel>();
 
-	public ChoicePanel(TranslatePanel t) {
+	public ChoicePanel(TranslatePanel t, NaryPanel np) {
 		super();
 		this.t = t;
+		this.np = np;
 		setPreferredSize(new Dimension(600, 400));
 
 		setLayout(new GridBagLayout());
@@ -70,6 +70,10 @@ public class ChoicePanel extends JPanel {
 	public JPanel getTranslatePane() {
 		return t;
 	}
+	
+	public JPanel getNaryPane() {
+		return np;
+	}
 
 	public JComboBox getRootCombo() {
 		if (rootCombo == null) {
@@ -102,39 +106,6 @@ public class ChoicePanel extends JPanel {
 		nextButton.addActionListener(listenForNextButton);
 	}
 
-	void addChangeOrderListener(ActionListener listenForOrderButton, JButton b) {
-		b.addActionListener(listenForOrderButton);
-	}
-
-	public Pair<JButton, JLabel> addChoicePanel(String relName,
-			List<String> listS) {
-		c.gridx = 0;
-		c.gridy = ++currLine;
-		c.anchor = GridBagConstraints.WEST;
-		JLabel relation = new JLabel("Relation name: " + relName);
-		add(relation, c);
-		labellist.add(relation);
-
-		JButton changeOrderButton = new JButton("Change Order");
-		JLabel currOrder = new JLabel("");
-		for (int i = 0; i < listS.size(); i++) {
-			currOrder.setText(currOrder.getText() + listS.get(i) + " ");
-		}
-
-		c.gridx = 0;
-		c.gridy = ++currLine;
-		c.fill = GridBagConstraints.NONE;
-		c.anchor = GridBagConstraints.WEST;
-		JPanel orderPanel = new JPanel(new FlowLayout(FlowLayout.TRAILING));
-		orderPanel.add(changeOrderButton);
-		orderPanel.add(currOrder);
-		add(orderPanel, c);
-
-		panellist.add(orderPanel);
-		Pair<JButton, JLabel> p = new Pair(changeOrderButton, currOrder);
-		return p;
-	}
-
 	public void addNextCancelButton() {
 		c.gridx = 2;
 		c.gridy = 30;
@@ -145,25 +116,9 @@ public class ChoicePanel extends JPanel {
 		bottomPanel.add(getCancelButton());
 		add(bottomPanel, c);
 	}
-
-	// the pop up window
-	public Pair<JPanel, ArrayList<JComboBox>> getOptionPane(List<String> listS) {
-		JPanel panel = new JPanel();
-		ArrayList<JComboBox> combolist = new ArrayList<JComboBox>();
-
-		for (int i = 0; i < listS.size(); i++) {
-			JComboBox combo = new JComboBox(listS.toArray(new String[listS
-					.size()]));
-			combo.setSelectedIndex(i);
-			panel.add(combo);
-			combolist.add(combo);
-		}
-
-		Pair<JPanel, ArrayList<JComboBox>> p = new Pair(panel, combolist);
-
-		return p;
-	}
-
+	
+	
+	
 	public List<JComboBox> addSplitCyclePanel(List<List<String>> listCycle) {
 		c.gridx = 0;
 		c.gridy = ++currLine;
@@ -232,15 +187,6 @@ public class ChoicePanel extends JPanel {
 			revalidate();
 			repaint();
 		}
-		for (int i = 0; i < labellist.size(); i++) {
-			remove(labellist.get(i));
-			revalidate();
-			repaint();
-		}
-		for (int i = 0; i < panellist.size(); i++) {
-			remove(panellist.get(i));
-			revalidate();
-			repaint();
-		}
 	}
+	
 }
