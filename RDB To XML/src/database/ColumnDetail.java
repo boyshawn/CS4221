@@ -23,6 +23,7 @@ public class ColumnDetail {
 		this.isUnique         = isUnique;
 		this.size             = size;
 		this.sqlType          = sqlType;
+		this.isMultiValued    = false;
 	}
 	
 	public String getTableName() {

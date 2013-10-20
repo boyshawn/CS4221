@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -137,13 +138,18 @@ public class XMLSchemaGenerator implements Generator {
 		writer.println();
 		
 		// root element of XML document is the database name
-		writer.println("\t<xs:element name=\""+dbName+"\">");
-		writer.println("\t\t<xs:complexType>");
+		writer.println("\t<xs:element name=\""+dbName+"\" type=\""+dbName+"_type\">");
+		writer.println("\t<xs:complexType name=\""+dbName+"_type\">");
+		writer.println("\t\t<xs:all>");
 		
-		printTables(root, 3);
+		printElementDeclarations(root, 3);
 		
-		writer.println("\t\t</xs:complexType>");
-
+		writer.println("\t\t</xs:all>");
+		writer.println("\t</xs:complexType>");
+		writer.println();
+		
+		printTables(root, 1);
+		
 		//printUniqueConstraints(root, 2);
 		//printPrimaryKeys(root, 2);
 		//printForeignKeys(root, null, 2);
@@ -155,29 +161,80 @@ public class XMLSchemaGenerator implements Generator {
 	}
 	
 	/**
-	 * Print details of a table that corresponds to 'node'
-	 * @param node				a node from ORASS model
-	 * @param numOfTabs			number of tabs needed for the xs:element tag
-	 * @throws MainException	if failed to retrieve information of a table due to a database connection error
+	 * Print declaration of elements and the name of their complex type in ORASS
+	 * @param node			a node from ORASS model
+	 * @param numOfTabs		number of tabs needed for the xs:element tag
+	 */
+	private void printElementDeclarations(ORASSNode node, int numOfTabs) {
+		
+		String tableName = node.getOriginalName();
+		writer.println(getTabs(numOfTabs) + "<xs:element name=\""+tableName+"\" type=\""+tableName+"_type\" maxOccurs=\"unbounded\"/>");
+		
+		List<ORASSNode> children = node.getChildren();
+		Iterator<ORASSNode> itr = children.iterator();
+		while (itr.hasNext()) {
+			ORASSNode child = itr.next();
+			printElementDeclarations(child, numOfTabs);
+		}
+		
+	}
+	
+	/**
+	 * Print details of each table
+	 * @param node			a node from ORASS model
+	 * @param numOfTabs		number of tabs needed for the xs:complexType tag
 	 */
 	private void printTables(ORASSNode node, int numOfTabs) {
 		
-		String tableName = node.getOriginalName();
 		List<ORASSNode> children = node.getChildren();
-		Iterator<ORASSNode> itr  = children.iterator();
+		Iterator<ORASSNode> itr = children.iterator();
 		
-		writer.println(getTabs(numOfTabs)     + "<xs:element name=\""+tableName+"\" minOccurs=\"0\" maxOccurs=\"unbounded\">");
-		writer.println(getTabs(numOfTabs + 1) + "<xs:complexType>");
+		String tableName = node.getOriginalName();
+		writer.println(getTabs(numOfTabs)     + "<xs:complexType name=\""+tableName+"_type\">");
+		writer.println(getTabs(numOfTabs + 1) + "<xs:attribute name=\""+tableName+"#\" type=\"string\" use=\"required\"/>");
+		writer.println(getTabs(numOfTabs + 1) + "<xs:all>");
+		
 		printColumns(node.getAttributes(), numOfTabs + 2);
 		
+		// print references to other tables
 		while (itr.hasNext()) {
 			ORASSNode child = itr.next();
-			printTables(child, numOfTabs + 2);
+			String childName = child.getOriginalName();
+			writer.println(getTabs(numOfTabs + 2) + "<xs:element name=\""+childName+"\" minOccurs=\"0\" maxOccurs=\"unbounded\">");
+			writer.println(getTabs(numOfTabs + 3) + "<xs:complexType>");
+			writer.println(getTabs(numOfTabs + 4) + "<xs:attribute name=\""+childName+"_ref\" type=\"string\" use=\"requred\"/>");
+			if (child.getChildren() == null) {
+				List<ColumnDetail> colsToPrint = new ArrayList<ColumnDetail>();
+				List<ColumnDetail> attrs = child.getAttributes();
+				Iterator<ColumnDetail> colItr = attrs.iterator();
+				while(colItr.hasNext()) {
+					ColumnDetail column = colItr.next();
+					// NOTE : can separate attributes from relationship and attributes from relation
+					// if there are other elements in relationship
+					if (!column.getTableName().equals(childName)) {
+						colsToPrint.add(column);
+					}
+				}
+				
+				if (colsToPrint.size() > 0) {
+					writer.println(getTabs(numOfTabs + 4) + "<xs:all>");
+					printColumns(colsToPrint, numOfTabs + 5);
+					writer.println(getTabs(numOfTabs + 4) + "</xs:all>");
+				}
+			}
+			writer.println(getTabs(numOfTabs + 3) + "</xs:complexType>");
+			writer.println(getTabs(numOfTabs + 2) + "</xs:element>");
 		}
 		
-		writer.println(getTabs(numOfTabs + 1) + "</xs:complexType>");
-		writer.println(getTabs(numOfTabs)     + "</xs:element>");
+		writer.println(getTabs(numOfTabs + 1) + "</xs:all>");
+		writer.println(getTabs(numOfTabs)     + "</xs:complexType>");
+		writer.println();
 		
+		itr = children.iterator();
+		while (itr.hasNext()) {
+			ORASSNode child = itr.next();
+			printElementDeclarations(child, numOfTabs);
+		}
 	}
 	
 	/**
@@ -188,19 +245,20 @@ public class XMLSchemaGenerator implements Generator {
 	private void printColumns(List<ColumnDetail> columns, int numOfTabs) {
 		
 		Iterator<ColumnDetail> itr = columns.iterator();
-		String colType, xml, xmlColDefault;
+		String colType, xml, xmlColDefault, xmlMinOccur, xmlMaxOccur;
 		
 		while(itr.hasNext()) {
 			
 			ColumnDetail column = itr.next();
 			
 			colType       = sqlDataTypes.get(column.getSqlType());
-			xmlColDefault = getColDefaultValuePrint(column.getSqlType(), column.getDefaultValue());	
+			xmlColDefault = getColDefaultValuePrint(column.getSqlType(), column.getDefaultValue());
 			
-			xml = "";	
+			xmlMaxOccur   = column.isMultiValued() ? " maxOccurs=\"unbounded\"" : " maxOccurs=\"1\"";
 			
-			
-			xml += getTabs(numOfTabs) + "<xs:element name=\""+column.getName()+"\" type=\""+colType+"\" nillable=\""+column.isNullable()+"\""+xmlColDefault +"/>";
+			xml = "";		
+			xml += getTabs(numOfTabs); 
+			xml += "<xs:element name=\""+column.getName()+"\" type=\""+colType+"\" nillable=\""+column.isNullable()+"\""+xmlColDefault + xmlMaxOccur + "/>";
 			writer.println(xml);
 			
 			// if the column size is 0 or the SQL column type is not translated to xs:string
