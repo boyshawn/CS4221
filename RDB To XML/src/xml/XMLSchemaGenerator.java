@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -146,9 +145,15 @@ public class XMLSchemaGenerator implements Generator {
 		
 		printTable(root, 1);
 		
-		//printUniqueConstraints(root, 2);
 		printKey(root, 1);
-		//printForeignKeys(root, null, 2);
+		
+		List<ORASSNode> children = root.getChildren();
+		Iterator<ORASSNode> itr  = children.iterator();
+		while (itr.hasNext()) {
+			printKeyRef(dbName, itr.next(), 1);
+		}
+		
+		printUniqueConstraints(root, 1);
 		
 		writer.println("\t</xs:element>");
 		writer.println();
@@ -240,38 +245,12 @@ public class XMLSchemaGenerator implements Generator {
 			colType       = sqlDataTypes.get(column.getSqlType());
 			xmlColDefault = getColDefaultValuePrint(column.getSqlType(), column.getDefaultValue());
 			
-			xmlMaxOccur   = column.isMultiValued() ? " maxOccurs=\"unbounded\"" : " maxOccurs=\"1\"";
+			xmlMaxOccur   = column.isMultiValued() ? " maxOccurs=\"unbounded\"" : "";
 			
 			xml = "";		
 			xml += getTabs(numOfTabs); 
 			xml += "<xs:element name=\""+column.getName()+"\" type=\""+colType+"\" nillable=\""+column.isNullable()+"\""+xmlColDefault + xmlMaxOccur + "/>";
 			writer.println(xml);
-			
-			// if the column size is 0 or the SQL column type is not translated to xs:string
-			// then xs:element has a "type" attribute and there is no restriction added to xs:element
-			/*
-			if (column.getSize() == 0 || !colType.equals("xs:string")) {
-				xml += getTabs(numOfTabs) + "<xs:element name=\""+column.getName()+"\" type=\""+colType+"\" nillable=\""+column.isNullable()+"\""+xmlColDefault;
-				
-				xml += "/>";
-				writer.println(xml);
-			}
-			
-			else {
-				xml += getTabs(numOfTabs) + "<xs:element name=\""+column.getName()+"\" nillable=\""+column.isNullable()+"\""+xmlColDefault;
-				
-				xml += ">";
-				writer.println(xml);
-				
-				// column size restriction for SQL column type (eg. varchar) translated to xs:string
-				writer.println(getTabs(numOfTabs + 1) + "<xs:simpleType>");
-				writer.println(getTabs(numOfTabs + 2) + "<xs:restriction base=\"xs:string\">");
-				writer.println(getTabs(numOfTabs + 3) + "<xs:maxLength value=\""+column.getSize()+"\"/>");
-				writer.println(getTabs(numOfTabs + 2) + "</xs:restriction>");
-				writer.println(getTabs(numOfTabs + 1) + "</xs:simpleType>");
-				writer.println(getTabs(numOfTabs)     + "</xs:element>");
-			}
-			*/
 			
 		}
 	}
@@ -309,26 +288,31 @@ public class XMLSchemaGenerator implements Generator {
 	}
 	
 	/**
-	 * Print unique constraints of a table name corresponding to the node
-	 * @param node				a node from ORASS model
-	 * @param numOfTabs			number of tabs needed for the xs:unique tag
-	 * @throws MainException	if failed to retrieve unique constraints of a table due to database connection error
+	 * Print unique constraints of columns in each database relation.
+	 * This does not include the attributes or elements names which are not originally from the relational database.
+	 * @param node			a node from ORASS model
+	 * @param numOfTabs		number of tabs needed for xs:unique tag
 	 */
-	private void printUniqueConstraints(ORASSNode node, int numOfTabs) throws MainException {
-		String tableName = node.getName();
+	private void printUniqueConstraints(ORASSNode node, int numOfTabs) {
+		String tableName    = node.getName();
+		String originalName = node.getOriginalName();
 		
-		writer.println(getTabs(numOfTabs)     + "<xs:unique name=\""+tableName+"Uniq"+"\">");
-		writer.println(getTabs(numOfTabs + 1) + "<xs:selector xpath=\".//"+tableName+"\"/>");
+		if (tableName.equals(originalName)) {
 		
-		List<ColumnDetail> cols = node.getRelAttributes();
-		Iterator<ColumnDetail> colsItr = cols.iterator();
-		while(colsItr.hasNext()) {
-			ColumnDetail column = colsItr.next();
-			if (column.isUnique())
-				writer.println(getTabs(numOfTabs + 1) + "<xs:field xpath=\""+column.getName()+"\"/>");
+			writer.println(getTabs(numOfTabs)     + "<xs:unique name=\""+tableName+"_Uniq"+"\">");
+			writer.println(getTabs(numOfTabs + 1) + "<xs:selector xpath=\".//"+tableName+"/*\"/>");
+			
+			List<ColumnDetail> cols = node.getAttributes();
+			Iterator<ColumnDetail> colsItr = cols.iterator();
+			while(colsItr.hasNext()) {
+				ColumnDetail column = colsItr.next();
+				if (column.isUnique())
+					writer.println(getTabs(numOfTabs + 1) + "<xs:field xpath=\""+column.getName()+"\"/>");
+			}
+			
+			writer.println(getTabs(numOfTabs) + "</xs:unique>");
+			writer.println();
 		}
-		
-		writer.println(getTabs(numOfTabs) + "</xs:unique>");
 		
 		List<ORASSNode> children = node.getChildren();
 		Iterator<ORASSNode> itr = children.iterator();
@@ -338,6 +322,7 @@ public class XMLSchemaGenerator implements Generator {
 		}
 	}
 	
+	
 	/**
 	 * Print key constraint of a table corresponding to an ORASSNode
 	 * @param node				a node from ORASS model
@@ -345,7 +330,7 @@ public class XMLSchemaGenerator implements Generator {
 	 * @throws MainException	if failed to retrieve primary keys of a table due to database connection error
 	 */
 	private void printKey(ORASSNode node, int numOfTabs) throws MainException {
-		String tableName = node.getOriginalName();
+		String tableName = node.getName();
 		
 		writer.println(getTabs(numOfTabs)     + "<xs:key name=\""+tableName+"_Key"+"\">");
 		writer.println(getTabs(numOfTabs + 1) + "<xs:selector xpath=\".//"+tableName+"\"/>");
@@ -361,57 +346,28 @@ public class XMLSchemaGenerator implements Generator {
 		}
 	}
 	
-	/*
-	private void printForeignKeys(ORASSNode currNode, ORASSNode prevNode, int numOfTabs) throws MainException {
+	/**
+	 * Prints key reference constraint
+	 * @param node				a node from ORASS model (it should not be the root)
+	 * @param numOfTabs			number of tabs needed for xs:keyref tag
+	 */
+	private void printKeyRef(String dbName, ORASSNode node, int numOfTabs) {
 		
-		String pkTableName = "", currPKTableName = "", fkColName;
+		String tableName = node.getName();
 		
-		if (prevNode != null) {
-			String currTableName = currNode.getName();
-			String prevTableName = prevNode.getName();
-			
-			CachedRowSet foreignKeys = dbAccess.getForeignKeys(currTableName);
-			while (foreignKeys.next()) {
-				pkTableName = foreignKeys.getString("PKTABLE_NAME");
-				
-			}
-		}
+		writer.println(getTabs(numOfTabs)     + "<xs:keyref name=\""+tableName+"_KeyRef"+"\" refer=\""+tableName+"_Key"+"\">");
+		writer.println(getTabs(numOfTabs + 1) + "<xs:selector xpath=\""+dbName+"/*\"/>");
+		writer.println(getTabs(numOfTabs + 1) + "<xs:field xpath=\"@"+tableName+"_Ref\"/>");
+		writer.println(getTabs(numOfTabs)     + "</xs:keyref>");
+		writer.println();
 		
-			boolean hasStarted = false;
-			
-			try {
-				while(foreignKeys.next()) {
-					currPKTableName = foreignKeys.getString("PKTABLE_NAME");
-					
-					// if there is a foreign key in the table
-					if (!hasStarted || !pkTableName.equals(currPKTableName)) {
-						if (hasStarted)
-							writer.println("\t\t</xs:keyref>");
-						else
-							hasStarted = true;
-						
-						pkTableName = currPKTableName;
-						
-						writer.println("\t\t<xs:keyref name=\""+tableName+"FK"+"\" refer=\""+pkTableName+"PK"+"\">");
-						writer.println("\t\t\t<xs:selector xpath=\".//"+tableName+"\"/>");
-					}
-					
-					fkColName = foreignKeys.getString("FKCOLUMN_NAME");
-					writer.println("\t\t\t<xs:field xpath=\""+fkColName+"\"/>");
-					
-					logger.debug("printForeignKeys : table - " + tableName + " ; column - " + fkColName);
-				}
-				
-				if (hasStarted)
-					writer.println("\t\t</xs:keyref>");
-				
-			} catch (SQLException e) {
-				e.printStackTrace();
-				throw new MainException("Database connection error when accessing foreign keys");
-			}
+		List<ORASSNode> children = node.getChildren();
+		Iterator<ORASSNode> itr  = children.iterator();
+		while (itr.hasNext()) {
+			ORASSNode child = itr.next();
+			printKeyRef(dbName, child, numOfTabs);
 		}
 	}
-	*/
 	
 	/**
 	 * Close I/O connection to file 
