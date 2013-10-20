@@ -33,6 +33,7 @@ public class ErdNode {
 	 * from the ERD node can be either a Entity type or a Relationship type.
 	 */
 	private Vector<ErdNode> link; 
+	private Vector<ErdNode> isaLink;
 	
 	private List<ColumnDetail> attributes;
 	
@@ -43,6 +44,7 @@ public class ErdNode {
 		this.nodeType = nodeType;
 		this.attributes  = attributes;
 		link = new Vector<ErdNode>();
+		isaLink = new Vector<ErdNode>();
 	}
 
 	//Method
@@ -93,6 +95,14 @@ public class ErdNode {
 	 */
 	public Vector<ErdNode> getLinks(){
 		return this.link;
+	}
+	
+	public void addISALink(ErdNode erdNode) {
+		isaLink.addElement(erdNode);
+	}
+	
+	public Vector<ErdNode> getISALinks() {
+		return this.isaLink;
 	}
 	
 
