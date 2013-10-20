@@ -182,7 +182,7 @@ public class ORASSBuilder{
 		for(int i = 0; i< cols.size(); i++){
 			ColumnDetail col = cols.get(i);
 			if(!foreignKeys.contains(col.getName())){
-				entityNode.addAttribute(col);
+				entityNode.addRelAttribute(col);
 			}
 		}
 	}

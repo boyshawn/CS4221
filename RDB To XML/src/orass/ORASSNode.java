@@ -11,7 +11,7 @@ public class ORASSNode {
 	private String name;
 	private String originalName;
 	private List<ColumnDetail> attributes;
-	//private List<ColumnDetail> relAttributes;
+	private List<ColumnDetail> relAttributes;
 	private Map<ORASSNode, String> relations;
 	
 	public ORASSNode(String n, String originalTName){
@@ -20,7 +20,7 @@ public class ORASSNode {
 		attributes = new ArrayList<ColumnDetail>();
 		originalName = originalTName;
 		relations = new HashMap<ORASSNode, String>();
-		//relAttributes = new ArrayList<ColumnDetail>();
+		relAttributes = new ArrayList<ColumnDetail>();
 	}
 	
 	public List<ORASSNode> getChildren(){
@@ -47,7 +47,7 @@ public class ORASSNode {
 		}
 	}
 
-	/*public void addRelAttribute(ColumnDetail attr){
+	public void addRelAttribute(ColumnDetail attr){
 		if(!relAttributes.contains(attr)){
 			relAttributes.add(attr);
 		}
@@ -55,9 +55,18 @@ public class ORASSNode {
 	
 	public List<ColumnDetail> getRelAttributes(){
 		return relAttributes;
-	}*/
-	public List<ColumnDetail> getAttributes(){
+	}
+	
+	
+	public List<ColumnDetail> getEntityAttributes(){
 		return attributes;
+	}
+	
+	public List<ColumnDetail> getAttributes(){
+		List<ColumnDetail> allAttrs = new ArrayList<ColumnDetail>();
+		allAttrs.addAll(attributes);
+		allAttrs.addAll(relAttributes);
+		return allAttrs;
 	}
 	
 	public String getRelation(ORASSNode child){
