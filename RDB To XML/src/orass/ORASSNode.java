@@ -15,6 +15,8 @@ public class ORASSNode {
 	private Map<ORASSNode, String> relations;
 	private List<ORASSNode> subtypeNodes;
 	private List<ORASSNode> supertypeNodes;
+	private ORASSNode normalEntityNode;
+	private List<ORASSNode> weakEntityNodes;
 	
 	public ORASSNode(String n, String originalTName){
 		children = new ArrayList<ORASSNode>();
@@ -25,6 +27,7 @@ public class ORASSNode {
 		relAttributes = new ArrayList<ColumnDetail>();
 		subtypeNodes = new ArrayList<ORASSNode>();
 		supertypeNodes = new ArrayList<ORASSNode>();
+		weakEntityNodes = new ArrayList<ORASSNode>();
 	}
 	
 	public List<ORASSNode> getChildren(){
@@ -99,5 +102,21 @@ public class ORASSNode {
 	
 	public List<ORASSNode> getSupertypeNode(){
 		return supertypeNodes;
+	}
+	
+	public void setNormalEntityNode(ORASSNode normNode){
+		normalEntityNode = normNode;
+	}
+	
+	public void addWeakEntityNode(ORASSNode weakNode){
+		weakEntityNodes.add(weakNode);
+	}
+	
+	public ORASSNode getNormalEntityNode(){
+		return normalEntityNode;
+	}
+	
+	public List<ORASSNode> getWeakEntityNodes(){
+		return weakEntityNodes;
 	}
 }
