@@ -279,12 +279,38 @@ public class ERDBuilder {
 				List<String> cycleToBeSplit = isMatch(
 						relationshipTypes.get(s).getLinks(), relationshipTypes
 								.get(curr).getLinks());
-				if (cycleToBeSplit != null) {					
+				if (cycleToBeSplit != null) {
+					boolean dependsOnRoot = true;
+					String doNotSplit = null;
+					for (int z = 0; z < cycleToBeSplit.size(); z++) {
+						// if there is one entity linked to other relationships,
+						// split all other entity but keep this one
+						if (entityTypes.get(cycleToBeSplit.get(z)).getLinks().size() > 2) {
+							doNotSplit = cycleToBeSplit.get(z);
+							dependsOnRoot = false;
+							break;
+						}
+					}
+					
+					if (dependsOnRoot == true) {
 						cycles.add(cycleToBeSplit);
-						List<String> relInCycle = new ArrayList<String>();
-						relInCycle.add(s);
-						relInCycle.add(curr);
-						relationshipInCycle.add(relInCycle);
+					} else {
+						List<String> notARoot = new ArrayList<String>();
+						notARoot.add("0");
+						notARoot.add(doNotSplit);
+						// put everything else in the
+						for (int z = 0; z < cycleToBeSplit.size(); z++) {
+							String e = cycleToBeSplit.get(z);
+							if (!e.equals(doNotSplit)) {		
+								notARoot.add(e);
+							}
+						}
+						cycles.add(notARoot);
+					}
+					List<String> relInCycle = new ArrayList<String>();
+					relInCycle.add(s);
+					relInCycle.add(curr);
+					relationshipInCycle.add(relInCycle);
 				}
 					
 					/*String e1 = cycleToBeSplit.get(0);
@@ -342,7 +368,7 @@ public class ERDBuilder {
 		return null;
 	}
 	
-	public void setEntityToBeSplitted(String entityName, int index) {
+	public void setEntityToBeSplitted(String entityName) {
 		System.out.println("SPLIT: " + entityName);
 		ErdNode n = entityTypes.get(entityName);
 		String tableName = n.getTableName();
@@ -390,9 +416,9 @@ public class ERDBuilder {
 			// add link from the new entities to the relationship
 			new1.addLink(relInCycle1);
 			new2.addLink(relInCycle2);
-			// add link from the new entities to their parent
-			new1.addSpecialLink(n);
-			new2.addSpecialLink(n);
+			// add link from the parent to new entities
+			n.addSpecialLink(new1);
+			n.addSpecialLink(new2);
 			// put the new entities to the map
 			entityTypes.put(new1S, new1);
 			entityTypes.put(new2S, new2);
