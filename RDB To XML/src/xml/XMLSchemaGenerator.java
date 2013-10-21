@@ -117,6 +117,28 @@ public class XMLSchemaGenerator implements Generator {
 		return tabs;
 	}
 	
+	private boolean toPrint(ORASSNode root, ORASSNode child) {
+		String tableName = root.getName();
+		
+		// if the child is a weak entity of the current root, do not need to process it
+		// since it has already been processed from the 1st root 
+		ORASSNode normalEntity = child.getNormalEntityNode();
+		if (normalEntity != null && normalEntity.getName().equals(tableName))
+			return false;
+		
+		Iterator<ORASSNode> itr2 = child.getSupertypeNode().iterator();
+		while (itr2.hasNext()) {
+			ORASSNode superType = itr2.next();
+			// if the child is a subtype of the current root, do not need to process it
+			// since it has already been processed from the 1st root
+			if (superType.getName().equals(tableName)) 
+				return false;
+			
+		}
+		
+		return true;
+	}
+	
 	/**
 	 * Print XML schema for a database
 	 * @param dbName			name of database
@@ -150,17 +172,17 @@ public class XMLSchemaGenerator implements Generator {
 		rootsItr = roots.iterator();
 		while(rootsItr.hasNext()) {
 			ORASSNode root = rootsItr.next();
-			printTable(root, 1);
+			printTable(root, 1, true);
 		
-			printKey(root, 1);
+			printKey(root, 1, true);
 		
 			List<ORASSNode> children = root.getChildren();
 			Iterator<ORASSNode> childrenItr  = children.iterator();
 			while (childrenItr.hasNext()) {
-				printKeyRef(dbName, childrenItr.next(), 1);
+				printKeyRef(dbName, childrenItr.next(), 1, true);
 			}
 		
-			printUniqueConstraints(root, 1);
+			printUniqueConstraints(root, 1, true);
 		}
 		
 		writer.println("</xs:schema>");
@@ -181,22 +203,12 @@ public class XMLSchemaGenerator implements Generator {
 		Iterator<ORASSNode> itr1 = children.iterator();
 		while (itr1.hasNext()) {
 			ORASSNode child = itr1.next();
-			boolean toPrint = true;
-			// if it is a root, it could be that the node is a supertype or a normal entity type with weak entity
-			if (isRoot) {
-				if ()
-				
-				Iterator<ORASSNode> itr2 = child.getSupertypeNode().iterator();
-				while (itr2.hasNext()) {
-					ORASSNode superType = itr2.next();
-					// if the child is a subtype of the current root, do not need to process it
-					// since it has already been processed from the 1st root
-					if (superType.getName().equals(tableName));
-						toPrint = false;
-				}
-			}
+			boolean continuePrint = true;
+			if (isRoot) 
+				continuePrint = toPrint(node, child);
 			
-			else
+			
+			if (continuePrint)
 				printElementDeclarations(child, numOfTabs, false);
 		}
 		
@@ -207,7 +219,7 @@ public class XMLSchemaGenerator implements Generator {
 	 * @param node			  	a node from ORASS model
 	 * @param numOfTabs			number of tabs needed for the xs:complexType tag
 	 */
-	private void printTable(ORASSNode node, int numOfTabs) {
+	private void printTable(ORASSNode node, int numOfTabs, boolean isRoot) {
 		
 		List<ORASSNode> children = node.getChildren();
 		Iterator<ORASSNode> itr = children.iterator();
@@ -244,7 +256,11 @@ public class XMLSchemaGenerator implements Generator {
 		itr = children.iterator();
 		while (itr.hasNext()) {
 			ORASSNode child = itr.next();
-			printTable(child, numOfTabs);
+			boolean continuePrint = true;
+			if (isRoot)
+				continuePrint = toPrint(node, child);
+			if (continuePrint)	
+				printTable(child, numOfTabs, false);
 		}
 	}
 	
@@ -313,7 +329,7 @@ public class XMLSchemaGenerator implements Generator {
 	 * @param node			a node from ORASS model
 	 * @param numOfTabs		number of tabs needed for xs:unique tag
 	 */
-	private void printUniqueConstraints(ORASSNode node, int numOfTabs) {
+	private void printUniqueConstraints(ORASSNode node, int numOfTabs, boolean isRoot) {
 		String tableName    = node.getName();
 		String originalName = node.getOriginalName();
 		
@@ -336,9 +352,13 @@ public class XMLSchemaGenerator implements Generator {
 		
 		List<ORASSNode> children = node.getChildren();
 		Iterator<ORASSNode> itr = children.iterator();
-		while(itr.hasNext()) {
+		while (itr.hasNext()) {
 			ORASSNode child = itr.next();
-			printUniqueConstraints(child, numOfTabs);
+			boolean continuePrint = true;
+			if (isRoot)
+				continuePrint = toPrint(node, child);
+			if (continuePrint)	
+				printUniqueConstraints(child, numOfTabs, false);
 		}
 	}
 	
@@ -349,7 +369,7 @@ public class XMLSchemaGenerator implements Generator {
 	 * @param numOfTabs			number of tabs needed for xs:key tag
 	 * @throws MainException	if failed to retrieve primary keys of a table due to database connection error
 	 */
-	private void printKey(ORASSNode node, int numOfTabs) throws MainException {
+	private void printKey(ORASSNode node, int numOfTabs, boolean isRoot) throws MainException {
 		String tableName = node.getName();
 		
 		writer.println(getTabs(numOfTabs)     + "<xs:key name=\""+tableName+"_Key"+"\">");
@@ -360,9 +380,13 @@ public class XMLSchemaGenerator implements Generator {
 		
 		List<ORASSNode> children = node.getChildren();
 		Iterator<ORASSNode> itr = children.iterator();
-		while(itr.hasNext()) {
+		while (itr.hasNext()) {
 			ORASSNode child = itr.next();
-			printKey(child, numOfTabs);
+			boolean continuePrint = true;
+			if (isRoot)
+				continuePrint = toPrint(node, child);
+			if (continuePrint)	
+				printKey(child, numOfTabs, false);
 		}
 	}
 	
@@ -371,7 +395,7 @@ public class XMLSchemaGenerator implements Generator {
 	 * @param node				a node from ORASS model (it should not be the root)
 	 * @param numOfTabs			number of tabs needed for xs:keyref tag
 	 */
-	private void printKeyRef(String dbName, ORASSNode node, int numOfTabs) {
+	private void printKeyRef(String dbName, ORASSNode node, int numOfTabs, boolean isRoot) {
 		
 		String tableName = node.getName();
 		
@@ -382,11 +406,16 @@ public class XMLSchemaGenerator implements Generator {
 		writer.println();
 		
 		List<ORASSNode> children = node.getChildren();
-		Iterator<ORASSNode> itr  = children.iterator();
+		Iterator<ORASSNode> itr = children.iterator();
 		while (itr.hasNext()) {
 			ORASSNode child = itr.next();
-			printKeyRef(dbName, child, numOfTabs);
+			boolean continuePrint = true;
+			if (isRoot)
+				continuePrint = toPrint(node, child);
+			if (continuePrint)	
+				printKeyRef(dbName, child, numOfTabs, false);
 		}
+	
 	}
 	
 	/**

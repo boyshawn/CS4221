@@ -16,7 +16,7 @@ public class RDBToXML {
 	private DBConnector dbc = DBConnector.getInstance();
 	private ERDBuilder erdb;
 	private ORASSBuilder orassb;
-	private ORASSNode orassRoot;
+	private List<ORASSNode> orassRoot;
 	
 	public void connectToDB(String address, String port, String dbName, String username, String password) throws MainException {	
 		dbc.openConnection(address, port, dbName, username, password);
@@ -49,9 +49,8 @@ public class RDBToXML {
 		orassb = new ORASSBuilder(erdb.getEntityTypes(), erdb.getRelationshipTypes());
 	}
 	
-	public ORASSNode buildORASS(ErdNode root) throws MainException {
+	public void buildORASS(ErdNode root) throws MainException {
 		orassRoot = orassb.buildORASS(root); 
-		return orassRoot;
 	}
 	
 	public Map<String, List<String>> getNaryRels() {
