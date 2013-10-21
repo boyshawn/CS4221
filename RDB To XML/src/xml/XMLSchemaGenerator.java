@@ -30,10 +30,10 @@ public class XMLSchemaGenerator implements Generator {
 	 * @throws MainException	if there is a database connection error which occurred at any time during the XML Schema generation
 	 */
 	@Override
-	public void generate(String dbName, String fileName, ORASSNode root) throws MainException {
+	public void generate(String dbName, String fileName, List<ORASSNode> roots) throws MainException {
 		setup(fileName);
 		
-		printDatabase(dbName, root);
+		printDatabase(dbName, roots);
 		
 		finish();
 	}
@@ -123,7 +123,7 @@ public class XMLSchemaGenerator implements Generator {
 	 * @param root				the root of the ORASS model
 	 * @throws MainException	if failed to retrieve any information of the database due to a database connection error
 	 */
-	private void printDatabase(String dbName, ORASSNode root) throws MainException {
+	private void printDatabase(String dbName, List<ORASSNode> roots) throws MainException {
 		
 		writer.println("<?xml version=\"1.0\"?>");
 		writer.println("<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"");
@@ -194,7 +194,7 @@ public class XMLSchemaGenerator implements Generator {
 		writer.println(getTabs(numOfTabs + 1) + "<xs:attribute name=\""+tableName+"#\" type=\"string\" use=\"required\"/>");
 		writer.println(getTabs(numOfTabs + 1) + "<xs:all>");
 		
-			printColumns(node.getEntityAttributes(), numOfTabs + 2);
+		printColumns(node.getEntityAttributes(), numOfTabs + 2);
 		
 		// print references to other tables
 		while (itr.hasNext()) {
@@ -203,13 +203,11 @@ public class XMLSchemaGenerator implements Generator {
 			writer.println(getTabs(numOfTabs + 2) + "<xs:element name=\""+childName+"\" minOccurs=\"0\" maxOccurs=\"unbounded\">");
 			writer.println(getTabs(numOfTabs + 3) + "<xs:complexType>");
 			writer.println(getTabs(numOfTabs + 4) + "<xs:attribute name=\""+childName+"_Ref\" type=\"string\" use=\"requred\"/>");
-			if (child.getChildren().size() > 0) {
-				List<ColumnDetail> relAttrs = child.getRelAttributes();
-				if (relAttrs.size() > 0) {
-					writer.println(getTabs(numOfTabs + 4) + "<xs:all>");
-					printColumns(relAttrs, numOfTabs + 5);
-					writer.println(getTabs(numOfTabs + 4) + "</xs:all>");
-				}
+			List<ColumnDetail> relAttrs = child.getRelAttributes();
+			if (relAttrs.size() > 0) {
+				writer.println(getTabs(numOfTabs + 4) + "<xs:all>");
+				printColumns(relAttrs, numOfTabs + 5);
+				writer.println(getTabs(numOfTabs + 4) + "</xs:all>");
 			}
 			writer.println(getTabs(numOfTabs + 3) + "</xs:complexType>");
 			writer.println(getTabs(numOfTabs + 2) + "</xs:element>");
