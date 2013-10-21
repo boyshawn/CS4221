@@ -57,6 +57,16 @@ public class ORASSBuilder{
 		ORASSNode rootNode = processEntity(root);
 		rootNodes.add(rootNode);
 		// Check and process unlinked nodes
+		if(processedNodes.size()<entities.size()){
+			for(int i=0; i<entities.size(); i++){
+				ErdNode erNode = entities.get(i);
+				String entityName = erNode.getTableName();
+				if(processedNodes.contains(entityName)){
+					ORASSNode additionalRoot = processEntity(erNode);
+					rootNodes.add(additionalRoot);
+				}
+			}
+		}
 		return rootNodes;
 	}
 	
@@ -259,6 +269,7 @@ public class ORASSBuilder{
 			ORASSNode supertypeNode = createORASSNode(node.getTableName(), node.getOriginalTableName());
 			subtypeNode.addSupertypeNode(supertypeNode);
 			supertypeNode.addSubtypeNode(subtypeNode);
+			logger.info(subtypeName + "is a subtype of "+node.getTableName());
 		}
  	}
 	
