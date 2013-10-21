@@ -13,6 +13,8 @@ public class ORASSNode {
 	private List<ColumnDetail> attributes;
 	private List<ColumnDetail> relAttributes;
 	private Map<ORASSNode, String> relations;
+	private List<ORASSNode> subtypeNodes;
+	private List<ORASSNode> supertypeNodes;
 	
 	public ORASSNode(String n, String originalTName){
 		children = new ArrayList<ORASSNode>();
@@ -21,6 +23,8 @@ public class ORASSNode {
 		originalName = originalTName;
 		relations = new HashMap<ORASSNode, String>();
 		relAttributes = new ArrayList<ColumnDetail>();
+		subtypeNodes = new ArrayList<ORASSNode>();
+		supertypeNodes = new ArrayList<ORASSNode>();
 	}
 	
 	public List<ORASSNode> getChildren(){
@@ -79,5 +83,13 @@ public class ORASSNode {
 	
 	public void addChildRelation(ORASSNode child, String relName){
 		relations.put(child, relName);
+	}
+	
+	public void addSubtypeNode(ORASSNode subtype){
+		subtypeNodes.add(subtype);
+	}
+	
+	public void addSupertypeNode(ORASSNode supertype){
+		supertypeNodes.add(supertype);
 	}
 }

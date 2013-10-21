@@ -20,7 +20,7 @@ public class ORASSBuilder{
 	private Map<String, ORASSNode> nodes;
 	private List<String> processedNodes;
 	private Map<String, List<String>> nRels;
-	private Map<ORASSNode, ORASSNode> isaRels;
+	//private Map<ORASSNode, ORASSNode> isaRels;
 	private DBAccess dbCache;
 	private Logger logger = Logger.getLogger(ORASSBuilder.class);
 	
@@ -29,13 +29,13 @@ public class ORASSBuilder{
 		rels = erdRels;
 		nodes = new HashMap<String, ORASSNode>();
 		dbCache = DBAccess.getInstance();
-		isaRels = new HashMap<ORASSNode, ORASSNode>();
+		//isaRels = new HashMap<ORASSNode, ORASSNode>();
 		processedNodes = new ArrayList<String>();
 		erdnodes = new HashMap<String, ErdNode>();
 		erdnodes.putAll(entities);
 		erdnodes.putAll(rels);
 		
-		/*Set<String> erd = erdnodes.keySet();
+		Set<String> erd = erdnodes.keySet();
 		Iterator<String> erdItr = erd.iterator();
 		String tables="";
 		String oldNames = "";
@@ -45,18 +45,19 @@ public class ORASSBuilder{
 			oldNames += erdnodes.get(nextName).getOriginalTableName()+"+";
 		}
 		logger.info(tables);
-		logger.info(oldNames);*/
+		logger.info(oldNames);
 	}
 	
 	/*
 	 * This method takes in the root ERD node as input and returns the root of ORASS after processing all ERD nodes.
 	 * */
-	public ORASSNode buildORASS(ErdNode root) throws MainException {
+	public List<ORASSNode> buildORASS(ErdNode root) throws MainException {
 
+		List<ORASSNode> rootNodes = new ArrayList<ORASSNode>();
 		ORASSNode rootNode = processEntity(root);
-
+		rootNodes.add(rootNode);
 		// Check and process unlinked nodes
-		return rootNode;
+		return rootNodes;
 	}
 	
 	public Map<String, List<String>> getNaryRels(){
@@ -87,9 +88,9 @@ public class ORASSBuilder{
 	/*
 	 * Returns a mapping from a subtype (key) to a supertype (object)
 	 * */
-	public Map<ORASSNode, ORASSNode> getIsaRelationships(){
+	/*public Map<ORASSNode, ORASSNode> getIsaRelationships(){
 		return isaRels;
-	}
+	}*/
 
 	/*
 	 * This method processes an ERD node that represents an entity. 
@@ -105,6 +106,7 @@ public class ORASSBuilder{
 			node.addAttribute(attrs.get(j));
 			//logger.info("add attribute " + attrs.get(j).getName() + " to " + tName);
 		}
+		processIsARel(erNode);
 		processedNodes.add(tName);
 
 		Vector<ErdNode> links = erdnodes.get(tName).getLinks();
@@ -225,13 +227,14 @@ public class ORASSBuilder{
 			if(i<entityOrder.size()-1){
 				// If the node is not the last entity in the n-ary relationship
 				String nextEntity = entityOrder.get(i+1);
-			
-				ORASSNode node2 = createORASSNode(nextEntity, erdnodes.get(nextEntity).getOriginalTableName());
+				ErdNode erdNode2 = erdnodes.get(nextEntity);
+				ORASSNode node2 = createORASSNode(nextEntity, erdNode2.getOriginalTableName());
 				List<ColumnDetail> attrs = erdnodes.get(nextEntity).getAttributes();
 				for(int j=0; j<attrs.size(); j++){
 					node2.addAttribute(attrs.get(j));
 					//logger.info("add attribute " + attrs.get(j).getName() + " to " + nextEntity);
 				}
+				processIsARel(erdNode2);
 				node1.addChildren(node2);
 				node1.addChildRelation(node2, rels.get(relName).getOriginalTableName());
 				logger.info("add child " + node2.getName() + " to " + node1.getName());
@@ -246,6 +249,18 @@ public class ORASSBuilder{
 		logger.info("processed n-ary relationship " +  relName);
 		return parent;
 	}
+	
+	private void processIsARel(ErdNode node){
+		Vector<ErdNode> isaLinks = node.getISALinks();
+		for(int i=0; i<isaLinks.size(); i++){
+			ErdNode subtype = isaLinks.get(i);
+			String subtypeName = subtype.getTableName();
+			ORASSNode subtypeNode = createORASSNode(subtypeName, subtype.getOriginalTableName());
+			ORASSNode supertypeNode = createORASSNode(node.getTableName(), node.getOriginalTableName());
+			subtypeNode.addSupertypeNode(supertypeNode);
+			supertypeNode.addSubtypeNode(subtypeNode);
+		}
+ 	}
 	
 	private ORASSNode createORASSNode (String nodeName, String originalName){
 		if(!nodes.containsKey(nodeName)){

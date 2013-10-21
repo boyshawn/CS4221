@@ -18,6 +18,7 @@ import main.MainException;
 import org.apache.log4j.Logger;
 
 import xml.NodeRelationship;
+import xml.TableColVal;
 
 import com.sun.rowset.CachedRowSetImpl;
 
@@ -286,6 +287,83 @@ public class DBAccess {
 			}
 		}
 		
+		logger.info("Query to execute : " + query);
+		return executeQuery(query);
+		
+	}
+	
+	public ResultSet getRelevantDataForTable(Map<String, List<String>> selectClause, List<List<String>> fromTables, List<TableColVal> whereClause, Map<String,List<String>> orderBy, List<String> nodeTables, NodeRelationship nodeRel) throws MainException {
+		String query = "", fromClause = "";
+		
+		// Process SELECT and FROM clause at the same time
+		query += "SELECT ";
+		fromClause += " FROM ";
+		Iterator<List<String>>listItr = fromTables.iterator();
+		while (listItr.hasNext()) {
+			List<String> table       = listItr.next();
+			String originalTableName = table.get(0);
+			String tableName         = table.get(1);
+			
+			// Add columns of tables into SELECT clause
+			List<String> columnsToSelect = selectClause.get(tableName);
+			Iterator<String> columnsItr  = columnsToSelect.iterator();
+			boolean isSameName = (originalTableName.equals(tableName));
+			while (columnsItr.hasNext()) {
+				String column = columnsItr.next();
+				query += tableName + "." + column;
+				// if table name is different from original table name
+				if (!isSameName)
+					query += " AS " + tableName + column + " ";
+				if (columnsItr.hasNext())
+					query += ",";
+			}
+			
+			// Add columns into FROM clause
+			if (isSameName)
+				fromClause += tableName;
+			else
+				fromClause += originalTableName + " AS " + tableName;
+
+			// if it is not the last table
+			if (listItr.hasNext()) {
+				query += ",";
+				fromClause += ",";
+			}
+		}
+		query += fromClause;
+		
+		// process where clause
+		query += " WHERE ";
+		Iterator<TableColVal> nrItr = whereClause.iterator();
+		while (nrItr.hasNext()) {
+			TableColVal nodeVal = nrItr.next();
+
+				query += nodeVal.getTableName() + "." + nodeVal.getColName() + "=" + nodeVal.getColVal();
+
+			
+			// if it is not the last where clause
+			if (nrItr.hasNext())
+				query += " AND ";
+		}
+		
+		// process order by clause
+		/*query += " ORDER BY ";
+		Iterator<String> stringItr = nodeTables.iterator();
+		while (stringItr.hasNext()) {
+			String table = stringItr.next();
+			List<String> columnsToOrder = orderBy.get(table);
+			Iterator<String> colItr = columnsToOrder.iterator();
+			while (colItr.hasNext()) {
+				String column = colItr.next();
+				query += table + "." + column;
+				// if it is not the last column of the last table to order by
+				if (colItr.hasNext() || stringItr.hasNext())
+					query += ",";
+				else
+					query += ";";
+			}
+		}*/
+		query += ";";
 		logger.info("Query to execute : " + query);
 		return executeQuery(query);
 		
