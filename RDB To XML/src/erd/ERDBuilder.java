@@ -385,8 +385,8 @@ public class ERDBuilder {
 			new1.addLink(relInCycle1);
 			new2.addLink(relInCycle2);
 			// add link from the new entities to their parent
-			new1.addISALink(n);
-			new2.addISALink(n);
+			new1.addSpecialLink(n);
+			new2.addSpecialLink(n);
 			// put the new entities to the map
 			entityTypes.put(new1S, new1);
 			entityTypes.put(new2S, new2);
