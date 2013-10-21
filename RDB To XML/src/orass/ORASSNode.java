@@ -92,4 +92,12 @@ public class ORASSNode {
 	public void addSupertypeNode(ORASSNode supertype){
 		supertypeNodes.add(supertype);
 	}
+	
+	public List<ORASSNode> getSubtypeNode(){
+		return subtypeNodes;
+	}
+	
+	public List<ORASSNode> getSupertypeNode(){
+		return supertypeNodes;
+	}
 }
