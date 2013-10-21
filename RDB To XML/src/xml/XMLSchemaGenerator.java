@@ -133,7 +133,7 @@ public class XMLSchemaGenerator implements Generator {
 		writer.println();
 		
 		// root element of XML document is the database name
-		writer.println("\t<xs:element name=\""+dbName+"\" type=\""+dbName+"_Type\">");
+		writer.println("\t<xs:element name=\""+dbName+"\" type=\""+dbName+"_Type\"/>");
 		writer.println("\t<xs:complexType name=\""+dbName+"_Type\">");
 		writer.println("\t\t<xs:all>");
 		
@@ -155,8 +155,6 @@ public class XMLSchemaGenerator implements Generator {
 		
 		printUniqueConstraints(root, 1);
 		
-		writer.println("\t</xs:element>");
-		writer.println();
 		writer.println("</xs:schema>");
 		
 	}
