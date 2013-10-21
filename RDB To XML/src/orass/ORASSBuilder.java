@@ -261,7 +261,7 @@ public class ORASSBuilder{
 	}
 	
 	private void processIsARel(ErdNode node){
-		Vector<ErdNode> isaLinks = node.getISALinks();
+		Vector<ErdNode> isaLinks = node.getSpecialLinks();
 		for(int i=0; i<isaLinks.size(); i++){
 			ErdNode subtype = isaLinks.get(i);
 			String subtypeName = subtype.getTableName();
