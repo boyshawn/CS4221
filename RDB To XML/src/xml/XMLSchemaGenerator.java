@@ -140,7 +140,7 @@ public class XMLSchemaGenerator implements Generator {
 		Iterator<ORASSNode> rootsItr = roots.iterator();
 		while (rootsItr.hasNext()) {
 			ORASSNode root = rootsItr.next();
-			printElementDeclarations(root, 3);
+			printElementDeclarations(root, 3, true);
 		}
 		
 		writer.println("\t\t</xs:all>");
@@ -172,16 +172,32 @@ public class XMLSchemaGenerator implements Generator {
 	 * @param node				a node from ORASS model
 	 * @param numOfTabs			number of tabs needed for the xs:element tag
 	 */
-	private void printElementDeclarations(ORASSNode node, int numOfTabs) {
+	private void printElementDeclarations(ORASSNode node, int numOfTabs, boolean isRoot) {
 		
 		String tableName = node.getName();
 		writer.println(getTabs(numOfTabs) + "<xs:element name=\""+tableName+"\" type=\""+tableName+"_Type\" maxOccurs=\"unbounded\"/>");
 		
 		List<ORASSNode> children = node.getChildren();
-		Iterator<ORASSNode> itr = children.iterator();
-		while (itr.hasNext()) {
-			ORASSNode child = itr.next();
-			printElementDeclarations(child, numOfTabs);
+		Iterator<ORASSNode> itr1 = children.iterator();
+		while (itr1.hasNext()) {
+			ORASSNode child = itr1.next();
+			boolean toPrint = true;
+			// if it is a root, it could be that the node is a supertype or a normal entity type with weak entity
+			if (isRoot) {
+				if ()
+				
+				Iterator<ORASSNode> itr2 = child.getSupertypeNode().iterator();
+				while (itr2.hasNext()) {
+					ORASSNode superType = itr2.next();
+					// if the child is a subtype of the current root, do not need to process it
+					// since it has already been processed from the 1st root
+					if (superType.getName().equals(tableName));
+						toPrint = false;
+				}
+			}
+			
+			else
+				printElementDeclarations(child, numOfTabs, false);
 		}
 		
 	}
