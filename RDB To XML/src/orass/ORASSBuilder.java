@@ -265,11 +265,18 @@ public class ORASSBuilder{
 		for(int i=0; i<isaLinks.size(); i++){
 			ErdNode subtype = isaLinks.get(i);
 			String subtypeName = subtype.getTableName();
+			ErdNodeType subtypeType = subtype.getErdNodeType();
 			ORASSNode subtypeNode = createORASSNode(subtypeName, subtype.getOriginalTableName());
 			ORASSNode supertypeNode = createORASSNode(node.getTableName(), node.getOriginalTableName());
-			subtypeNode.addSupertypeNode(supertypeNode);
-			supertypeNode.addSubtypeNode(subtypeNode);
-			logger.info(subtypeName + "is a subtype of "+node.getTableName());
+			if(subtypeType == ErdNodeType.WEAK_ENTITY_TYPE){
+				subtypeNode.setNormalEntityNode(supertypeNode);
+				supertypeNode.addWeakEntityNode(subtypeNode);
+				logger.info(subtypeName + "is a weak entity of "+node.getTableName());
+			}else{
+				subtypeNode.addSupertypeNode(supertypeNode);
+				supertypeNode.addSubtypeNode(subtypeNode);
+				logger.info(subtypeName + "is a subtype of "+node.getTableName());
+			}
 		}
  	}
 	
