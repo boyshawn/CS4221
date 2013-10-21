@@ -40,8 +40,8 @@ public class RDBToXML {
 		return erdb.checkCycle();
 	}
 	
-	public void setEntityToBeSplitted(String entityName, int index) {
-		erdb.setEntityToBeSplitted(entityName, index);
+	public void setEntityToBeSplitted(String entityName) {
+		erdb.setEntityToBeSplitted(entityName);
 	}
 	
 	// ORA-SS

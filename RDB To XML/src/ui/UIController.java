@@ -43,6 +43,7 @@ public class UIController {
 	private List<List<String>> cycles;
 	private String rootString;
 	private boolean naryPanelExist = false;
+	private List<String> splitThis;
 
 	public UIController(MainPanel main, ChoicePanel choice, NaryPanel np,
 			TranslatePanel translate, RDBToXML r) {
@@ -54,13 +55,14 @@ public class UIController {
 		cycleCombo = new ArrayList<JComboBox>();
 		nary = new HashMap<String, List<String>>();
 		cycles = new ArrayList<List<String>>();
+		splitThis = new ArrayList<String>();
 
 		this.main = main;
 		this.choice = choice;
 		this.translate = translate;
 		this.r = r;
 		this.np = np;
-		
+
 		this.main.addConnectListener(new ConnectListener());
 		this.choice.addNextListener(new NextListener());
 		this.choice.addCancelListener(new CancelListener());
@@ -91,7 +93,9 @@ public class UIController {
 			cycleCombo.clear();
 			nary.clear();
 			cycles.clear();
-			
+			splitThis.clear();
+			naryPanelExist = false;
+
 			if (name.isEmpty() || address.isEmpty() || port.isEmpty()
 					|| username.isEmpty() || password.isEmpty()) {
 				main.setErrorMsg("Please enter all the fields");
@@ -105,25 +109,34 @@ public class UIController {
 						main.setErrorMsg(" ");
 
 						choice.cleanUp();
-						
+
 						r.translateToERD();
 						cycles = r.checkCycle();
-						
+
 						// set up the choice panel
 						Map<String, ErdNode> rootMap = r.getERDEntityTypes();
-						List<String> rootTemp = new ArrayList<String>(rootMap.keySet());
+						List<String> rootTemp = new ArrayList<String>(
+								rootMap.keySet());
 						List<String> rootEntity = new ArrayList<String>();
 						for (int i = 0; i < rootTemp.size(); i++) {
 							if (rootMap.get(rootTemp.get(i)).getErdNodeType() == ErdNodeType.ENTITY_TYPE) {
 								rootEntity.add(rootTemp.get(i));
 							}
 						}
+
+						for (int i = 0; i < cycles.size(); i++) {
+							List<String> currC = cycles.get(i);
+							if (currC.get(0).equals("0")) {
+								for (int q = 2; q < currC.size(); q++) {
+									splitThis.add(currC.get(q));
+								}
+							}
+						}
+
+						rootEntity.removeAll(splitThis);
+
 						String[] root = rootEntity.toArray(new String[0]);
 						choice.setRootList(root);
-						
-						if (cycles.size() != 0){
-							cycleCombo = choice.addSplitCyclePanel(cycles);
-						}
 
 						choice.addNextCancelButton();
 						main.getMainFrame().setContentPane(
@@ -148,147 +161,159 @@ public class UIController {
 	class NextListener implements ActionListener {
 
 		public void actionPerformed(ActionEvent e) {
-			
+
 			np.cleanUp();
-			
+
 			// set the root, entity splitting, nary relation order
-			rootString = choice.getRootCombo().getSelectedItem()
-					.toString();
-			
-			boolean check = true;
-			List<String> c = new ArrayList<String>();
-			for (int i = 0; i < cycleCombo.size(); i++) {
-				String x = cycleCombo.get(i).getSelectedItem().toString();
-				c.add(x);
-				if (x.equals(rootString)) {
-						check = false;
-				}					
+			rootString = choice.getRootCombo().getSelectedItem().toString();
+
+			for (int i = 0; i < splitThis.size(); i++) {
+				r.setEntityToBeSplitted(splitThis.get(i));
 			}
-			
-			HashSet<String> hashSet = new HashSet<String>();
-			boolean dupli = false;
-			for (String s : c) {
-				if (hashSet.contains(s))
-					dupli = true; // contains
-									// duplicates
-				else
-					hashSet.add(s);
-			}
-			
-			if (check == false) {
-				JOptionPane.showMessageDialog(choice,
-						"Cannot split the root", "ERROR", JOptionPane.ERROR_MESSAGE);
-			} else if (dupli == true) {
-				JOptionPane.showMessageDialog(choice,
-						"Duplicate(s) detected! Cannot choose 2 same entity to be split", "ERROR", JOptionPane.ERROR_MESSAGE);
-			} else {
-				if (cycleCombo.size() != 0) {
-					for (int i = 0; i < cycleCombo.size(); i++) {
-						r.setEntityToBeSplitted(cycleCombo.get(i).getSelectedItem()
-								.toString(), i);
+
+			for (int i = 0; i < cycles.size(); i++) {
+				List<String> s = cycles.get(i);
+				if (!s.get(0).equals("0") && s.contains(rootString)) {
+					for (int j = 0; j < s.size(); j++) {
+						if (!s.get(j).equals(rootString)) {
+							r.setEntityToBeSplitted(s.get(j));
+						}
 					}
 				}
-				
-				try {
-					r.translateToORASS();
-				} catch (MainException me) {
-					JOptionPane.showMessageDialog(choice,
-							me.getMessage(),
-							"ERROR",JOptionPane.ERROR_MESSAGE);
-				}
-				
-				nary = r.getNaryRels();
-				
-				if (nary.size() != 0) {
-					// go to NaryPanel
-					naryPanelExist = true;
-					for (Map.Entry<String, List<String>> entry : nary
-							.entrySet()) {
-						String relName = entry.getKey();
-						List<String> listOrder = entry.getValue();
-						Pair<JButton, JLabel> n = np.addChoicePanel(
-								relName, listOrder);
-						JButton b = n.getFirst();
-						mapButtonRelationName.put(b, relName);
-						mapButtonLabel.put(b, n.getSecond());
-						mapButtonNary.put(b, listOrder);
+			}
 
-						b.addMouseListener(new MouseAdapter() {
+			/*
+			 * boolean check = true; List<String> c = new ArrayList<String>();
+			 * for (int i = 0; i < cycleCombo.size(); i++) { String x =
+			 * cycleCombo.get(i).getSelectedItem().toString(); c.add(x); if
+			 * (x.equals(rootString)) { check = false; } }
+			 */
 
-							@Override
-							public void mouseReleased(MouseEvent e) {
-								if (MouseEvent.BUTTON1 == e.getButton()) {
-									JButton btemp = (JButton) e.getSource();
-									Pair<JPanel, ArrayList<JComboBox>> pane;
-									if (mapButtonCombo.containsKey(btemp)) {
-										pane = mapButtonCombo.get(btemp);
+			/*
+			 * HashSet<String> hashSet = new HashSet<String>(); boolean dupli =
+			 * false; for (String s : c) { if (hashSet.contains(s)) dupli =
+			 * true; // contains // duplicates else hashSet.add(s); }
+			 */
+
+			/*
+			 * if (check == false) { JOptionPane.showMessageDialog(choice,
+			 * "Cannot split the root", "ERROR", JOptionPane.ERROR_MESSAGE); }
+			 * else if (dupli == true) { JOptionPane.showMessageDialog(choice,
+			 * "Duplicate(s) detected! Cannot choose 2 same entity to be split",
+			 * "ERROR", JOptionPane.ERROR_MESSAGE); } else { if
+			 * (cycleCombo.size() != 0) { for (int i = 0; i < cycleCombo.size();
+			 * i++) {
+			 * r.setEntityToBeSplitted(cycleCombo.get(i).getSelectedItem()
+			 * .toString()); } }
+			 */
+
+			try {
+				r.translateToORASS();
+			} catch (MainException me) {
+				JOptionPane.showMessageDialog(choice, me.getMessage(), "ERROR",
+						JOptionPane.ERROR_MESSAGE);
+			}
+
+			nary = r.getNaryRels();
+
+			if (nary.size() != 0) {
+				// go to NaryPanel
+				naryPanelExist = true;
+				for (Map.Entry<String, List<String>> entry : nary.entrySet()) {
+					String relName = entry.getKey();
+					List<String> listOrder = entry.getValue();
+					Pair<JButton, JLabel> n = np.addChoicePanel(relName,
+							listOrder);
+					JButton b = n.getFirst();
+					mapButtonRelationName.put(b, relName);
+					mapButtonLabel.put(b, n.getSecond());
+					mapButtonNary.put(b, listOrder);
+
+					b.addMouseListener(new MouseAdapter() {
+
+						@Override
+						public void mouseReleased(MouseEvent e) {
+							if (MouseEvent.BUTTON1 == e.getButton()) {
+								JButton btemp = (JButton) e.getSource();
+								Pair<JPanel, ArrayList<JComboBox>> pane;
+								if (mapButtonCombo.containsKey(btemp)) {
+									pane = mapButtonCombo.get(btemp);
+								} else {
+									pane = np.getOptionPane(mapButtonNary
+											.get(btemp));
+									mapButtonCombo.put(btemp, pane);
+								}
+
+								boolean check = true;
+								while (check) {
+									int result = JOptionPane.showConfirmDialog(
+											null, pane.getFirst(),
+											"Specify the order",
+											JOptionPane.OK_CANCEL_OPTION);
+									if (result == JOptionPane.CANCEL_OPTION) {
+										check = false;
 									} else {
-										pane = np.getOptionPane(mapButtonNary.get(btemp));
-										mapButtonCombo.put(btemp, pane);
-									}
-
-									boolean check = true;
-									while (check) {
-										int result = JOptionPane.showConfirmDialog(null, pane.getFirst(),
-														"Specify the order",JOptionPane.OK_CANCEL_OPTION);
-										if (result == JOptionPane.CANCEL_OPTION) {
+										if (result == JOptionPane.OK_OPTION) {
+											// check if the choices are
+											// different
+											List<String> newOrder = new ArrayList<String>();
+											List<JComboBox> temp2 = pane
+													.getSecond();
+											for (int i = 0; i < temp2.size(); i++) {
+												String s = temp2.get(i)
+														.getSelectedItem()
+														.toString();
+												newOrder.add(s);
+											}
+											HashSet<String> hashSet = new HashSet<String>();
 											check = false;
-										} else {
-											if (result == JOptionPane.OK_OPTION) {
-												// check if the choices are
-												// different
-												List<String> newOrder = new ArrayList<String>();
-												List<JComboBox> temp2 = pane
-														.getSecond();
-												for (int i = 0; i < temp2
+											for (String s : newOrder) {
+												if (hashSet.contains(s))
+													check = true; // contains
+																	// duplicates
+												else
+													hashSet.add(s);
+											}
+											if (check) {
+												JOptionPane.showMessageDialog(
+														pane.getFirst(),
+														"Duplicate(s) detected! Choose the correct order!",
+														"ERROR",
+														JOptionPane.ERROR_MESSAGE);
+											} else {
+												JLabel l = mapButtonLabel
+														.get(btemp);
+												l.setText(""); // remove the
+																// current text
+												for (int i = 0; i < newOrder
 														.size(); i++) {
-													String s = temp2
-															.get(i)
-															.getSelectedItem()
-															.toString();
-													newOrder.add(s);
+													l.setText(l.getText()
+															+ newOrder.get(i)
+															+ " ");
 												}
-												HashSet<String> hashSet = new HashSet<String>();
-												check = false;
-												for (String s : newOrder) {
-													if (hashSet.contains(s))
-														check = true; // contains
-																		// duplicates
-													else
-														hashSet.add(s);
-												}
-												if (check) {
-													JOptionPane.showMessageDialog(pane.getFirst(),
-																	"Duplicate(s) detected! Choose the correct order!",
-																	"ERROR",JOptionPane.ERROR_MESSAGE);
-												} else {
-													JLabel l = mapButtonLabel.get(btemp);
-													l.setText(""); // remove the current text				
-													for (int i = 0; i < newOrder.size(); i++) {
-														l.setText(l.getText()+ newOrder.get(i)+ " ");
-													}
-													mapButtonNary.put(btemp,newOrder);
-													String reltemp = mapButtonRelationName.get(btemp);
-													nary.put(reltemp,newOrder);
-												}
+												mapButtonNary.put(btemp,
+														newOrder);
+												String reltemp = mapButtonRelationName
+														.get(btemp);
+												nary.put(reltemp, newOrder);
 											}
 										}
 									}
 								}
 							}
-						});
+						}
+					});
 
-					}
-					np.addNextCancelButton();
-					main.getMainFrame().setContentPane(choice.getNaryPane());
-					main.getMainFrame().validate();
-				} else {
-					// go to TranslatePanel
-					naryPanelExist = false;
-					translate.emptiedField();
-					main.getMainFrame().setContentPane(choice.getTranslatePane());
-					main.getMainFrame().validate();
 				}
+				np.addNextCancelButton();
+				main.getMainFrame().setContentPane(choice.getNaryPane());
+				main.getMainFrame().validate();
+			} else {
+				// go to TranslatePanel
+				naryPanelExist = false;
+				translate.emptiedField();
+				main.getMainFrame().setContentPane(choice.getTranslatePane());
+				main.getMainFrame().validate();
 			}
 		}
 	}
@@ -304,7 +329,7 @@ public class UIController {
 			main.showMainPane();
 		}
 	}
-	
+
 	class NaryPrevListener implements ActionListener {
 
 		public void actionPerformed(ActionEvent e) {
@@ -318,39 +343,42 @@ public class UIController {
 			}
 		}
 	}
-	
+
 	class NaryNextListener implements ActionListener {
-		
+
 		public void actionPerformed(ActionEvent e) {
 			boolean check = true;
 			List<List<String>> list = new ArrayList<List<String>>(nary.values());
 			for (int i = 0; i < list.size(); i++) {
 				if (list.get(i).contains(rootString))
 					if (!list.get(i).get(0).equals(rootString))
-						check = false; 
+						check = false;
 			}
-			
+
 			if (check == false) {
-			JOptionPane.showMessageDialog(choice,
-					rootString + " must be the root of the n-ary relation, because it is the most important entity",
-					"ERROR",JOptionPane.ERROR_MESSAGE);
+				JOptionPane
+						.showMessageDialog(
+								choice,
+								rootString
+										+ " must be the root of the n-ary relation, because it is the most important entity",
+								"ERROR", JOptionPane.ERROR_MESSAGE);
 			} else {
 				try {
 					r.setOrders(nary);
 					Map<String, ErdNode> rootMap = r.getERDEntityTypes();
 					r.buildORASS(rootMap.get(rootString));
-					main.getMainFrame().setContentPane(choice.getTranslatePane());
+					main.getMainFrame().setContentPane(
+							choice.getTranslatePane());
 					main.getMainFrame().validate();
 				} catch (MainException me) {
-					JOptionPane.showMessageDialog(choice,
-							me.getMessage(),
-							"ERROR",JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(choice, me.getMessage(),
+							"ERROR", JOptionPane.ERROR_MESSAGE);
 				}
 			}
-			
+
 		}
 	}
-	
+
 	class PrevListener implements ActionListener {
 
 		public void actionPerformed(ActionEvent e) {

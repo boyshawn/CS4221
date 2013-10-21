@@ -111,7 +111,7 @@ public class NaryPanel extends JPanel {
 
 	private JButton getPrevButton() {
 		if (prevButton == null) {
-			prevButton = new JButton("Cancel");
+			prevButton = new JButton("Previous");
 		}
 		return prevButton;
 	}
