@@ -137,23 +137,31 @@ public class XMLSchemaGenerator implements Generator {
 		writer.println("\t<xs:complexType name=\""+dbName+"_Type\">");
 		writer.println("\t\t<xs:all>");
 		
-		printElementDeclarations(root, 3);
+		Iterator<ORASSNode> rootsItr = roots.iterator();
+		while (rootsItr.hasNext()) {
+			ORASSNode root = rootsItr.next();
+			printElementDeclarations(root, 3);
+		}
 		
 		writer.println("\t\t</xs:all>");
 		writer.println("\t</xs:complexType>");
 		writer.println();
 		
-		printTable(root, 1);
+		rootsItr = roots.iterator();
+		while(rootsItr.hasNext()) {
+			ORASSNode root = rootsItr.next();
+			printTable(root, 1);
 		
-		printKey(root, 1);
+			printKey(root, 1);
 		
-		List<ORASSNode> children = root.getChildren();
-		Iterator<ORASSNode> itr  = children.iterator();
-		while (itr.hasNext()) {
-			printKeyRef(dbName, itr.next(), 1);
+			List<ORASSNode> children = root.getChildren();
+			Iterator<ORASSNode> childrenItr  = children.iterator();
+			while (childrenItr.hasNext()) {
+				printKeyRef(dbName, childrenItr.next(), 1);
+			}
+		
+			printUniqueConstraints(root, 1);
 		}
-		
-		printUniqueConstraints(root, 1);
 		
 		writer.println("</xs:schema>");
 		
