@@ -132,13 +132,19 @@ public class ERDBuilder {
 			// else the table is an entity
 			else {
 				ErdNode entity;
+				boolean isWeakEntity = true;
 				if ((isReferenced || columns.size() > primaryKey.size()) && 
 					 ((!hasIntersection(fkColumns, primaryKey) && !isNullableSetOfCols(fkColumns, columns)) || isProperSubset(fkColumns, primaryKey)))
 					entity = new ErdNode(tableName, tableName, ErdNodeType.WEAK_ENTITY_TYPE, columns);
-				else
-					entity = new ErdNode(tableName, tableName, ErdNodeType.ENTITY_TYPE, columns);
-				entity.addLink(fkNode);
-				fkNode.addLink(entity);
+				else {
+					entity = new ErdNode(tableName, tableName, ErdNodeType.ENTITY_TYPE, columns); 
+					isWeakEntity = false;
+				}
+				
+				if (!isWeakEntity)
+					entity.addLink(fkNode);
+				
+				fkNode.addSpecialLink(entity);
 				entityTypes.put(tableName, entity);
 				return entity;
 			}
