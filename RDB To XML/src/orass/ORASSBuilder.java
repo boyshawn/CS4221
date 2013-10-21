@@ -38,10 +38,14 @@ public class ORASSBuilder{
 		/*Set<String> erd = erdnodes.keySet();
 		Iterator<String> erdItr = erd.iterator();
 		String tables="";
+		String oldNames = "";
 		while(erdItr.hasNext()){
-			tables += erdItr.next() + "-";
+			String nextName = erdItr.next();
+			tables += nextName + "-";
+			oldNames += erdnodes.get(nextName).getOriginalTableName()+"+";
 		}
-		logger.info(tables);*/
+		logger.info(tables);
+		logger.info(oldNames);*/
 	}
 	
 	/*

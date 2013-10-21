@@ -207,26 +207,32 @@ public class XMLDataGenerator implements Generator {
 				//logger.info("should print " +tableName);
 				printTabs(indentation);
 				writer.println("<"+node.getOriginalName()+">");
+				needClosing.put(tableIndex, true);
 				for(int i=0;i<cols.size();i++){
 					ColumnDetail col = cols.get(i);
+					
 					String colName = col.getName();
-					String tName = col.getTableName();
-					String nextData;
-					if(isNameChanged(tName)){
+					//String tName = col.getTableName();
+					String nextData = currVals.get(tableName).get(i);
+					/*if(isNameChanged(tName)){
 						nextData= data.getString(node.getName()+colName);
 					}else{
 						nextData = data.getString(colName);
+					}*/
+					//boolean isMVD = col.isMultiValued();
+					String prevColVal = prevVals.get(tableName).get(i);
+					// Print for individual columns
+					if(!prevColVal.equals(nextData) || tableIndex==currTables.size()-1){
+						printTabs(indentation+1);
+						if (data.wasNull()){
+							writer.print("<"+colName);
+							writer.print(" xsi:nil=\"true\">");
+						}else{
+							writer.print("<"+colName+">"+nextData);
+						}
+						writer.println("</"+colName+">");
 					}
-					printTabs(indentation+1);
-					if (data.wasNull()){
-						writer.print("<"+colName);
-						writer.print(" xsi:nil=\"true\">");
-					}else{
-						writer.print("<"+colName+">"+nextData);
-					}
-					writer.println("</"+colName+">");
 				}
-				needClosing.put(tableIndex, true);
 			}
 			List<ORASSNode> children = node.getChildren();
 			
@@ -266,36 +272,15 @@ public class XMLDataGenerator implements Generator {
 					if(!isEqual){
 						printTabs(indentation);
 						writer.println("</"+node.getOriginalName()+">");
+						needClosing.put(tableIndex, false);
 					}
 					data.previous();
-					needClosing.put(tableIndex, false);
 				}else{
-					if(needClosing.get(tableIndex)){
-						printTabs(indentation);
-						writer.println("</"+node.getOriginalName()+">");
-					}
+					printTabs(indentation);
+					writer.println("</"+node.getOriginalName()+">");
+					needClosing.put(tableIndex, false);
 				}
 			}
-			/*if((children.isEmpty() || children.size()==0) && needClosing.get(tableIndex)){
-				printTabs(indentation);
-				writer.println("</"+node.getOriginalName()+">");
-				needClosing.put(tableIndex, false);
-			}else if(!data.isLast()){
-				data.next();
-				List<String> pkVals = getAllValues(node, data);
-				boolean isEqual = isValsEqual(previousVals,pkVals);
-				if(!isEqual){
-					printTabs(indentation);
-					writer.println("</"+node.getOriginalName()+">");
-				}
-				data.previous();
-				needClosing.put(tableIndex, false);
-			}else{
-				if(needClosing.get(tableIndex)){
-					printTabs(indentation);
-					writer.println("</"+node.getOriginalName()+">");
-				}
-			}*/
 
 		}catch(SQLException ex){
 			throw new MainException("Error in getting data for printing the closing tag.");
