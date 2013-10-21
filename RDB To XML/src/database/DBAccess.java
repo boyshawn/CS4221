@@ -18,7 +18,7 @@ import main.MainException;
 import org.apache.log4j.Logger;
 
 import xml.NodeRelationship;
-import xml.TableColVal;
+//import xml.TableColVal;
 
 import com.sun.rowset.CachedRowSetImpl;
 
@@ -292,7 +292,7 @@ public class DBAccess {
 		
 	}
 	
-	public ResultSet getRelevantDataForTable(Map<String, List<String>> selectClause, List<List<String>> fromTables, List<TableColVal> whereClause, Map<String,List<String>> orderBy, List<String> nodeTables, NodeRelationship nodeRel) throws MainException {
+	/*public ResultSet getRelevantDataForTable(Map<String, List<String>> selectClause, List<List<String>> fromTables, List<TableColVal> whereClause, Map<String,List<String>> orderBy, List<String> nodeTables, NodeRelationship nodeRel) throws MainException {
 		String query = "", fromClause = "";
 		
 		// Process SELECT and FROM clause at the same time
@@ -347,27 +347,12 @@ public class DBAccess {
 		}
 		
 		// process order by clause
-		/*query += " ORDER BY ";
-		Iterator<String> stringItr = nodeTables.iterator();
-		while (stringItr.hasNext()) {
-			String table = stringItr.next();
-			List<String> columnsToOrder = orderBy.get(table);
-			Iterator<String> colItr = columnsToOrder.iterator();
-			while (colItr.hasNext()) {
-				String column = colItr.next();
-				query += table + "." + column;
-				// if it is not the last column of the last table to order by
-				if (colItr.hasNext() || stringItr.hasNext())
-					query += ",";
-				else
-					query += ";";
-			}
-		}*/
+
 		query += ";";
 		logger.info("Query to execute : " + query);
 		return executeQuery(query);
 		
-	}
+	}*/
 	
 	private ResultSet executeQuery(String query) throws MainException {
 		
@@ -403,6 +388,26 @@ public class DBAccess {
 		}catch(Exception ex){
 			ex.printStackTrace();
 			throw new MainException("Exception at DBAccess.getData(tableName) when retrieving data from table " + tableName);
+		}
+	}
+	
+	public CachedRowSet getSelectedData(String tableName, List<String> cols) throws MainException{
+		try{
+			CachedRowSet crs = new CachedRowSetImpl();
+			
+			String query = "SELECT DISTINCT " + cols.get(0);
+			for(int i=1; i<cols.size(); i++){
+				query += ", "+cols.get(i);
+			}
+			query += " FROM " +tableName;
+			
+			Statement stmt = dbConnection.createStatement();
+			ResultSet results = stmt.executeQuery(query);
+			crs.populate(results);
+			stmt.close();
+			return crs;
+		}catch(SQLException ex){
+			throw new MainException("Exception when retrieving primary keys data from table " + tableName + " : " + ex.getMessage());
 		}
 	}
 }
