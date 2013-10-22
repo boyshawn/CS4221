@@ -310,10 +310,16 @@ public class UIController {
 				main.getMainFrame().validate();
 			} else {
 				// go to TranslatePanel
+				try {
+				Map<String, ErdNode> rootMap = r.getERDEntityTypes();
+				r.buildORASS(rootMap.get(rootString));
 				naryPanelExist = false;
 				translate.emptiedField();
 				main.getMainFrame().setContentPane(choice.getTranslatePane());
 				main.getMainFrame().validate();
+				} catch (MainException me) {
+					System.out.println(me.getMessage());
+				}
 			}
 		}
 	}
