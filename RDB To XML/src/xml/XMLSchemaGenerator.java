@@ -249,7 +249,7 @@ public class XMLSchemaGenerator implements Generator {
 			String childName = child.getName();
 			writer.println(getTabs(numOfTabs + 2) + "<xs:element name=\""+childName+"\" minOccurs=\"0\" maxOccurs=\"unbounded\">");
 			writer.println(getTabs(numOfTabs + 3) + "<xs:complexType>");
-			writer.println(getTabs(numOfTabs + 4) + "<xs:attribute name=\""+childName+"_Ref\" type=\"string\" use=\"requred\"/>");
+			writer.println(getTabs(numOfTabs + 4) + "<xs:attribute name=\""+childName+"_Ref\" type=\"xs:string\" use=\"requred\"/>");
 			List<ColumnDetail> relAttrs = child.getRelAttributes();
 			if (relAttrs.size() > 0) {
 				writer.println(getTabs(numOfTabs + 4) + "<xs:all>");
