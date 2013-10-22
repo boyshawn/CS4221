@@ -377,7 +377,7 @@ public class XMLDataGenerator implements Generator {
 				// Print ID reference of the relationship
 				List<String> pkValues = getSelectedVals(table1, cols1, data);
 				String currID = this.getTupleID(table1, pkValues);
-				if(ID.equals(currID)){
+				if(ID.equals(currID) && node1.hasChild(node2)){
 					List<String> pkValues2 = getSelectedVals(table2, cols2, data);
 					String refID = this.getTupleID(table2, pkValues2);
 					String originalName2 = node2.getOriginalName();

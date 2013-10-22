@@ -119,4 +119,8 @@ public class ORASSNode {
 	public List<ORASSNode> getWeakEntityNodes(){
 		return weakEntityNodes;
 	}
+	
+	public boolean hasChild(ORASSNode child){
+		return children.contains(child);
+	}
 }
