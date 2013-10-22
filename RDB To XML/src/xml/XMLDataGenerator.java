@@ -297,6 +297,7 @@ public class XMLDataGenerator implements Generator {
 					List<NodeRelationship> nodeRels = getNodeRelationship(node,child);
 					CachedRowSet crs = getRelationshipData(nodeRels);
 					printRelationship(node, child, nodeRels, crs, id, indentation+1);
+					crs.close();
 				}
 				
 				// Print IS-A relationships
@@ -305,8 +306,9 @@ public class XMLDataGenerator implements Generator {
 					ORASSNode supertype = supertypes.get(i);
 					List<NodeRelationship> nodeRels = getNodeRelationship(node,supertype);
 					logger.info("is-a nodeRels size="+nodeRels.size());
-					CachedRowSet crs = getRelationshipData(nodeRels);
-					printRelationship(node, supertype, nodeRels, crs, id, indentation+1);
+					CachedRowSet crsIsA = getRelationshipData(nodeRels);
+					printRelationship(node, supertype, nodeRels, crsIsA, id, indentation+1);
+					crsIsA.close();
 				}
 				
 				// Print ID/EX relationships
@@ -321,8 +323,9 @@ public class XMLDataGenerator implements Generator {
 				if(regularEntity!=null){
 					List<NodeRelationship> nodeRels = getNodeRelationship(node,regularEntity);
 					logger.info("weak nodeRels size="+nodeRels.size());
-					CachedRowSet crs = getRelationshipData(nodeRels);
-					printRelationship(node, regularEntity, nodeRels, crs, id, indentation+1);
+					CachedRowSet crsWeak = getRelationshipData(nodeRels);
+					printRelationship(node, regularEntity, nodeRels, crsWeak, id, indentation+1);
+					crsWeak.close();
 				}
 				
 				printClosingTag(node, data, keyCols, keyVals, indentation);
@@ -377,23 +380,20 @@ public class XMLDataGenerator implements Generator {
 	private void printRelationship(ORASSNode node1, ORASSNode node2, List<NodeRelationship> nodeRels, CachedRowSet data, String ID, int indentation) throws MainException{
 		try{
 			int n = nodeRels.size();
-			List<String> cols1 = new ArrayList<String>(); 
-			List<String> cols2 = new ArrayList<String>(); 
+			
 			String table1 = node1.getName();
 			String table2 = node2.getName();
+			List<String> cols1 = keyMaps.get(table1);
+			List<String> cols2 = keyMaps.get(table2);
+			boolean shouldPrint = false;
 			if(n==1){
-				NodeRelationship nodeRel = nodeRels.get(0);
-				cols1 = nodeRel.getCols1();
-				cols2 = nodeRel.getCols2(); 
+				shouldPrint = true;
 			}else{
 				for(int i=0; i<nodeRels.size(); i++){
 					NodeRelationship nodeRel = nodeRels.get(i);
 					String relTable2 = nodeRel.getTable2();
 					if(relTable2.equals(table1)){
-						cols1 = nodeRel.getCols2();
-					}
-					if(relTable2.equals(table2)){
-						cols2 = nodeRel.getCols2();
+						shouldPrint = true;
 					}
 				}
 			}
@@ -401,10 +401,9 @@ public class XMLDataGenerator implements Generator {
 			while(data.next()){
 				List<String> pkValues = getSelectedVals(table1, cols1, data);
 				String currID = this.getTupleID(table1, pkValues);
-				if(ID.equals(currID) && node1.hasChild(node2)){
+				if(ID.equals(currID) && shouldPrint){
 					// Print ID reference of the relationship
 					List<String> pkValues2 = getSelectedVals(table2, cols2, data);
-					logger.info("table pkvals size"+pkValues2.size());
 					String refID = this.getTupleID(table2, pkValues2);
 					String originalName2 = node2.getOriginalName();
 					printTabs(indentation);
@@ -775,9 +774,7 @@ public class XMLDataGenerator implements Generator {
 		
 		//logger.info("new name: "+newName +"|| old name: "+tName);
 		List<String> pks =dbCache.getPrimaryKeys(tName);
-		if(!keyMaps.keySet().contains(newName)){
-			keyMaps.put(newName, pks);
-		}
+		keyMaps.put(newName, pks);
 		List<String> criticalCols = new ArrayList<String>();
 		criticalCols.addAll(pks);
 		List<ColumnDetail> colDetails = parent.getEntityAttributes();
@@ -839,8 +836,6 @@ public class XMLDataGenerator implements Generator {
 					}
 					NodeRelationship rel = new NodeRelationship(relName, parent.getName(), relCols1, pkCols);
 					NodeRelationship rel2 = new NodeRelationship(relName, child.getName(), relCols2, cols2);
-					keyMaps.put(parent.getName(), pkCols);
-					keyMaps.put(child.getName(), cols2);
 					relationships.add(rel);
 					relationships.add(rel2);
 				}catch(SQLException ex){
@@ -878,12 +873,10 @@ public class XMLDataGenerator implements Generator {
 				}
 
 				NodeRelationship rel = new NodeRelationship(child.getName(), parent.getName(), fkList, pkList);
-				keyMaps.put(parent.getName(), pkList);
 				relationships.add(rel);
 			}else{
 				NodeRelationship rel = new NodeRelationship(child.getName(), parent.getName(), pkList, fkList);
 				relationships.add(rel);
-				keyMaps.put(child.getName(), pkList);
 			}
 			logger.info("special rel added: " + child.getName() + " " + parent.getName());
 		}catch(SQLException ex){
