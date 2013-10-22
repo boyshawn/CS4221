@@ -23,11 +23,11 @@ import xml.NodeRelationship;
 import com.sun.rowset.CachedRowSetImpl;
 
 public class DBAccess {
-	
+
 	private Logger logger = Logger.getLogger(DBAccess.class);
 	private static volatile DBAccess singDbAccess = null;
 	private Connection dbConnection;
-	
+
 	/**
 	 * Constructor that can only be used by DBConnector
 	 * 
@@ -35,9 +35,9 @@ public class DBAccess {
 	 * @throws MainException 
 	 */
 	public DBAccess(Connection dbConnection) throws MainException {
-		
+
 		this.dbConnection = dbConnection;
-		
+
 		try {
 			if(this.dbConnection.isClosed()){
 				throw new MainException("The database connection is closed.");
@@ -46,11 +46,11 @@ public class DBAccess {
 			e.printStackTrace();
 			throw new MainException("Cannot access database connection.");
 		}
-		
+
 		singDbAccess = this;
 	}
 
-	
+
 	public static DBAccess getInstance() throws MainException {
 		if (singDbAccess == null)
 			throw new MainException("DBAccess instance not initialized");
@@ -58,12 +58,12 @@ public class DBAccess {
 			return singDbAccess;
 		}
 	}
-	
+
 	public void removeInstance() {
 		singDbAccess = null;
 		dbConnection = null;
 	}
-	
+
 	public List<String> getTableNames() throws MainException {
 		List<String> tableNames = new ArrayList<String>();
 		try {
@@ -78,7 +78,7 @@ public class DBAccess {
 			throw new MainException("Exception when retrieving table names : " + e.getMessage());
 		}
 	}
-	
+
 	public List<String> getAllColumns(String tableName) throws MainException {
 		List<String> allCols = new ArrayList<String>();
 		try {
@@ -92,18 +92,18 @@ public class DBAccess {
 			throw new MainException("Failed to get all columns for " + tableName);
 		}
 	}
-	
+
 	public List<ColumnDetail> getDetailsOfColumns(String tableName) throws MainException {
-	
+
 		try {
 			DatabaseMetaData dbMetadata = dbConnection.getMetaData();
 			ResultSet results = dbMetadata.getColumns(null, null, tableName, null);
-			
+
 			List<ColumnDetail> columns = new ArrayList<ColumnDetail>();
 			List<String> uniqueCols    = getUniqueColumns(tableName);
 			CachedRowSet foreignKeys   = getForeignKeys(tableName);
 			Map<String,Map<String,String>> foreignKeyToRefTableAndCol = new HashMap<String,Map<String,String>>();
-			
+
 			// process foreign keys according to the foreign keys of the table
 			while (foreignKeys.next()) {
 				String fkColumnName = foreignKeys.getString("FKCOLUMN_NAME");
@@ -113,7 +113,7 @@ public class DBAccess {
 				refTableToCol.put(pkTableName, pkColumnName);
 				foreignKeyToRefTableAndCol.put(fkColumnName, refTableToCol);
 			}
-			
+
 			// process the columns of the table
 			while (results.next()) {
 				String colName      = results.getString("COLUMN_NAME");
@@ -126,15 +126,15 @@ public class DBAccess {
 				ColumnDetail column = new ColumnDetail(tableName, colName, refTableToCol, colDefault, colNullable, colUnique, colSize, colSQLType);
 				columns.add(column);
 			}
-			
+
 			return columns;
-			
+
 		} catch (SQLException e) {
 			e.printStackTrace();
 			throw new MainException("Exception when retrieving detail of columns for table " + tableName + " : " + e.getMessage());
 		}
 	}
-	
+
 	private List<String> getUniqueColumns(String tableName) throws MainException {
 		List<String> uniqueCols = new ArrayList<String>();
 		try {
@@ -148,7 +148,7 @@ public class DBAccess {
 			throw new MainException("Failed to get unique columns for " + tableName);
 		}
 	}
-	
+
 	public List<String> getPrimaryKeys(String tableName) throws MainException {
 		List<String> primaryKeys = new ArrayList<String>();
 		try {
@@ -162,7 +162,7 @@ public class DBAccess {
 			throw new MainException("Failed to get primary keys for " + tableName);
 		}
 	}
-	
+
 	public boolean isBeingReferenced(String tableName) throws MainException {
 		CachedRowSet crs;
 		try {
@@ -178,7 +178,7 @@ public class DBAccess {
 			throw new MainException("Failed to get foreign keys for " + tableName);
 		}
 	}
-	
+
 	public CachedRowSet getForeignKeys(String tableName) throws MainException {
 		CachedRowSet crs;
 		try {
@@ -191,7 +191,7 @@ public class DBAccess {
 			throw new MainException("Failed to get foreign keys for " + tableName);
 		}
 	}
-	
+
 	public List<String> getNamesOfForeignKeys(String tableName) throws MainException {
 		logger.info("getForeignKeys : " + tableName);
 		CachedRowSet crs;
@@ -209,10 +209,10 @@ public class DBAccess {
 			throw new MainException("Failed to get the names of foreign keys for " + tableName);
 		}
 	}
-	
+
 	public ResultSet joinTables(Map<String, List<String>> selectClause, List<List<String>> fromTables, List<NodeRelationship> whereClause, Map<String,List<String>> orderBy, List<String> nodeTables) throws MainException {
 		String query = "", fromClause = "";
-		
+
 		// Process SELECT and FROM clause at the same time
 		query += "SELECT ";
 		fromClause += " FROM ";
@@ -221,7 +221,7 @@ public class DBAccess {
 			List<String> table       = listItr.next();
 			String originalTableName = table.get(0);
 			String tableName         = table.get(1);
-			
+
 			// Add columns of tables into SELECT clause
 			List<String> columnsToSelect = selectClause.get(tableName);
 			Iterator<String> columnsItr  = columnsToSelect.iterator();
@@ -235,7 +235,7 @@ public class DBAccess {
 				if (columnsItr.hasNext())
 					query += ",";
 			}
-			
+
 			// Add columns into FROM clause
 			if (isSameName)
 				fromClause += tableName;
@@ -249,7 +249,7 @@ public class DBAccess {
 			}
 		}
 		query += fromClause;
-		
+
 		// process where clause
 		query += " WHERE ";
 		Iterator<NodeRelationship> nrItr = whereClause.iterator();
@@ -263,12 +263,12 @@ public class DBAccess {
 					query += " AND ";
 				}
 			}
-			
+
 			// if it is not the last where clause
 			if (nrItr.hasNext())
 				query += " AND ";
 		}
-		
+
 		// process order by clause
 		query += " ORDER BY ";
 		Iterator<String> stringItr = nodeTables.iterator();
@@ -286,15 +286,72 @@ public class DBAccess {
 					query += ";";
 			}
 		}
-		
+
 		logger.info("Query to execute : " + query);
 		return executeQuery(query);
-		
+
 	}
-	
+
+	public CachedRowSet joinTables(List<String> fromTables, List<NodeRelationship> whereClause, Map<String,List<String>> orderBy) throws MainException {
+
+		String query = "";
+
+		// Process SELECT and FROM clause at the same time
+		query += "SELECT DISTINCT * FROM " + fromTables.get(0);
+		for(int i=1; i<fromTables.size(); i++){
+			query += ", " + fromTables.get(i);
+		}
+
+		// process where clause
+		query += " WHERE ";
+		Iterator<NodeRelationship> nrItr = whereClause.iterator();
+		while (nrItr.hasNext()) {
+			NodeRelationship nodeRel = nrItr.next();
+			List<String> cols1 = nodeRel.getCols1();
+			List<String> cols2 = nodeRel.getCols2();
+			for(int i=0; i<cols1.size(); i++){
+				query += nodeRel.getTable1() + "." + cols1.get(i) + "=" + nodeRel.getTable2() + "." + cols2.get(i);
+				if(i!=cols1.size()-1){
+					query += " AND ";
+				}
+			}
+
+			// if it is not the last where clause
+			if (nrItr.hasNext())
+				query += " AND ";
+		}
+
+		// process order by clause
+		/*query += " ORDER BY ";
+		Iterator<String> stringItr = nodeTables.iterator();
+		while (stringItr.hasNext()) {
+			String table = stringItr.next();
+			List<String> columnsToOrder = orderBy.get(table);
+			Iterator<String> colItr = columnsToOrder.iterator();
+			while (colItr.hasNext()) {
+				String column = colItr.next();
+				query += table + "." + column;
+				// if it is not the last column of the last table to order by
+				if (colItr.hasNext() || stringItr.hasNext())
+					query += ",";
+				else
+					query += ";";
+			}
+		}*/
+		logger.info("Query to execute : " + query);
+		try{
+			CachedRowSet crs = new CachedRowSetImpl();
+			ResultSet results = executeQuery(query);
+			crs.populate(results);
+			return crs;
+		}catch(SQLException ex){
+			throw new MainException(""+ex.getMessage());
+		}
+	}
+
 	/*public ResultSet getRelevantDataForTable(Map<String, List<String>> selectClause, List<List<String>> fromTables, List<TableColVal> whereClause, Map<String,List<String>> orderBy, List<String> nodeTables, NodeRelationship nodeRel) throws MainException {
 		String query = "", fromClause = "";
-		
+
 		// Process SELECT and FROM clause at the same time
 		query += "SELECT ";
 		fromClause += " FROM ";
@@ -303,7 +360,7 @@ public class DBAccess {
 			List<String> table       = listItr.next();
 			String originalTableName = table.get(0);
 			String tableName         = table.get(1);
-			
+
 			// Add columns of tables into SELECT clause
 			List<String> columnsToSelect = selectClause.get(tableName);
 			Iterator<String> columnsItr  = columnsToSelect.iterator();
@@ -317,7 +374,7 @@ public class DBAccess {
 				if (columnsItr.hasNext())
 					query += ",";
 			}
-			
+
 			// Add columns into FROM clause
 			if (isSameName)
 				fromClause += tableName;
@@ -331,7 +388,7 @@ public class DBAccess {
 			}
 		}
 		query += fromClause;
-		
+
 		// process where clause
 		query += " WHERE ";
 		Iterator<TableColVal> nrItr = whereClause.iterator();
@@ -340,67 +397,78 @@ public class DBAccess {
 
 				query += nodeVal.getTableName() + "." + nodeVal.getColName() + "=" + nodeVal.getColVal();
 
-			
+
 			// if it is not the last where clause
 			if (nrItr.hasNext())
 				query += " AND ";
 		}
-		
+
 		// process order by clause
 
 		query += ";";
 		logger.info("Query to execute : " + query);
 		return executeQuery(query);
-		
+
 	}*/
-	
+
 	private ResultSet executeQuery(String query) throws MainException {
-		
+
 		try {
 			Statement stmt = dbConnection.createStatement();
 			ResultSet results = stmt.executeQuery(query);
 			return results;
-			
+
 		} catch(SQLException e){
 			e.printStackTrace();
 			throw new MainException("Exception when executing the query : " + query + "\nException message : " +e.getMessage());
-			
+
 		}
-		
+
 	}
-	
-	public CachedRowSet getData(String tableName) throws MainException {
+
+	public CachedRowSet getData(String tableName, List<String> orderByCols) throws MainException {
 		try{
 			Statement stmt = null;
 			ResultSet results = null;
 			CachedRowSet crs = new CachedRowSetImpl();
-			
+			String query = "SELECT * FROM " + tableName;
+			int n = orderByCols.size();
+			for(int i=0; i<n-1; i++){
+				query += orderByCols.get(i) + " AND ";
+
+			}
+			query += orderByCols.get(n-1) + ";";
 			stmt = dbConnection.createStatement();
-			results = stmt.executeQuery("SELECT * FROM " + tableName);
+			results = stmt.executeQuery(query);
 			crs.populate(results);
 			stmt.close();
 			return crs;
-			
+
 		}catch(SQLException ex){
 			ex.printStackTrace();
 			throw new MainException("Exception when retrieving data from table " + tableName + " : " + ex.getMessage());
-			
+
 		}catch(Exception ex){
 			ex.printStackTrace();
 			throw new MainException("Exception at DBAccess.getData(tableName) when retrieving data from table " + tableName);
 		}
 	}
-	
+
 	public CachedRowSet getSelectedData(String tableName, List<String> cols) throws MainException{
 		try{
 			CachedRowSet crs = new CachedRowSetImpl();
-			
+
 			String query = "SELECT DISTINCT " + cols.get(0);
 			for(int i=1; i<cols.size(); i++){
 				query += ", "+cols.get(i);
 			}
 			query += " FROM " +tableName;
-			
+
+			query += " ORDER BY "+cols.get(0);
+			for(int i=1; i<cols.size(); i++){
+				query += ", " + cols.get(i);
+			}
+			query += ";";
 			Statement stmt = dbConnection.createStatement();
 			ResultSet results = stmt.executeQuery(query);
 			crs.populate(results);

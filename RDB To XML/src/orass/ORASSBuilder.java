@@ -54,6 +54,7 @@ public class ORASSBuilder{
 	public List<ORASSNode> buildORASS(ErdNode root) throws MainException {
 
 		List<ORASSNode> rootNodes = new ArrayList<ORASSNode>();
+		logger.info(root.getTableName());
 		ORASSNode rootNode = processEntity(root);
 		rootNodes.add(rootNode);
 		// Check and process unlinked nodes
@@ -67,6 +68,7 @@ public class ORASSBuilder{
 				}
 			}
 		}
+		logger.info(rootNodes.size());
 		return rootNodes;
 	}
 	

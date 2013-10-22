@@ -37,7 +37,7 @@ public class XMLDataGenerator implements Generator {
 	private List<NodeRelationship> relationships;
 	private Map<String, List<String>>  keyMaps;
 	private Map<String, List<String>>  criticalColMaps;
-	private Map<String, List<String>> prevVals;
+//	private Map<String, List<String>> prevVals;
 	private Map<String, List<String>> colMaps;
 	private Map<String, CachedRowSet> tableKeyData;
 	private Map<String, CachedRowSet> tableData;
@@ -45,7 +45,7 @@ public class XMLDataGenerator implements Generator {
 	//private Map<String, List<String>> currVals;
 	private List<String> currTables;
 
-	private Map<Integer, Boolean> needClosing;
+//	private Map<Integer, Boolean> needClosing;
 	private Logger logger = Logger.getLogger(XMLDataGenerator.class);
 
 	@Override
@@ -59,7 +59,7 @@ public class XMLDataGenerator implements Generator {
 		colMaps = new HashMap<String, List<String>>();
 		criticalColMaps = new HashMap<String, List<String>>();
 		tableDataIDs = new HashMap<String, List<TupleIDMap>>();
-		needClosing = new HashMap<Integer, Boolean>();
+	//	needClosing = new HashMap<Integer, Boolean>();
 		
 		setupFile(dbName, fileName);
 
@@ -109,6 +109,8 @@ public class XMLDataGenerator implements Generator {
 		assignIDsToTuples();
 		
 		for(int i=0; i<rootNodes.size(); i++){
+			ORASSNode root = rootNodes.get(i);
+			printTable(root, 1);
 			/*prevVals = new HashMap<String, List<String>>();
 			//currVals = new HashMap<String, List<String>>();
 			currTables = new ArrayList<String>();
@@ -140,7 +142,7 @@ public class XMLDataGenerator implements Generator {
 		List<String> cols = keyMaps.get(tableName);
 		CachedRowSet crsKey = dbCache.getSelectedData(originalName, cols);
 		tableKeyData.put(tableName, crsKey);
-		CachedRowSet crs = dbCache.getData(originalName);
+		CachedRowSet crs = dbCache.getData(originalName, criticalColMaps.get(tableName));
 		tableData.put(tableName, crs);
 		List<TupleIDMap> tim = new ArrayList<TupleIDMap>();
 		tableDataIDs.put(tableName, tim);
@@ -184,142 +186,210 @@ public class XMLDataGenerator implements Generator {
 		}	
 		return vals;
 	}
-	/*private void printDB2(String dbName, String filename, ORASSNode root) throws MainException{
-		// Write xml version info.
-		writer.println("<?xml version=\"1.0\"?>");
-		// Write DB name to file
-		writer.println("<" + dbName);
-		writer.println("xmlns=\"http://www.w3schools.com\"");
-		writer.println("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
-		writer.println("xsi:schemaLocation=\""+filename+".xsd\">");
-
-
-		prevVals = new HashMap<String, List<String>>();
-		//currVals = new HashMap<String, List<String>>();
-		currTables = new ArrayList<String>();
-		try{
-			String tableName = root.getName();
-			CachedRowSet results = dbCache.getData(root.getOriginalName());
-			while(results.next()){
-				if(!currTables.contains(tableName)){
-					currTables.add(tableName); 
-					List<String> pkVals = getEntityValues(root, results);
-					prevVals.put(tableName, pkVals);
-				}
-
-				printTable2(root, results, 1);
-				//printed.put(tableName,true);
+	
+	private String getTupleID(String tableName, List<String> keyVals){
+		List<TupleIDMap> tim = tableDataIDs.get(tableName);
+		for(int i=0; i<tim.size(); i++){
+			TupleIDMap currIDMap = tim.get(i);
+			if(currIDMap.isPKValsSame(keyVals)){
+				return currIDMap.getID();
 			}
-		}catch(SQLException ex){
-			throw new MainException("Error in printing DB " + dbName + ex.getMessage());
 		}
-		writer.println("</"+dbName+">");
-	}*/
-
-	private List<String> getAllValues(ORASSNode node, ResultSet data) throws MainException{
-
-		//logger.info("start");
-		List<String> allVals = new ArrayList<String>();
-		try{
-			List<ColumnDetail> allCols = node.getAttributes();
-			//List<String> colNames = dbCache.getAllColumns(node.getOriginalName());
-			for(int j = 0; j<allCols.size(); j++){
-				ColumnDetail col = allCols.get(j);
-				String colName = col.getName();
-				String tableName = col.getTableName();
-
-				if(isNameChangedReverse(tableName)){
-					tableName = node.getName();
-					//logger.info("table name=" +tableName);
-					colName = tableName+colName;
-				}
-				String val = data.getString(colName);
-				//logger.info("Table: " +tableName+"; key =" +colName +"; val=" + val);
-				allVals.add(val);
-			}
-			//logger.info("Table: " + tableName + "; keysize: " + pkCols.size()+"; valsize: "+pkVals.size());
-		}catch(SQLException ex){
-			throw new MainException("Error in getting the values for "+node.getName() + " : " + ex.getMessage());
-		}
-		return allVals;
+		return "";
 	}
 	
-	private List<String> getEntityValues(ORASSNode node, ResultSet data) throws MainException{
-
-		//logger.info("start");
-		List<String> vals = new ArrayList<String>();
-		try{
-			List<ColumnDetail> cols = node.getEntityAttributes();
-			//List<String> colNames = dbCache.getAllColumns(node.getOriginalName());
-			for(int j = 0; j<cols.size(); j++){
-				ColumnDetail col = cols.get(j);
-				String colName = col.getName();
-				String tableName = col.getTableName();
-
-				if(isNameChangedReverse(tableName)){
-					tableName = node.getName();
-					//logger.info("table name=" +tableName);
-					colName = tableName+colName;
+	private List<NodeRelationship> getNodeRelationship(ORASSNode node1, ORASSNode node2){
+		List<NodeRelationship> nodeRels = new ArrayList<NodeRelationship>();
+		String table1 = node1.getOriginalName();
+		String table2 = node2.getOriginalName();
+		if(node1.hasRelation(node2)){
+			String relName = node1.getRelation(node2);
+			for(int i= 0; i<relationships.size(); i++){
+				NodeRelationship nodeRel = relationships.get(i);
+				String relTable1 = nodeRel.getTable1();
+				if(relTable1.equals(relName)){
+					String relTable2 = nodeRel.getTable2();
+					if(relTable2.equals(table1) || relTable2.equals(table2)){
+						nodeRels.add(nodeRel);
+					}
 				}
-				String val = data.getString(colName);
-				//logger.info("Table: " +tableName+"; key =" +colName +"; val=" + val);
-				vals.add(val);
 			}
-			//logger.info("Table: " + tableName + "; keysize: " + pkCols.size()+"; valsize: "+pkVals.size());
-		}catch(SQLException ex){
-			throw new MainException("Error in getting the values for "+node.getName() + " : " + ex.getMessage());
+		}else{
+			for(int i=0; i<relationships.size(); i++){
+				NodeRelationship nodeRel = relationships.get(i);
+				String relTable1 = nodeRel.getTable1();
+				if(relTable1.equals(table1)){
+					String relTable2 = nodeRel.getTable2();
+					if(relTable2.equals(table2)){
+						nodeRels.add(nodeRel);
+					}
+				}
+			}
 		}
-		return vals;
+		return nodeRels;
 	}
 	
-	private String getFirstChangedTable(Map<String, List<String>> vals1, Map<String, List<String>> vals2, List<String> currTables) throws MainException{
-		int n =currTables.size();
-		String firstTable = "";
-		boolean isEqual = true;
-		int i=0;
-		while(isEqual && i<n){
-			firstTable = currTables.get(i);
-			List<String> tVals1 = vals1.get(firstTable);
-			List<String> tVals2 = vals2.get(firstTable);
-			//logger.info(n + " Table: " + firstTable+"; map1 size=" + vals1.size() + "; map2 size= " +vals2.size());
-			isEqual = isValsEqual(tVals1, tVals2);
-			i++;
-		}
-		if(isEqual){
-			firstTable=currTables.get(n-1);
-		}
-		//logger.info("first changed table: " +firstTable);
-		return firstTable;
-	}
-	private boolean isValsEqual(List<String> vals1, List<String> vals2) throws MainException{
-		//boolean isEqual = true;
-		for(int i= 0; i<vals1.size(); i++){
-			String val1 = vals1.get(i);
-			String val2 = vals2.get(i);
-			//logger.info("val1=" + val1 + "; val2= " +val2);
-			if(!val1.equals(val2)){
-				return false;
+	private void printTable(ORASSNode node, int indentation) throws MainException{
+		try{
+			String tableName = node.getName();
+			CachedRowSet data = tableData.get(tableName);
+			
+			List<String> keyCols = keyMaps.get(tableName);
+			//List<String> cols = colMaps.get(tableName);
+			List<ColumnDetail> entityCols = node.getEntityAttributes();
+			boolean firstPrint = true;
+			
+			List<String> entityColNames = new ArrayList<String>();
+			for(int i=0; i< entityCols.size(); i++){
+				String currName = entityCols.get(i).getName();
+				entityColNames.add(currName);
 			}
+			
+			List<ORASSNode> children = node.getChildren();
+			List<ORASSNode> supertypes = node.getSupertypeNode();
+			List<ORASSNode> weakEntities = node.getWeakEntityNodes();
+			
+			List<String> prevVals = getSelectedVals(tableName, entityColNames, data);
+			
+			String prevId = "";
+
+			while(data.next()){
+				List<String> keyVals = getSelectedVals(tableName, keyCols, data);
+				String id = getTupleID(tableName, keyVals);
+				// Print opening tag
+				if(!id.equals(prevId)){
+					printTabs(indentation);
+					writer.println("<"+node.getOriginalName()+" id=\"" + id+"\">");
+				}
+				// Print columns
+				for(int i=0;i<entityCols.size();i++){
+					ColumnDetail col = entityCols.get(i);
+					String colName = col.getName();
+					String nextData = data.getString(colName);
+					String prevColVal = prevVals.get(i);
+					boolean hasFKref = col.hasForeignRef();
+					if((!prevColVal.equals(nextData) || firstPrint) && !hasFKref){
+						printTabs(indentation+1);
+						if (data.wasNull()){
+							writer.print("<"+colName);
+							writer.print(" xsi:nil=\"true\">");
+						}else{
+							writer.print("<"+colName+">"+nextData);
+						}
+						writer.println("</"+colName+">");
+					}
+				}
+				
+				// Print regular relationships
+				for(int i=0; i<children.size(); i++){
+					ORASSNode child = children.get(i);
+					List<NodeRelationship> nodeRels = getNodeRelationship(node,child);
+					CachedRowSet crs = getRelationshipData(nodeRels);
+					printRelationship(node, child, nodeRels, crs, id, indentation+1);
+				}
+				
+				// Print IS-A relationships
+
+				for(int i=0; i<supertypes.size(); i++){
+					ORASSNode supertype = supertypes.get(i);
+					List<NodeRelationship> nodeRels = getNodeRelationship(node,supertype);
+					CachedRowSet crs = getRelationshipData(nodeRels);
+					printRelationship(node, supertype, nodeRels, crs, id, indentation+1);
+				}
+				
+				// Print ID/EX relationships
+				
+				for(int i=0; i<weakEntities.size(); i++){
+					ORASSNode weakEntity = weakEntities.get(i);
+					List<NodeRelationship> nodeRels = getNodeRelationship(node,weakEntity);
+					CachedRowSet crs = getRelationshipData(nodeRels);
+					printRelationship(node, weakEntity, nodeRels, crs, id, indentation+1);
+				}
+				
+				printClosingTag(node, data, keyCols, keyVals, indentation);
+			}
+			
+			for(int i=0; i<children.size(); i++){
+				ORASSNode child = children.get(i);
+				printTable(child, 1);
+			}
+
+		}catch(SQLException ex){
+			throw new MainException("Print table " + node.getName()+" : "+ ex.getMessage());
 		}
-		return true;
 	}
-
-	/*private List<String> getColNames(ORASSNode node){
-		List<String> cols = new ArrayList<String>();
-		List<ColumnDetail> colDetails  = node.getAttributes();
-		for(int i= 0; i<colDetails.size();i++){
-			cols.add(colDetails.get(i).getName());
-		}
-		return cols;
-	}*/
-
-	private void resetNeedClosing(){
-		for(int i=0; i<nodeTables.size(); i++){
-			needClosing.put(i,false);
+	
+	private void printClosingTag(ORASSNode node, CachedRowSet data, List<String> keyCols, List<String> currKeyVals, int indentation) throws MainException{
+		try{
+			String tableName = node.getName();
+			data.next();
+			List<String> nextKeyVals = getSelectedVals(tableName, keyCols, data);
+			boolean sameVals = isValsEqual(currKeyVals, nextKeyVals);
+			if(!sameVals){
+				printTabs(indentation);
+				writer.println("</"+node.getOriginalName()+">");
+			}
+			data.previous();
+		}catch(SQLException ex){
+			
 		}
 	}
-
-	private void printTable(ORASSNode node, ResultSet data, int indentation) throws MainException{
+	
+	private CachedRowSet getRelationshipData(List<NodeRelationship> nodeRels) throws MainException{
+		List<String> fromTables = new ArrayList<String>();
+		for(int i=0;i<nodeRels.size(); i++){
+			NodeRelationship nodeRel = nodeRels.get(i);
+			String table1 = nodeRel.getTable1();
+			if(!fromTables.contains(table1)) fromTables.add(table1);
+			String table2 = nodeRel.getTable2();
+			if(!fromTables.contains(table2)) fromTables.add(table2);
+		}
+		
+		CachedRowSet crs = dbCache.joinTables(fromTables, nodeRels, null);
+		return crs;
+	}
+	
+	private void printRelationship(ORASSNode node1, ORASSNode node2, List<NodeRelationship> nodeRels, CachedRowSet data, String ID, int indentation) throws MainException{
+		try{
+			int n = nodeRels.size();
+			List<String> cols1 = new ArrayList<String>(); 
+			List<String> cols2 = new ArrayList<String>(); 
+			String table1 = node1.getName();
+			String table2 = node2.getName();
+			if(n==1){
+				NodeRelationship nodeRel = nodeRels.get(0);
+				cols1 = nodeRel.getCols1();
+				cols2 = nodeRel.getCols2();
+			}else{
+				for(int i=0; i<nodeRels.size(); i++){
+					NodeRelationship nodeRel = nodeRels.get(i);
+					String relTable2 = nodeRel.getTable2();
+					if(relTable2.equals(table1)){
+						cols1 = nodeRel.getCols2();
+					}
+					if(relTable2.equals(table2)){
+						cols2 = nodeRel.getCols2();
+					}
+				}
+			}
+			
+			while(data.next()){
+				List<String> pkValues = getSelectedVals(table1, cols1, data);
+				String currID = this.getTupleID(table1, pkValues);
+				if(ID.equals(currID)){
+					List<String> pkValues2 = getSelectedVals(table2, cols2, data);
+					String refID = this.getTupleID(table2, pkValues2);
+					String originalName2 = node2.getOriginalName();
+					printTabs(indentation);
+					writer.print("<"+originalName2+" " +originalName2+"_REF="+refID+">");
+					writer.println("</"+originalName2+">");
+				}
+			}
+		}catch(SQLException ex){
+			throw new MainException(ex.getMessage());
+		}
+	}
+	/*private void printTable(ORASSNode node, ResultSet data, int indentation) throws MainException{
 		try{
 			String tableName = node.getName();
 			//List<String> cols = getColNames(node);
@@ -381,7 +451,146 @@ public class XMLDataGenerator implements Generator {
 		}catch(SQLException ex){
 			throw new MainException("Print table " + node.getName()+" : "+ ex.getMessage());
 		}
+	}*/
+	/*private void printDB2(String dbName, String filename, ORASSNode root) throws MainException{
+		// Write xml version info.
+		writer.println("<?xml version=\"1.0\"?>");
+		// Write DB name to file
+		writer.println("<" + dbName);
+		writer.println("xmlns=\"http://www.w3schools.com\"");
+		writer.println("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
+		writer.println("xsi:schemaLocation=\""+filename+".xsd\">");
+
+
+		prevVals = new HashMap<String, List<String>>();
+		//currVals = new HashMap<String, List<String>>();
+		currTables = new ArrayList<String>();
+		try{
+			String tableName = root.getName();
+			CachedRowSet results = dbCache.getData(root.getOriginalName());
+			while(results.next()){
+				if(!currTables.contains(tableName)){
+					currTables.add(tableName); 
+					List<String> pkVals = getEntityValues(root, results);
+					prevVals.put(tableName, pkVals);
+				}
+
+				printTable2(root, results, 1);
+				//printed.put(tableName,true);
+			}
+		}catch(SQLException ex){
+			throw new MainException("Error in printing DB " + dbName + ex.getMessage());
+		}
+		writer.println("</"+dbName+">");
+	}*/
+
+	/*
+	private List<String> getAllValues(ORASSNode node, ResultSet data) throws MainException{
+
+		//logger.info("start");
+		List<String> allVals = new ArrayList<String>();
+		try{
+			List<ColumnDetail> allCols = node.getAttributes();
+			//List<String> colNames = dbCache.getAllColumns(node.getOriginalName());
+			for(int j = 0; j<allCols.size(); j++){
+				ColumnDetail col = allCols.get(j);
+				String colName = col.getName();
+				String tableName = col.getTableName();
+
+				if(isNameChangedReverse(tableName)){
+					tableName = node.getName();
+					//logger.info("table name=" +tableName);
+					colName = tableName+colName;
+				}
+				String val = data.getString(colName);
+				//logger.info("Table: " +tableName+"; key =" +colName +"; val=" + val);
+				allVals.add(val);
+			}
+			//logger.info("Table: " + tableName + "; keysize: " + pkCols.size()+"; valsize: "+pkVals.size());
+		}catch(SQLException ex){
+			throw new MainException("Error in getting the values for "+node.getName() + " : " + ex.getMessage());
+		}
+		return allVals;
+	}*/
+	
+	/*
+	private List<String> getEntityValues(ORASSNode node, ResultSet data) throws MainException{
+
+		//logger.info("start");
+		List<String> vals = new ArrayList<String>();
+		try{
+			List<ColumnDetail> cols = node.getEntityAttributes();
+			//List<String> colNames = dbCache.getAllColumns(node.getOriginalName());
+			for(int j = 0; j<cols.size(); j++){
+				ColumnDetail col = cols.get(j);
+				String colName = col.getName();
+				String tableName = col.getTableName();
+
+				if(isNameChangedReverse(tableName)){
+					tableName = node.getName();
+					//logger.info("table name=" +tableName);
+					colName = tableName+colName;
+				}
+				String val = data.getString(colName);
+				//logger.info("Table: " +tableName+"; key =" +colName +"; val=" + val);
+				vals.add(val);
+			}
+			//logger.info("Table: " + tableName + "; keysize: " + pkCols.size()+"; valsize: "+pkVals.size());
+		}catch(SQLException ex){
+			throw new MainException("Error in getting the values for "+node.getName() + " : " + ex.getMessage());
+		}
+		return vals;
+	}*/
+	
+	/*
+	private String getFirstChangedTable(Map<String, List<String>> vals1, Map<String, List<String>> vals2, List<String> currTables) throws MainException{
+		int n =currTables.size();
+		String firstTable = "";
+		boolean isEqual = true;
+		int i=0;
+		while(isEqual && i<n){
+			firstTable = currTables.get(i);
+			List<String> tVals1 = vals1.get(firstTable);
+			List<String> tVals2 = vals2.get(firstTable);
+			//logger.info(n + " Table: " + firstTable+"; map1 size=" + vals1.size() + "; map2 size= " +vals2.size());
+			isEqual = isValsEqual(tVals1, tVals2);
+			i++;
+		}
+		if(isEqual){
+			firstTable=currTables.get(n-1);
+		}
+		//logger.info("first changed table: " +firstTable);
+		return firstTable;
+	}*/
+	private boolean isValsEqual(List<String> vals1, List<String> vals2) throws MainException{
+		//boolean isEqual = true;
+		for(int i= 0; i<vals1.size(); i++){
+			String val1 = vals1.get(i);
+			String val2 = vals2.get(i);
+			//logger.info("val1=" + val1 + "; val2= " +val2);
+			if(!val1.equals(val2)){
+				return false;
+			}
+		}
+		return true;
 	}
+
+	/*private List<String> getColNames(ORASSNode node){
+		List<String> cols = new ArrayList<String>();
+		List<ColumnDetail> colDetails  = node.getAttributes();
+		for(int i= 0; i<colDetails.size();i++){
+			cols.add(colDetails.get(i).getName());
+		}
+		return cols;
+	}*/
+/*
+	private void resetNeedClosing(){
+		for(int i=0; i<nodeTables.size(); i++){
+			needClosing.put(i,false);
+		}
+	}*/
+
+
 
 	
 /*	private void printTable2(ORASSNode node, ResultSet data, int indentation) throws MainException{
@@ -448,7 +657,7 @@ public class XMLDataGenerator implements Generator {
 		}
 	}*/
 	
-	private void printClosingTag(ORASSNode node, ResultSet data, List<String> previousVals, int indentation) throws MainException{
+	/*private void printClosingTag(ORASSNode node, ResultSet data, List<String> previousVals, int indentation) throws MainException{
 		String tName = node.getName();
 		try{
 			List<ORASSNode> children = node.getChildren();
@@ -479,7 +688,8 @@ public class XMLDataGenerator implements Generator {
 		}catch(SQLException ex){
 			throw new MainException("Error in getting data for printing the closing tag.");
 		}
-	}
+	}*/
+	
 	
 	private boolean checkTableExist(String tName){
 		for(int i=0; i<tables.size();i++){
@@ -491,6 +701,7 @@ public class XMLDataGenerator implements Generator {
 		return false;
 	}
 
+	/*
 	private boolean isNameChanged(String tName){
 		for(int i=0; i<tables.size(); i++){
 			String newName = tables.get(i).get(1);
@@ -513,7 +724,7 @@ public class XMLDataGenerator implements Generator {
 			}
 		}
 		return true;
-	}
+	}*/
 	
 	private void setupTables(ORASSNode parent) throws MainException{
 		String tName = parent.getOriginalName();
@@ -572,8 +783,8 @@ public class XMLDataGenerator implements Generator {
 							relCols2.add(relFK.getString("FKCOLUMN_NAME"));
 						}
 					}
-					NodeRelationship rel = new NodeRelationship(parent.getName(), relName, pkCols, relCols1);
-					NodeRelationship rel2 = new NodeRelationship(child.getName(), relName, cols2, relCols2);
+					NodeRelationship rel = new NodeRelationship(relName, parent.getName(), relCols1, pkCols);
+					NodeRelationship rel2 = new NodeRelationship(relName, child.getName(), relCols2, cols2);
 					relationships.add(rel);
 					relationships.add(rel2);
 				}catch(SQLException ex){
@@ -619,11 +830,11 @@ public class XMLDataGenerator implements Generator {
 
 	}
 
-	
+	/*
 	private CachedRowSet getAllDataForTable(String tableName) throws MainException{
 		CachedRowSet crs = dbCache.getData(tableName);
 		return crs;
-	}
+	}*/
 
 /*	private ResultSet getRelevantDataForTable(ORASSNode node, ResultSet data) throws MainException{
 		List<TableColVal> valMaps = new ArrayList<TableColVal>();
@@ -650,6 +861,7 @@ public class XMLDataGenerator implements Generator {
 		return resultSet;
 	}*/
 	
+	/*
 	private NodeRelationship getNodeRelationship(String tableName){
 		for(int i = 0; i< relationships.size(); i++){
 			NodeRelationship nodeRel = relationships.get(i);
@@ -663,7 +875,7 @@ public class XMLDataGenerator implements Generator {
 			}
 		}
 		return null; 
-	}
+	}*/
 	
 	
 	
