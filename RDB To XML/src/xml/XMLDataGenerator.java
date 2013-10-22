@@ -278,7 +278,7 @@ public class XMLDataGenerator implements Generator {
 					String prevColVal = prevVals.get(i);
 				
 					boolean hasFKref = col.hasForeignRef();
-					if((!prevColVal.equals(nextData) || firstPrint) && !hasFKref){
+					if(((!prevColVal.equals(nextData) || firstPrint) && !hasFKref) || !col.isMultiValued()){
 						printTabs(indentation+1);
 						if (data.wasNull()){
 							writer.print("<"+colName);
@@ -369,7 +369,7 @@ public class XMLDataGenerator implements Generator {
 			String table2 = nodeRel.getTable2();
 			if(!fromTables.contains(table2)) fromTables.add(table2);
 		}
-		logger.debug("from tables size: "+fromTables.size());
+		//logger.debug("from tables size: "+fromTables.size());
 		CachedRowSet crs = dbCache.joinTables(fromTables, nodeRels, null);
 		return crs;
 	}
@@ -775,7 +775,9 @@ public class XMLDataGenerator implements Generator {
 		
 		//logger.info("new name: "+newName +"|| old name: "+tName);
 		List<String> pks =dbCache.getPrimaryKeys(tName);
-		keyMaps.put(newName, pks);
+		if(!keyMaps.keySet().contains(newName)){
+			keyMaps.put(newName, pks);
+		}
 		List<String> criticalCols = new ArrayList<String>();
 		criticalCols.addAll(pks);
 		List<ColumnDetail> colDetails = parent.getEntityAttributes();
@@ -837,6 +839,8 @@ public class XMLDataGenerator implements Generator {
 					}
 					NodeRelationship rel = new NodeRelationship(relName, parent.getName(), relCols1, pkCols);
 					NodeRelationship rel2 = new NodeRelationship(relName, child.getName(), relCols2, cols2);
+					keyMaps.put(parent.getName(), pkCols);
+					keyMaps.put(child.getName(), cols2);
 					relationships.add(rel);
 					relationships.add(rel2);
 				}catch(SQLException ex){
@@ -874,10 +878,12 @@ public class XMLDataGenerator implements Generator {
 				}
 
 				NodeRelationship rel = new NodeRelationship(child.getName(), parent.getName(), fkList, pkList);
+				keyMaps.put(parent.getName(), pkList);
 				relationships.add(rel);
 			}else{
 				NodeRelationship rel = new NodeRelationship(child.getName(), parent.getName(), pkList, fkList);
 				relationships.add(rel);
+				keyMaps.put(child.getName(), pkList);
 			}
 			logger.info("special rel added: " + child.getName() + " " + parent.getName());
 		}catch(SQLException ex){
