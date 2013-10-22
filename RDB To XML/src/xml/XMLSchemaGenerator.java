@@ -119,28 +119,6 @@ public class XMLSchemaGenerator implements Generator {
 		return tabs;
 	}
 	
-	private boolean toPrint(ORASSNode root, ORASSNode child) {
-		String tableName = root.getName();
-		
-		// if the child is a weak entity of the current root, do not need to process it
-		// since it has already been processed from the 1st root 
-		ORASSNode normalEntity = child.getNormalEntityNode();
-		if (normalEntity != null && normalEntity.getName().equals(tableName))
-			return false;
-		
-		Iterator<ORASSNode> itr2 = child.getSupertypeNode().iterator();
-		while (itr2.hasNext()) {
-			ORASSNode superType = itr2.next();
-			// if the child is a subtype of the current root, do not need to process it
-			// since it has already been processed from the 1st root
-			if (superType.getName().equals(tableName)) 
-				return false;
-			
-		}
-		
-		return true;
-	}
-	
 	/**
 	 * Print XML schema for a database
 	 * @param dbName			name of database
@@ -227,29 +205,46 @@ public class XMLSchemaGenerator implements Generator {
 	 */
 	private void printTable(ORASSNode node, int numOfTabs) {
 		
-		List<ORASSNode> children = node.getChildren();
 		String tableName = node.getName();
+		boolean hasNotPrintXsAll = false;
 		
 		writer.println(getTabs(numOfTabs)     + "<xs:complexType name=\""+tableName+"_Type\">");
 		writer.println(getTabs(numOfTabs + 1) + "<xs:attribute name=\""+tableName+"#\" type=\"xs:string\" use=\"required\"/>");
-		writer.println(getTabs(numOfTabs + 1) + "<xs:all>");
+		
+		List<ORASSNode> superTypes = node.getSupertypeNode();
+		ORASSNode normalEntity = node.getNormalEntityNode();
 		
 		// if it is a subtype, print the reference to its supertype
-		List<ORASSNode> superTypes = node.getSupertypeNode();
 		if (superTypes.size() > 0) {
 			Iterator<ORASSNode> itr = superTypes.iterator();
 			while (itr.hasNext()) {
 				ORASSNode superType = itr.next();
 				String superTypeName = superType.getName();
-				writer.println(getTabs(numOfTabs + 2) + "<xs:attribute name=\""+superTypeName+"_Ref\" type=\"xs:string\" use=\"requred\"/>");
+				writer.println(getTabs(numOfTabs + 1) + "<xs:attribute name=\""+superTypeName+"_Ref\" type=\"xs:string\" use=\"requred\"/>");
 			}
+			hasNotPrintXsAll = true;
 		}
 		
-		else
+		// if it is a weak entity, print the reference to its normal entity
+		else if (normalEntity != null) {
+			String entityName = normalEntity.getName();
+			writer.println(getTabs(numOfTabs + 1) + "<xs:attribute name=\""+entityName+"_Ref\" type=\"xs:string\" use=\"requred\"/>");
+			hasNotPrintXsAll = true;
+		}
+		
+		else {
+			writer.println(getTabs(numOfTabs + 1) + "<xs:all>");
 			printColumns(node.getEntityAttributes(), numOfTabs + 2);
+		}
 		
 		// print references to other tables
+		List<ORASSNode> children = node.getChildren();
 		Iterator<ORASSNode> itr = children.iterator();
+		
+		if (children.size() > 0 && hasNotPrintXsAll) {
+			writer.println(getTabs(numOfTabs + 1) + "<xs:all>");
+			hasNotPrintXsAll = false;
+		}
 		while (itr.hasNext()) {
 			ORASSNode child = itr.next();
 			String childName = child.getName();
@@ -266,7 +261,9 @@ public class XMLSchemaGenerator implements Generator {
 			writer.println(getTabs(numOfTabs + 2) + "</xs:element>");
 		}
 		
-		writer.println(getTabs(numOfTabs + 1) + "</xs:all>");
+		if (!hasNotPrintXsAll)
+			writer.println(getTabs(numOfTabs + 1) + "</xs:all>");
+		
 		writer.println(getTabs(numOfTabs)     + "</xs:complexType>");
 		writer.println();
 		
@@ -431,6 +428,11 @@ public class XMLSchemaGenerator implements Generator {
 		
 		while(rootsItr.hasNext()) {
 			ORASSNode root = rootsItr.next();
+			
+			// print key ref for root only if it is a supertype or normal entity of a weak entity
+			if (root.getSubtypeNode().size() > 0 || root.getWeakEntityNodes().size() > 0)
+				printKeyRef(dbName, root, 1, true);
+			
 			List<ORASSNode> children = root.getChildren();
 			Iterator<ORASSNode> childrenItr  = children.iterator();
 			
@@ -439,7 +441,7 @@ public class XMLSchemaGenerator implements Generator {
 				String childName = child.getName();
 				if (!processedTables.contains(childName)) {
 					processedTables.add(childName);
-					printKeyRef(dbName, child, 1);
+					printKeyRef(dbName, child, 1, false);
 				}
 			}
 		
@@ -448,10 +450,12 @@ public class XMLSchemaGenerator implements Generator {
 	
 	/**
 	 * Prints key reference constraint
-	 * @param node				a node from ORASS model (it should not be the root)
+	 * @param dbName			name of database
+	 * @param node				a node from ORASS model
 	 * @param numOfTabs			number of tabs needed for xs:keyref tag
+	 * @param isRoot			if 'node' is a root in ORASS
 	 */
-	private void printKeyRef(String dbName, ORASSNode node, int numOfTabs) {
+	private void printKeyRef(String dbName, ORASSNode node, int numOfTabs, boolean isRoot) {
 		
 		String tableName = node.getName();
 		
@@ -461,11 +465,14 @@ public class XMLSchemaGenerator implements Generator {
 		writer.println(getTabs(numOfTabs)     + "</xs:keyref>");
 		writer.println();
 		
+		if (isRoot)
+			return;
+		
 		List<ORASSNode> children = node.getChildren();
 		Iterator<ORASSNode> itr = children.iterator();
 		while (itr.hasNext()) {
 			ORASSNode child = itr.next();
-			printKeyRef(dbName, child, numOfTabs);
+			printKeyRef(dbName, child, numOfTabs, false);
 		}
 	
 	}
