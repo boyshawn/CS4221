@@ -260,6 +260,22 @@ public class XMLDataGenerator implements Generator {
 			List<ORASSNode> supertypes = node.getSupertypeNode();
 			ORASSNode regularEntity = node.getNormalEntityNode();
 			
+			if(supertypes.size()>0){
+				logger.info("herer");
+				List<ColumnDetail> filteredEntityCols = new ArrayList<ColumnDetail>();
+				for(int i=0; i<supertypes.size(); i++){
+					ORASSNode supertype = supertypes.get(i);
+					String supertypeName = supertype.getName();
+					List<String> supertypeCols = colMaps.get(supertypeName);
+					for(int j = 0; j<entityCols.size(); j++){
+						ColumnDetail col = entityCols.get(j);
+						if(!supertypeCols.contains(col.getName())){
+							filteredEntityCols.add(col);
+						}
+					}
+				}
+				entityCols = filteredEntityCols;
+			}
 			String prevId = "";
 
 			while(data.next()){
