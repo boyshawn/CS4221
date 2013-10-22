@@ -310,7 +310,7 @@ public class DBAccess {
 			List<String> cols1 = nodeRel.getCols1();
 			List<String> cols2 = nodeRel.getCols2();
 			for(int i=0; i<cols1.size(); i++){
-				query += nodeRel.getTable1() + "." + cols1.get(i) + "=" + nodeRel.getTable2() + "." + cols2.get(i);
+				query += nodeRel.getOriginalTable1() + "." + cols1.get(i) + "=" + nodeRel.getOriginalTable2() + "." + cols2.get(i);
 				if(i!=cols1.size()-1){
 					query += " AND ";
 				}
