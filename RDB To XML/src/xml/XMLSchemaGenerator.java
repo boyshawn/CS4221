@@ -238,7 +238,7 @@ public class XMLSchemaGenerator implements Generator {
 		String tableName = node.getName();
 		
 		writer.println(getTabs(numOfTabs)     + "<xs:complexType name=\""+tableName+"_Type\">");
-		writer.println(getTabs(numOfTabs + 1) + "<xs:attribute name=\""+tableName+"#\" type=\"string\" use=\"required\"/>");
+		writer.println(getTabs(numOfTabs + 1) + "<xs:attribute name=\""+tableName+"#\" type=\"xs:string\" use=\"required\"/>");
 		writer.println(getTabs(numOfTabs + 1) + "<xs:all>");
 		
 		printColumns(node.getEntityAttributes(), numOfTabs + 2);
