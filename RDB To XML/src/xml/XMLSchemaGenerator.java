@@ -206,7 +206,6 @@ public class XMLSchemaGenerator implements Generator {
 	private void printTable(ORASSNode node, int numOfTabs) {
 		
 		String tableName = node.getName();
-		boolean hasNotPrintXsAll = false;
 		
 		writer.println(getTabs(numOfTabs)     + "<xs:complexType name=\""+tableName+"_Type\">");
 		writer.println(getTabs(numOfTabs + 1) + "<xs:attribute name=\""+tableName+"#\" type=\"xs:string\" use=\"required\"/>");
@@ -222,29 +221,22 @@ public class XMLSchemaGenerator implements Generator {
 				String superTypeName = superType.getName();
 				writer.println(getTabs(numOfTabs + 1) + "<xs:attribute name=\""+superTypeName+"_Ref\" type=\"xs:string\" use=\"requred\"/>");
 			}
-			hasNotPrintXsAll = true;
 		}
 		
 		// if it is a weak entity, print the reference to its normal entity
 		else if (normalEntity != null) {
 			String entityName = normalEntity.getName();
 			writer.println(getTabs(numOfTabs + 1) + "<xs:attribute name=\""+entityName+"_Ref\" type=\"xs:string\" use=\"requred\"/>");
-			hasNotPrintXsAll = true;
 		}
 		
-		else {
-			writer.println(getTabs(numOfTabs + 1) + "<xs:all>");
-			printColumns(node.getEntityAttributes(), numOfTabs + 2);
-		}
-		
+		// Note : change this if subtype does not store supertype's attributes
+		writer.println(getTabs(numOfTabs + 1) + "<xs:all>");
+		printColumns(node.getEntityAttributes(), numOfTabs + 2);
+	
 		// print references to other tables
 		List<ORASSNode> children = node.getChildren();
 		Iterator<ORASSNode> itr = children.iterator();
 		
-		if (children.size() > 0 && hasNotPrintXsAll) {
-			writer.println(getTabs(numOfTabs + 1) + "<xs:all>");
-			hasNotPrintXsAll = false;
-		}
 		while (itr.hasNext()) {
 			ORASSNode child = itr.next();
 			String childName = child.getName();
@@ -261,9 +253,7 @@ public class XMLSchemaGenerator implements Generator {
 			writer.println(getTabs(numOfTabs + 2) + "</xs:element>");
 		}
 		
-		if (!hasNotPrintXsAll)
-			writer.println(getTabs(numOfTabs + 1) + "</xs:all>");
-		
+		writer.println(getTabs(numOfTabs + 1) + "</xs:all>");
 		writer.println(getTabs(numOfTabs)     + "</xs:complexType>");
 		writer.println();
 		
