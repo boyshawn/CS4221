@@ -135,10 +135,10 @@ public class ERDBuilder {
 					isWeakEntity = false;
 				}
 				
-				if (!isWeakEntity)
+				if (isWeakEntity)
+					fkNode.addSpecialLink(entity);
+				else
 					entity.addLink(fkNode);
-				
-				fkNode.addSpecialLink(entity);
 				entityTypes.put(tableName, entity);
 				return entity;
 			}
