@@ -116,12 +116,6 @@ public class ERDBuilder {
 					}
 				}
 				
-				
-				if (fkNode.getErdNodeType() == ErdNodeType.ENTITY_TYPE || fkNode.getErdNodeType() == ErdNodeType.WEAK_ENTITY_TYPE)
-					entityTypes.put(tableName, fkNode);
-				else
-					relationshipTypes.put(tableName, fkNode);
-				
 				return fkNode;
 			}
 			

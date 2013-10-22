@@ -190,7 +190,7 @@ public class XMLSchemaGenerator implements Generator {
 				String childName = child.getName();
 				if (!processedTables.contains(childName)) {
 					processedTables.add(childName);
-					printKeyRef(dbName, childrenItr.next(), 1);
+					printKeyRef(dbName, child, 1);
 				}
 			}
 			
