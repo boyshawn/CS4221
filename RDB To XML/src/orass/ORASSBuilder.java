@@ -35,14 +35,14 @@ public class ORASSBuilder{
 		erdnodes.putAll(entities);
 		erdnodes.putAll(rels);
 		
-		Set<String> erd = erdnodes.keySet();
+		Set<String> erd = entities.keySet();
 		Iterator<String> erdItr = erd.iterator();
 		String tables="";
 		String oldNames = "";
 		while(erdItr.hasNext()){
 			String nextName = erdItr.next();
 			tables += nextName + "-";
-			oldNames += erdnodes.get(nextName).getOriginalTableName()+"+";
+			oldNames += entities.get(nextName).getOriginalTableName()+"+";
 		}
 		logger.info(tables);
 		logger.info(oldNames);
@@ -58,11 +58,14 @@ public class ORASSBuilder{
 		ORASSNode rootNode = processEntity(root);
 		rootNodes.add(rootNode);
 		// Check and process unlinked nodes
+		
 		if(processedNodes.size()<entities.size()){
-			for(int i=0; i<entities.size(); i++){
-				ErdNode erNode = entities.get(i);
-				String entityName = erNode.getTableName();
-				if(processedNodes.contains(entityName)){
+			Set<String> allTables = entities.keySet();
+			Iterator<String> tableItr = allTables.iterator();
+			while(tableItr.hasNext()){
+				String tableName = tableItr.next();
+				if(!processedNodes.contains(tableName)){
+					ErdNode erNode = entities.get(tableName);
 					ORASSNode additionalRoot = processEntity(erNode);
 					rootNodes.add(additionalRoot);
 				}

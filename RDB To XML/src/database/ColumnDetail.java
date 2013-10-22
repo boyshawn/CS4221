@@ -41,6 +41,7 @@ public class ColumnDetail {
 	public boolean hasForeignRef(){
 		return (refTableToColumn != null) && (refTableToColumn.size() > 0);
 	}
+	
 	public String getDefaultValue() {
 		return defaultValue;
 	}

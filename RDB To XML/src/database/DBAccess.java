@@ -432,6 +432,7 @@ public class DBAccess {
 			ResultSet results = null;
 			CachedRowSet crs = new CachedRowSetImpl();
 			String query = "SELECT * FROM " + tableName;
+			query += " ORDER BY ";
 			int n = orderByCols.size();
 			for(int i=0; i<n-1; i++){
 				query += orderByCols.get(i) + " AND ";
@@ -443,7 +444,7 @@ public class DBAccess {
 			crs.populate(results);
 			stmt.close();
 			return crs;
-
+			//return results;
 		}catch(SQLException ex){
 			ex.printStackTrace();
 			throw new MainException("Exception when retrieving data from table " + tableName + " : " + ex.getMessage());
@@ -474,6 +475,7 @@ public class DBAccess {
 			crs.populate(results);
 			stmt.close();
 			return crs;
+			//return results;
 		}catch(SQLException ex){
 			throw new MainException("Exception when retrieving primary keys data from table " + tableName + " : " + ex.getMessage());
 		}
