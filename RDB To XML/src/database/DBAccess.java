@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.sql.rowset.CachedRowSet;
 
@@ -434,7 +435,7 @@ public class DBAccess {
 			
 			List<String> tables = new ArrayList<String>();
 			//Print select clause
-			String query = "SELECT ";
+			String query = "SELECT DISTINCT ";
 			Iterator<ColumnDetail> colsItr = cols.iterator();
 			while(colsItr.hasNext()){
 				ColumnDetail col = colsItr.next();
@@ -453,6 +454,26 @@ public class DBAccess {
 				query += tName;
 				if(tablesItr.hasNext()) query+=", ";
 			}
+			
+			boolean isFirst = true;
+			if(tables.size()>1){
+				query += " WHERE ";
+				
+				List<String> pks = this.getPrimaryKeys(tableName);
+				for(int i=0; i<pks.size(); i++){
+					String pkCol = pks.get(i);
+					for(int j=0; j<tables.size(); j++){
+						String tName = tables.get(j);
+						if(!tName.equals(tableName)){
+							if(isFirst){
+								query += tableName +"."+pkCol+"="+tName+"."+pkCol;
+							}else{
+								query += ", "+ tableName +"."+pkCol+"="+tName+"."+pkCol;
+							}
+						}
+					}
+				}
+			}
 			query += " ORDER BY ";
 			int n = orderByCols.size();
 			for(int i=0; i<n; i++){
@@ -466,6 +487,7 @@ public class DBAccess {
 
 			}
 			query += ";";
+			logger.info("Get data query: " +query);
 			stmt = dbConnection.createStatement();
 			results = stmt.executeQuery(query);
 			crs.populate(results);

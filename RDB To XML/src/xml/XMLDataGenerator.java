@@ -285,6 +285,7 @@ public class XMLDataGenerator implements Generator {
 				if(!id.equals(prevId)){
 					printTabs(indentation);
 					writer.println("<"+tableName+" "+ tableName +"#=\"" + id+"\">");
+					firstPrint= true;
 				}
 				// Print columns
 				for(int i=0;i<entityCols.size();i++){
@@ -294,7 +295,7 @@ public class XMLDataGenerator implements Generator {
 					String prevColVal = prevVals.get(i);
 
 					boolean hasFKref = col.hasForeignRef();
-					if(((!prevColVal.equals(nextData) || firstPrint) && !hasFKref) || !col.isMultiValued()){
+					if((firstPrint || !prevColVal.equals(nextData)) && !hasFKref){
 						printTabs(indentation+1);
 						if (data.wasNull()){
 							writer.print("<"+colName);
@@ -305,42 +306,44 @@ public class XMLDataGenerator implements Generator {
 						writer.println("</"+colName+">");
 					}
 				}
-				firstPrint= false;
 
-				// Print regular relationships
-				for(int i=0; i<children.size(); i++){
-					ORASSNode child = children.get(i);
-					List<NodeRelationship> nodeRels = getNodeRelationship(node,child);
-					CachedRowSet crs = getRelationshipData(node, child, nodeRels);
-					printRelationship(node, child, nodeRels, crs, id, indentation+1);
-					crs.close();
-				}
-				
-				// Print IS-A relationships
-				for(int i=0; i<supertypes.size(); i++){
-					ORASSNode supertype = supertypes.get(i);
-					List<NodeRelationship> nodeRels = getNodeRelationship(node,supertype);
-					//logger.info("is-a nodeRels size="+nodeRels.size());
-					String supertypeName = supertype.getOriginalName();
-					if(node.getOriginalName().equals(supertypeName)){
-						printSpecialRelationship(supertype, keyVals, indentation+1);
-					}else{
-						CachedRowSet crsIsA = getRelationshipData(node, supertype, nodeRels);
-						printRelationship(node, supertype, nodeRels, crsIsA, id, indentation+1);
-						crsIsA.close();
+				if(firstPrint){
+					// Print regular relationships
+					for(int i=0; i<children.size(); i++){
+						ORASSNode child = children.get(i);
+						List<NodeRelationship> nodeRels = getNodeRelationship(node,child);
+						CachedRowSet crs = getRelationshipData(node, child, nodeRels);
+						printRelationship(node, child, nodeRels, crs, id, indentation+1);
+						crs.close();
+					}
+
+					// Print IS-A relationships
+					for(int i=0; i<supertypes.size(); i++){
+						ORASSNode supertype = supertypes.get(i);
+						List<NodeRelationship> nodeRels = getNodeRelationship(node,supertype);
+						//logger.info("is-a nodeRels size="+nodeRels.size());
+						String supertypeName = supertype.getOriginalName();
+						if(node.getOriginalName().equals(supertypeName)){
+							printSpecialRelationship(supertype, keyVals, indentation+1);
+						}else{
+							CachedRowSet crsIsA = getRelationshipData(node, supertype, nodeRels);
+							printRelationship(node, supertype, nodeRels, crsIsA, id, indentation+1);
+							crsIsA.close();
+						}
+					}
+
+					// Print ID/EX relationships
+					if(regularEntity!=null){
+						List<NodeRelationship> nodeRels = getNodeRelationship(node,regularEntity);
+						//logger.info("weak nodeRels size="+nodeRels.size());
+						CachedRowSet crsWeak = getRelationshipData(node, regularEntity, nodeRels);
+						printRelationship(node, regularEntity, nodeRels, crsWeak, id, indentation+1);
+						crsWeak.close();
 					}
 				}
-
-				// Print ID/EX relationships
-
-				if(regularEntity!=null){
-					List<NodeRelationship> nodeRels = getNodeRelationship(node,regularEntity);
-					//logger.info("weak nodeRels size="+nodeRels.size());
-					CachedRowSet crsWeak = getRelationshipData(node, regularEntity, nodeRels);
-					printRelationship(node, regularEntity, nodeRels, crsWeak, id, indentation+1);
-					crsWeak.close();
-				}
-
+				firstPrint= false;
+				prevId = id;
+				prevVals = getSelectedVals(tableName, entityColNames, data);
 				printClosingTag(node, data, keyCols, keyVals, indentation);
 			}
 
@@ -348,7 +351,6 @@ public class XMLDataGenerator implements Generator {
 				ORASSNode child = children.get(i);
 				printTable(child, 1);
 			}
-
 		}catch(SQLException ex){
 			throw new MainException("Print table " + node.getName()+" : "+ ex.getMessage());
 		}
@@ -427,28 +429,28 @@ public class XMLDataGenerator implements Generator {
 					// Print ID reference of the relationship
 					List<String> pkValues2 = getSelectedVals(table2, cols2, data);
 					String refID = this.getTupleID(table2, pkValues2);
+					printTabs(indentation);
+					if(m==0){
+						writer.print("<"+table2+" " +table2+"_Ref=\""+refID+"\">");
+						writer.println("</"+table2+">");
+					}else{
+						writer.println("<"+table2+" " +table2+"_Ref=\""+refID+"\">");
+					}
+
+
+					// Print relationship attributes
+					for(int i=0; i<relCols.size(); i++){
+						ColumnDetail col= relCols.get(i);
+						String colName = col.getName();
+						String colVal = data.getString(colName);
+						printTabs(indentation+1);
+						writer.print("<"+colName+">"+colVal);
+						writer.println("</"+colName+">");
+					}
+					if(m>0){
 						printTabs(indentation);
-						if(m==0){
-							writer.print("<"+table2+" " +table2+"_Ref=\""+refID+"\">");
-							writer.println("</"+table2+">");
-						}else{
-							writer.println("<"+table2+" " +table2+"_Ref=\""+refID+"\">");
-						}
-
-
-						// Print relationship attributes
-						for(int i=0; i<relCols.size(); i++){
-							ColumnDetail col= relCols.get(i);
-							String colName = col.getName();
-							String colVal = data.getString(colName);
-							printTabs(indentation+1);
-							writer.print("<"+colName+">"+colVal);
-							writer.println("</"+colName+">");
-						}
-						if(m>0){
-							printTabs(indentation);
-							writer.println("</"+table2+">");
-						}
+						writer.println("</"+table2+">");
+					}
 				}
 			}
 		}catch(SQLException ex){
@@ -460,6 +462,7 @@ public class XMLDataGenerator implements Generator {
 		try{
 			String table2 = node2.getName();
 			String refID = this.getTupleID(table2, pkVals);
+			printTabs(indentation);
 			writer.println("<"+table2 + " "+table2+"_Ref=\""+refID+"\"></"+table2+">");
 		}catch(Exception ex){
 			throw new MainException(ex.getMessage());
