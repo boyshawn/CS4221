@@ -48,7 +48,7 @@ public class XMLDataGenerator implements Generator {
 	private Logger logger = Logger.getLogger(XMLDataGenerator.class);
 
 	@Override
-	public void generate(String dbName, String fileName, List<ORASSNode> rootNodes) throws MainException {
+	public void generate(String dbName, String fileName, List<ORASSNode> rootNodes, Map<String, List<String>> nRels) throws MainException {
 		// TODO Auto-generated method stub
 		dbCache = DBAccess.getInstance();
 		tables = new ArrayList<List<String>>();
