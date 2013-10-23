@@ -426,19 +426,46 @@ public class DBAccess {
 
 	}
 
-	public CachedRowSet getData(String tableName, List<String> orderByCols) throws MainException {
+	public CachedRowSet getData(String tableName, List<ColumnDetail> cols, List<ColumnDetail> orderByCols) throws MainException {
 		try{
 			Statement stmt = null;
 			ResultSet results = null;
 			CachedRowSet crs = new CachedRowSetImpl();
-			String query = "SELECT * FROM " + tableName;
+			
+			List<String> tables = new ArrayList<String>();
+			//Print select clause
+			String query = "SELECT ";
+			Iterator<ColumnDetail> colsItr = cols.iterator();
+			while(colsItr.hasNext()){
+				ColumnDetail col = colsItr.next();
+				String colTable = col.getTableName();
+				if(!tables.contains(colTable)){
+					tables.add(colTable);
+				}
+				String colName = col.getName();
+				query += colTable +"." + colName;
+				if(colsItr.hasNext()) query+=", ";
+			}
+			query += " FROM ";
+			Iterator<String> tablesItr = tables.iterator();
+			while(tablesItr.hasNext()){
+				String tName = tablesItr.next();
+				query += tName;
+				if(tablesItr.hasNext()) query+=", ";
+			}
 			query += " ORDER BY ";
 			int n = orderByCols.size();
-			for(int i=0; i<n-1; i++){
-				query += orderByCols.get(i) + " AND ";
+			for(int i=0; i<n; i++){
+				ColumnDetail col = orderByCols.get(i);
+				String tName = col.getTableName();
+				String colName = col.getName();
+				query += tName +"."+colName;
+				if(i<n-1){
+					query+=", ";
+				}
 
 			}
-			query += orderByCols.get(n-1) + ";";
+			query += ";";
 			stmt = dbConnection.createStatement();
 			results = stmt.executeQuery(query);
 			crs.populate(results);
