@@ -439,7 +439,7 @@ public class UIController {
 							// for windows
 							fName = path + "\\" + xmlName;
 						}
-						r.translateToXML(dbname, fName);
+						r.translateToXML(dbname, fName, nary);
 						translate.displaySuccessfulMsg();
 						translate.emptiedField();
 						translate.setErrorMsg(" ");
