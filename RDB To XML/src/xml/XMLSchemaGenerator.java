@@ -230,7 +230,7 @@ public class XMLSchemaGenerator implements Generator {
 				writer.println(getTabs(numOfTabs + 1) + "<xs:all>");
 				writer.println(getTabs(numOfTabs + 2) + "<xs:element name=\""+superTypeName+"\">");
 				writer.println(getTabs(numOfTabs + 3) + "<xs:complexType>");
-				writer.println(getTabs(numOfTabs + 4) + "<xs:attribute name=\""+superTypeName+"_Ref\" type=\"xs:string\" use=\"requred\"/>");
+				writer.println(getTabs(numOfTabs + 4) + "<xs:attribute name=\""+superTypeName+"_Ref\" type=\"xs:string\" use=\"required\"/>");
 				writer.println(getTabs(numOfTabs + 3) + "</xs:complexType>");
 				writer.println(getTabs(numOfTabs + 2) + "</xs:element>");
 			}
@@ -241,7 +241,7 @@ public class XMLSchemaGenerator implements Generator {
 			String normalEntityName = normalEntity.getName();
 			writer.println(getTabs(numOfTabs + 2) + "<xs:element name=\""+normalEntityName+"\">");
 			writer.println(getTabs(numOfTabs + 3) + "<xs:complexType>");
-			writer.println(getTabs(numOfTabs + 4) + "<xs:attribute name=\""+normalEntityName+"_Ref\" type=\"xs:string\" use=\"requred\"/>");
+			writer.println(getTabs(numOfTabs + 4) + "<xs:attribute name=\""+normalEntityName+"_Ref\" type=\"xs:string\" use=\"required\"/>");
 			writer.println(getTabs(numOfTabs + 3) + "</xs:complexType>");
 			writer.println(getTabs(numOfTabs + 2) + "</xs:element>");
 		}
@@ -256,7 +256,7 @@ public class XMLSchemaGenerator implements Generator {
 			String childName = child.getName();
 			writer.println(getTabs(numOfTabs + 2) + "<xs:element name=\""+childName+"\" minOccurs=\"0\" maxOccurs=\"unbounded\">");
 			writer.println(getTabs(numOfTabs + 3) + "<xs:complexType>");
-			writer.println(getTabs(numOfTabs + 4) + "<xs:attribute name=\""+childName+"_Ref\" type=\"xs:string\" use=\"requred\"/>");
+			writer.println(getTabs(numOfTabs + 4) + "<xs:attribute name=\""+childName+"_Ref\" type=\"xs:string\" use=\"required\"/>");
 			List<ColumnDetail> relAttrs = child.getRelAttributes();
 			if (relAttrs.size() > 0) {
 				writer.println(getTabs(numOfTabs + 4) + "<xs:all>");
