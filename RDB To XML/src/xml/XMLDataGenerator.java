@@ -438,7 +438,7 @@ public class XMLDataGenerator implements Generator {
 			String relTable = rel.getTable1();
 			if(!fromTables.contains(relTable)) fromTables.add(relTable);
 			String table2 = rel.getTable2();
-			if(!fromTables.contains(table2)) fromTables.add(relTable);
+			if(!fromTables.contains(table2)) fromTables.add(table2);
 		}
 		CachedRowSet crs = dbCache.joinTables(fromTables, nodeRels, null);
 		return crs;
@@ -531,6 +531,13 @@ public class XMLDataGenerator implements Generator {
 				String nextEntity = entityOrder.get(node2Index+1);
 				List<ORASSNode> children2 = node2.getChildren();
 				
+				for(int i=0; i<children2.size(); i++){
+					ORASSNode child = children2.get(i);
+					String childName = child.getName();
+					if(childName.equals(nextEntity)){
+						printNaryRelHelp(node2, child, relName, node2Index+1, entityOrder, data, refID, indentation+1);
+					}
+				}
 				// Print relationship attributes
 				for(int i=0; i<relCols.size(); i++){
 					ColumnDetail col= relCols.get(i);
@@ -542,14 +549,6 @@ public class XMLDataGenerator implements Generator {
 					printTabs(indentation+1);
 					writer.print("<"+colName+">"+colVal);
 					writer.println("</"+colName+">");
-					}
-				}
-				
-				for(int i=0; i<children2.size(); i++){
-					ORASSNode child = children2.get(i);
-					String childName = child.getName();
-					if(childName.equals(nextEntity)){
-						printNaryRelHelp(node2, child, relName, node2Index+1, entityOrder, data, refID, indentation+1);
 					}
 				}
 
