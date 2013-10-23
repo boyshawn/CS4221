@@ -23,7 +23,7 @@ public class XMLSchemaGenerator implements Generator {
 	private static Logger logger = Logger.getLogger(XMLSchemaGenerator.class);
 	private PrintWriter writer;
 	private Map<Integer, String> sqlDataTypes;
-	private List<String> processedTables;
+	private List<String> processedTables, partOfNaryRel;
 	private Map<String, List<String>> naryRels;
 	
 	/**
@@ -249,7 +249,6 @@ public class XMLSchemaGenerator implements Generator {
 			writer.println(getTabs(numOfTabs + 2) + "</xs:element>");
 		}
 		
-		
 		// print references to other tables
 		List<ORASSNode> children = node.getChildren();
 		Iterator<ORASSNode> itr = children.iterator();
@@ -257,17 +256,27 @@ public class XMLSchemaGenerator implements Generator {
 		while (itr.hasNext()) {
 			ORASSNode child = itr.next();
 			String childName = child.getName();
-			writer.println(getTabs(numOfTabs + 2) + "<xs:element name=\""+childName+"\" minOccurs=\"0\" maxOccurs=\"unbounded\">");
-			writer.println(getTabs(numOfTabs + 3) + "<xs:complexType>");
-			writer.println(getTabs(numOfTabs + 4) + "<xs:attribute name=\""+childName+"_Ref\" type=\"xs:string\" use=\"required\"/>");
-			List<ColumnDetail> relAttrs = child.getRelAttributes();
-			if (relAttrs.size() > 0) {
-				writer.println(getTabs(numOfTabs + 4) + "<xs:all>");
-				printColumns(relAttrs, numOfTabs + 5);
-				writer.println(getTabs(numOfTabs + 4) + "</xs:all>");
+			
+			String relName = node.getRelation(child);
+			List<String> entityNamesInNary = naryRels.get(relName);
+			// if 'node' is the first ORASSNode in the n-ary relationship
+			if (entityNamesInNary != null && entityNamesInNary.get(0).equals(tableName)) {
+				printEntitiesInNary(child, relName, entityNamesInNary, 1, numOfTabs + 2);
 			}
-			writer.println(getTabs(numOfTabs + 3) + "</xs:complexType>");
-			writer.println(getTabs(numOfTabs + 2) + "</xs:element>");
+			
+			else {	
+				writer.println(getTabs(numOfTabs + 2) + "<xs:element name=\""+childName+"\" minOccurs=\"0\" maxOccurs=\"unbounded\">");
+				writer.println(getTabs(numOfTabs + 3) + "<xs:complexType>");
+				writer.println(getTabs(numOfTabs + 4) + "<xs:attribute name=\""+childName+"_Ref\" type=\"xs:string\" use=\"required\"/>");
+				List<ColumnDetail> relAttrs = child.getRelAttributes();
+				if (relAttrs.size() > 0) {
+					writer.println(getTabs(numOfTabs + 4) + "<xs:all>");
+					printRelColumns(relAttrs, numOfTabs + 5);
+					writer.println(getTabs(numOfTabs + 4) + "</xs:all>");
+				}
+				writer.println(getTabs(numOfTabs + 3) + "</xs:complexType>");
+				writer.println(getTabs(numOfTabs + 2) + "</xs:element>");
+			}
 		}
 		
 		writer.println(getTabs(numOfTabs + 1) + "</xs:all>");
@@ -282,6 +291,72 @@ public class XMLSchemaGenerator implements Generator {
 				processedTables.add(childName);
 				printTable(child, numOfTabs);
 			}
+		}
+	}
+	
+	private void printEntitiesInNary(ORASSNode node, String naryRelName, List<String> entities, int currEntityIndex, int numOfTabs) {
+		
+		String entityName = node.getName();
+		writer.println(getTabs(numOfTabs) + "<xs:element name=\""+entityName+"\" minOccurs=\"0\" maxOccurs=\"unbounded\">");
+		writer.println(getTabs(numOfTabs + 1) + "<xs:complexType>");
+		writer.println(getTabs(numOfTabs + 2) + "<xs:attribute name=\""+entityName+"_Ref\" type=\"xs:string\" use=\"required\"/>");
+		
+		if (currEntityIndex == entities.size()-1) {
+			List<ColumnDetail> relAttrs = node.getRelAttributes();
+			if (relAttrs.size() > 0) {
+				writer.println(getTabs(numOfTabs + 2) + "<xs:all>");
+				
+				Iterator<ColumnDetail> relAttrsItr = relAttrs.iterator();
+				List<ColumnDetail> naryRelAttrs = new ArrayList<ColumnDetail>();
+				while (relAttrsItr.hasNext()) {
+					ColumnDetail relAttr = relAttrsItr.next();
+					if (relAttr.getTableName().equals(naryRelName))
+						naryRelAttrs.add(relAttr);
+				}
+				printRelColumns(naryRelAttrs, numOfTabs + 3);
+				writer.println(getTabs(numOfTabs + 2) + "</xs:all>");
+			}
+		}
+		
+		else {
+			List<ORASSNode> children = node.getChildren();
+			Iterator<ORASSNode> childrenItr = children.iterator();
+			String nextEntityNameInNary = entities.get(currEntityIndex + 1);
+			while (childrenItr.hasNext()) {
+				ORASSNode child = childrenItr.next();
+				if (child.getName().equals(nextEntityNameInNary)) {
+					printEntitiesInNary(child, naryRelName, entities, currEntityIndex + 1, numOfTabs+2);
+					break;
+				}
+			}
+		}
+		
+		writer.println(getTabs(numOfTabs + 1) + "</xs:complexType>");
+		writer.println(getTabs(numOfTabs) + "</xs:element>");
+	}
+	
+	
+	private void printRelColumns(List<ColumnDetail> columns, int numOfTabs) {
+		Iterator<ColumnDetail> itr = columns.iterator();
+		String colType, xml, xmlColDefault, xmlMaxOccur;
+		
+		while(itr.hasNext()) {
+			ColumnDetail column = itr.next();
+			
+			// if column is part of n-ary relationship, do not print
+			if (naryRels.get(column.getTableName()) != null)
+				continue;
+			
+			colType       = sqlDataTypes.get(column.getSqlType());
+			xmlColDefault = getColDefaultValuePrint(column.getSqlType(), column.getDefaultValue());
+			
+			xmlMaxOccur   = column.isMultiValued() ? " maxOccurs=\"unbounded\"" : "";
+			
+			xml = "";		
+			xml += getTabs(numOfTabs); 
+			xml += "<xs:element name=\""+column.getName()+"\" type=\""+colType+"\" nillable=\""+column.isNullable()+"\""+xmlColDefault + xmlMaxOccur + "/>";
+			writer.println(xml);
+			
 		}
 	}
 	
