@@ -260,11 +260,12 @@ public class XMLSchemaGenerator implements Generator {
 			String relName = node.getRelation(child);
 			List<String> entityNamesInNary = naryRels.get(relName);
 			// if 'node' is the first ORASSNode in the n-ary relationship
-			if (entityNamesInNary != null && entityNamesInNary.get(0).equals(tableName)) {
-				printEntitiesInNary(child, relName, entityNamesInNary, 1, numOfTabs + 2);
+			if (entityNamesInNary != null) {
+				if (entityNamesInNary.get(0).equals(tableName))
+					printEntitiesInNary(child, relName, entityNamesInNary, 1, numOfTabs + 2);
 			}
 			
-			else {	
+			else {
 				writer.println(getTabs(numOfTabs + 2) + "<xs:element name=\""+childName+"\" minOccurs=\"0\" maxOccurs=\"unbounded\">");
 				writer.println(getTabs(numOfTabs + 3) + "<xs:complexType>");
 				writer.println(getTabs(numOfTabs + 4) + "<xs:attribute name=\""+childName+"_Ref\" type=\"xs:string\" use=\"required\"/>");
@@ -301,19 +302,21 @@ public class XMLSchemaGenerator implements Generator {
 		writer.println(getTabs(numOfTabs + 1) + "<xs:complexType>");
 		writer.println(getTabs(numOfTabs + 2) + "<xs:attribute name=\""+entityName+"_Ref\" type=\"xs:string\" use=\"required\"/>");
 		
+		List<ColumnDetail> naryRelAttrs = new ArrayList<ColumnDetail>();
 		if (currEntityIndex == entities.size()-1) {
 			List<ColumnDetail> relAttrs = node.getRelAttributes();
 			if (relAttrs.size() > 0) {
-				writer.println(getTabs(numOfTabs + 2) + "<xs:all>");
-				
 				Iterator<ColumnDetail> relAttrsItr = relAttrs.iterator();
-				List<ColumnDetail> naryRelAttrs = new ArrayList<ColumnDetail>();
 				while (relAttrsItr.hasNext()) {
 					ColumnDetail relAttr = relAttrsItr.next();
 					if (relAttr.getTableName().equals(naryRelName))
 						naryRelAttrs.add(relAttr);
 				}
-				printRelColumns(naryRelAttrs, numOfTabs + 3);
+			}
+			
+			if (naryRelAttrs.size() > 0) {
+				writer.println(getTabs(numOfTabs + 2) + "<xs:all>");
+				printColumns(naryRelAttrs, numOfTabs + 3);
 				writer.println(getTabs(numOfTabs + 2) + "</xs:all>");
 			}
 		}
