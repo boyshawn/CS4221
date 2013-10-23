@@ -295,7 +295,7 @@ public class XMLDataGenerator implements Generator {
 							printSpecialRelationship(supertype, keyVals, indentation+1);
 						}else{
 							CachedRowSet crsIsA = getRelationshipData(node, supertype, nodeRels);
-							printRelationship(node, supertype, nodeRels, crsIsA, id, indentation+1);
+							printRelationship(node, supertype, nodeRels, crsIsA, id, indentation+1, true);
 							crsIsA.close();
 						}
 					}
@@ -306,7 +306,7 @@ public class XMLDataGenerator implements Generator {
 						List<NodeRelationship> nodeRels = getNodeRelationship(node,regularEntity);
 						//logger.info("weak nodeRels size="+nodeRels.size());
 						CachedRowSet crsWeak = getRelationshipData(node, regularEntity, nodeRels);
-						printRelationship(node, regularEntity, nodeRels, crsWeak, id, indentation+1);
+						printRelationship(node, regularEntity, nodeRels, crsWeak, id, indentation+1, true);
 						crsWeak.close();
 					}
 
@@ -338,7 +338,7 @@ public class XMLDataGenerator implements Generator {
 					ORASSNode child = children.get(i);
 					List<NodeRelationship> nodeRels = getNodeRelationship(node,child);
 					CachedRowSet crs = getRelationshipData(node, child, nodeRels);
-					printRelationship(node, child, nodeRels, crs, id, indentation+1);
+					printRelationship(node, child, nodeRels, crs, id, indentation+1, false);
 					crs.close();
 				}
 
@@ -399,7 +399,7 @@ public class XMLDataGenerator implements Generator {
 		return crs;
 	}
 
-	private void printRelationship(ORASSNode node1, ORASSNode node2, List<NodeRelationship> nodeRels, CachedRowSet data, String ID, int indentation) throws MainException{
+	private void printRelationship(ORASSNode node1, ORASSNode node2, List<NodeRelationship> nodeRels, CachedRowSet data, String ID, int indentation, boolean isSpecial) throws MainException{
 		try{
 			int n = nodeRels.size();
 
@@ -428,7 +428,7 @@ public class XMLDataGenerator implements Generator {
 					// Print ID reference of the relationship
 					List<String> pkValues2 = getSelectedVals(table2, cols2, data);
 					String refID = this.getTupleID(table2, pkValues2);
-					if(n>1){
+					if(n>1 || !isSpecial){
 						printTabs(indentation);
 						if(m==0){
 							writer.print("<"+table2+" " +table2+"_Ref=\""+refID+"\">");
@@ -451,7 +451,7 @@ public class XMLDataGenerator implements Generator {
 							printTabs(indentation);
 							writer.println("</"+table2+">");
 						}
-					}else{
+					}else if (isSpecial){
 						writer.print(" " + table2+"_Ref=\""+refID+"\"");
 					}
 				}
@@ -888,7 +888,9 @@ public class XMLDataGenerator implements Generator {
 				}catch(SQLException ex){
 					throw new MainException("Error in finding related columns from " + relName + " :" +ex.getMessage());
 				}
-			}	
+			}else{
+				processSpecialRels(parent, child);
+			}
 
 			setupTables(child);
 		}
