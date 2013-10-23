@@ -1,6 +1,7 @@
 package ui;
 
 import java.awt.Desktop;
+import java.awt.Dialog.ModalityType;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -14,6 +15,7 @@ import java.util.Map;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -181,31 +183,6 @@ public class UIController {
 					}
 				}
 			}
-
-			/*
-			 * boolean check = true; List<String> c = new ArrayList<String>();
-			 * for (int i = 0; i < cycleCombo.size(); i++) { String x =
-			 * cycleCombo.get(i).getSelectedItem().toString(); c.add(x); if
-			 * (x.equals(rootString)) { check = false; } }
-			 */
-
-			/*
-			 * HashSet<String> hashSet = new HashSet<String>(); boolean dupli =
-			 * false; for (String s : c) { if (hashSet.contains(s)) dupli =
-			 * true; // contains // duplicates else hashSet.add(s); }
-			 */
-
-			/*
-			 * if (check == false) { JOptionPane.showMessageDialog(choice,
-			 * "Cannot split the root", "ERROR", JOptionPane.ERROR_MESSAGE); }
-			 * else if (dupli == true) { JOptionPane.showMessageDialog(choice,
-			 * "Duplicate(s) detected! Cannot choose 2 same entity to be split",
-			 * "ERROR", JOptionPane.ERROR_MESSAGE); } else { if
-			 * (cycleCombo.size() != 0) { for (int i = 0; i < cycleCombo.size();
-			 * i++) {
-			 * r.setEntityToBeSplitted(cycleCombo.get(i).getSelectedItem()
-			 * .toString()); } }
-			 */
 
 			try {
 				r.translateToORASS();
@@ -462,7 +439,7 @@ public class UIController {
 							// for windows
 							fName = path + "\\" + xmlName;
 						}
-						r.translateToXML(dbname, fName);
+						r.translateToXML(dbname, fName, nary);
 						translate.displaySuccessfulMsg();
 						translate.emptiedField();
 						translate.setErrorMsg(" ");

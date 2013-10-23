@@ -62,13 +62,13 @@ public class RDBToXML {
 	}
 	
 	// XML
-	public void translateToXML(String dbName, String xmlFileName) throws MainException {
+	public void translateToXML(String dbName, String xmlFileName, Map<String, List<String>> nrels) throws MainException {
 		
 		XMLSchemaGenerator schemaGen = new XMLSchemaGenerator();
-		schemaGen.generate(dbName, xmlFileName, orassRoot);
+		schemaGen.generate(dbName, xmlFileName, orassRoot, nrels);
 		
 		XMLDataGenerator dataGen = new XMLDataGenerator();
-		dataGen.generate(dbName, xmlFileName, orassRoot);
+		dataGen.generate(dbName, xmlFileName, orassRoot, nrels);
 		dbc.closeConnection();	
 	}	
 	

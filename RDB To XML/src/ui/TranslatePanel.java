@@ -66,54 +66,6 @@ public class TranslatePanel extends JPanel {
 		add(bottomPanel, layout);
 		
 		add(Box.createRigidArea(new Dimension(0,130)));
-
-	/*	setLayout(new GridBagLayout());
-
-		GridBagConstraints c = new GridBagConstraints();
-		c.insets = new Insets(5, 5, 5, 5);
-
-		c.gridx = 0;
-		c.gridy = 0;
-		c.gridwidth = 2;
-		errorMsgLabel = new JLabel(" ");
-		errorMsgLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-		errorMsgLabel.setForeground(Color.RED);
-		add(errorMsgLabel, c);
-
-		c.gridx = 0;
-		c.gridy = 1;
-		c.gridwidth = 1;
-		add(new JLabel("Enter the XML file name"), c);
-
-		c.gridx = 1;
-		c.gridy = 1;
-		c.gridwidth = 1;
-		add(getXmlNameField(), c);
-
-		c.gridx = 0;
-		c.gridy = 2;
-		c.gridwidth = 1;
-		add(new JLabel("Save to                               "), c);
-
-		c.gridx = 1;
-		c.gridy = 2;
-		c.gridwidth = 2;
-		add(getPathField(), c);
-
-		c.gridx = 4;
-		c.gridy = 2;
-		c.gridwidth = 1;
-		add(getBrowseButton(), c);
-
-		c.gridx = 1;
-		c.gridy = 4;
-		c.gridwidth = 3;
-		JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.TRAILING));
-		bottomPanel.add(getTranslateButton());
-		bottomPanel.add(getCancelButton());
-		bottomPanel.add(new JLabel("              "));
-		add(bottomPanel, c);*/
-
 	}
 
 	private JButton getTranslateButton() {
