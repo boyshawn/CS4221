@@ -23,7 +23,7 @@ public class XMLSchemaGenerator implements Generator {
 	private static Logger logger = Logger.getLogger(XMLSchemaGenerator.class);
 	private PrintWriter writer;
 	private Map<Integer, String> sqlDataTypes;
-	private List<String> processedTables, partOfNaryRel;
+	private List<String> processedTables;
 	private Map<String, List<String>> naryRels;
 	
 	/**
