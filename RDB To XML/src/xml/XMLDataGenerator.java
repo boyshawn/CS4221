@@ -36,7 +36,7 @@ public class XMLDataGenerator implements Generator {
 	private List<NodeRelationship> relationships;
 	private Map<String, List<String>>  keyMaps;
 	private Map<String, List<String>>  criticalColMaps;
-//	private Map<String, List<String>> prevVals;
+	//	private Map<String, List<String>> prevVals;
 	private Map<String, List<String>> colMaps;
 	private Map<String, CachedRowSet> tableKeyData;
 	private Map<String, CachedRowSet> tableData;
@@ -44,7 +44,7 @@ public class XMLDataGenerator implements Generator {
 	//private Map<String, List<String>> currVals;
 	//private List<String> currTables;
 
-//	private Map<Integer, Boolean> needClosing;
+	//	private Map<Integer, Boolean> needClosing;
 	private Logger logger = Logger.getLogger(XMLDataGenerator.class);
 
 	@Override
@@ -60,12 +60,12 @@ public class XMLDataGenerator implements Generator {
 		tableDataIDs = new HashMap<String, List<TupleIDMap>>();
 		tableKeyData= new HashMap<String, CachedRowSet>();
 		tableData= new HashMap<String, CachedRowSet>();
-	//	needClosing = new HashMap<Integer, Boolean>();
-		
+		//	needClosing = new HashMap<Integer, Boolean>();
+
 		setupFile(dbName, fileName);
 
 		printDB(dbName, fileName, rootNodes);
-		
+
 		writer.close();
 	}
 
@@ -106,9 +106,9 @@ public class XMLDataGenerator implements Generator {
 			setupTables(root);
 			populateTableData(root);
 		}
-		
+
 		assignIDsToTuples();
-		
+
 		for(int i=0; i<rootNodes.size(); i++){
 			ORASSNode root = rootNodes.get(i);
 			printTable(root, 1);
@@ -133,10 +133,10 @@ public class XMLDataGenerator implements Generator {
 				throw new MainException("Error in printing DB " + dbName + ex.getMessage());
 			}*/
 		}
-		
+
 		writer.println("</"+dbName+">");
 	}
-	
+
 	private void populateTableData(ORASSNode node) throws MainException{
 		String tableName = node.getName();
 		String originalName = node.getOriginalName();
@@ -155,30 +155,30 @@ public class XMLDataGenerator implements Generator {
 			populateTableData(child);
 		}
 	}
-	
+
 	private void assignIDsToTuples() throws MainException{
 		try{
-		for(int i=0; i<nodeTables.size(); i++){
-			String tableName = nodeTables.get(i);
-			CachedRowSet keyData = tableKeyData.get(tableName);
-			List<String> keyCols = keyMaps.get(tableName);
-			int k = 1; 
-			while(keyData.next()){
-				String id = tableName + k;
-				List<String> keyVals = getSelectedVals(tableName, keyCols, keyData);
-				TupleIDMap tidm = new TupleIDMap(tableName, id, keyVals);
-				List<TupleIDMap> tim = tableDataIDs.get(tableName);
-				tim.add(tidm);
-				k++;
+			for(int i=0; i<nodeTables.size(); i++){
+				String tableName = nodeTables.get(i);
+				CachedRowSet keyData = tableKeyData.get(tableName);
+				List<String> keyCols = keyMaps.get(tableName);
+				int k = 1; 
+				while(keyData.next()){
+					String id = tableName + k;
+					List<String> keyVals = getSelectedVals(tableName, keyCols, keyData);
+					TupleIDMap tidm = new TupleIDMap(tableName, id, keyVals);
+					List<TupleIDMap> tim = tableDataIDs.get(tableName);
+					tim.add(tidm);
+					k++;
+				}
 			}
-		}
 		}catch(SQLException ex){
-			
+
 		}
 	}
-	
+
 	private List<String> getSelectedVals(String tableName, List<String> cols, CachedRowSet data) throws MainException{
-		
+
 		try{
 			//logger.info("get data for "+tableName);
 			List<String> vals = new ArrayList<String>();
@@ -192,9 +192,9 @@ public class XMLDataGenerator implements Generator {
 		}catch(SQLException ex){
 			throw new MainException(ex.getMessage());
 		}	
-		
+
 	}
-	
+
 	private String getTupleID(String tableName, List<String> keyVals){
 		List<TupleIDMap> tim = tableDataIDs.get(tableName);
 		for(int i=0; i<tim.size(); i++){
@@ -205,7 +205,7 @@ public class XMLDataGenerator implements Generator {
 		}
 		return "";
 	}
-	
+
 	private List<NodeRelationship> getNodeRelationship(ORASSNode node1, ORASSNode node2){
 		List<NodeRelationship> nodeRels = new ArrayList<NodeRelationship>();
 		String table1 = node1.getName();
@@ -237,17 +237,17 @@ public class XMLDataGenerator implements Generator {
 		}
 		return nodeRels;
 	}
-	
+
 	private void printTable(ORASSNode node, int indentation) throws MainException{
 		try{
 			String tableName = node.getName();
 			CachedRowSet data = tableData.get(tableName);
-			
+
 			List<String> keyCols = keyMaps.get(tableName);
 			//List<String> cols = colMaps.get(tableName);
 			List<ColumnDetail> entityCols = node.getEntityAttributes();
 			boolean firstPrint = true;
-			
+
 			List<String> entityColNames = new ArrayList<String>();
 			for(int i=0; i< entityCols.size(); i++){
 				String currName = entityCols.get(i).getName();
@@ -259,9 +259,8 @@ public class XMLDataGenerator implements Generator {
 			List<ORASSNode> children = node.getChildren();
 			List<ORASSNode> supertypes = node.getSupertypeNode();
 			ORASSNode regularEntity = node.getNormalEntityNode();
-			
+
 			if(supertypes.size()>0){
-				logger.info("herer");
 				List<ColumnDetail> filteredEntityCols = new ArrayList<ColumnDetail>();
 				for(int i=0; i<supertypes.size(); i++){
 					ORASSNode supertype = supertypes.get(i);
@@ -284,7 +283,34 @@ public class XMLDataGenerator implements Generator {
 				// Print opening tag
 				if(!id.equals(prevId)){
 					printTabs(indentation);
-					writer.println("<"+tableName+" "+ tableName +"#=\"" + id+"\">");
+					writer.print("<"+tableName+" "+ tableName +"#=\"" + id+"\"");
+
+					// Print IS-A relationships
+					for(int i=0; i<supertypes.size(); i++){
+						ORASSNode supertype = supertypes.get(i);
+						List<NodeRelationship> nodeRels = getNodeRelationship(node,supertype);
+						//logger.info("is-a nodeRels size="+nodeRels.size());
+						String supertypeName = supertype.getOriginalName();
+						if(node.getOriginalName().equals(supertypeName)){
+							printSpecialRelationship(supertype, keyVals, indentation+1);
+						}else{
+							CachedRowSet crsIsA = getRelationshipData(node, supertype, nodeRels);
+							printRelationship(node, supertype, nodeRels, crsIsA, id, indentation+1);
+							crsIsA.close();
+						}
+					}
+
+					// Print ID/EX relationships
+
+					if(regularEntity!=null){
+						List<NodeRelationship> nodeRels = getNodeRelationship(node,regularEntity);
+						//logger.info("weak nodeRels size="+nodeRels.size());
+						CachedRowSet crsWeak = getRelationshipData(node, regularEntity, nodeRels);
+						printRelationship(node, regularEntity, nodeRels, crsWeak, id, indentation+1);
+						crsWeak.close();
+					}
+
+					writer.println(">");
 				}
 				// Print columns
 				for(int i=0;i<entityCols.size();i++){
@@ -292,7 +318,7 @@ public class XMLDataGenerator implements Generator {
 					String colName = col.getName();
 					String nextData = data.getString(colName);
 					String prevColVal = prevVals.get(i);
-				
+
 					boolean hasFKref = col.hasForeignRef();
 					if(((!prevColVal.equals(nextData) || firstPrint) && !hasFKref) || !col.isMultiValued()){
 						printTabs(indentation+1);
@@ -306,7 +332,7 @@ public class XMLDataGenerator implements Generator {
 					}
 				}
 				firstPrint= false;
-				
+
 				// Print regular relationships
 				for(int i=0; i<children.size(); i++){
 					ORASSNode child = children.get(i);
@@ -315,43 +341,10 @@ public class XMLDataGenerator implements Generator {
 					printRelationship(node, child, nodeRels, crs, id, indentation+1);
 					crs.close();
 				}
-				
-				// Print IS-A relationships
 
-				for(int i=0; i<supertypes.size(); i++){
-					ORASSNode supertype = supertypes.get(i);
-					List<NodeRelationship> nodeRels = getNodeRelationship(node,supertype);
-					//logger.info("is-a nodeRels size="+nodeRels.size());
-					String supertypeName = supertype.getOriginalName();
-					if(node.getOriginalName().equals(supertypeName)){
-						printSpecialRelationship(supertype, keyVals, indentation+1);
-					}else{
-						CachedRowSet crsIsA = getRelationshipData(node, supertype, nodeRels);
-						printRelationship(node, supertype, nodeRels, crsIsA, id, indentation+1);
-						crsIsA.close();
-					}
-				}
-				
-				// Print ID/EX relationships
-				
-				/*for(int i=0; i<weakEntities.size(); i++){
-					ORASSNode weakEntity = weakEntities.get(i);
-					List<NodeRelationship> nodeRels = getNodeRelationship(node,weakEntity);
-					logger.info("nodeRels size="+nodeRels.size());
-					CachedRowSet crs = getRelationshipData(nodeRels);
-					printRelationship(node, weakEntity, nodeRels, crs, id, indentation+1);
-				}*/
-				if(regularEntity!=null){
-					List<NodeRelationship> nodeRels = getNodeRelationship(node,regularEntity);
-					//logger.info("weak nodeRels size="+nodeRels.size());
-					CachedRowSet crsWeak = getRelationshipData(node, regularEntity, nodeRels);
-					printRelationship(node, regularEntity, nodeRels, crsWeak, id, indentation+1);
-					crsWeak.close();
-				}
-				
 				printClosingTag(node, data, keyCols, keyVals, indentation);
 			}
-			
+
 			for(int i=0; i<children.size(); i++){
 				ORASSNode child = children.get(i);
 				printTable(child, 1);
@@ -361,7 +354,7 @@ public class XMLDataGenerator implements Generator {
 			throw new MainException("Print table " + node.getName()+" : "+ ex.getMessage());
 		}
 	}
-	
+
 	private void printClosingTag(ORASSNode node, CachedRowSet data, List<String> keyCols, List<String> currKeyVals, int indentation) throws MainException{
 		try{
 			String tableName = node.getName();
@@ -378,12 +371,12 @@ public class XMLDataGenerator implements Generator {
 				printTabs(indentation);
 				writer.println("</"+tableName+">");
 			}
-			
+
 		}catch(SQLException ex){
 			throw new MainException(ex.getMessage());
 		}
 	}
-	
+
 	private CachedRowSet getRelationshipData(ORASSNode node1, ORASSNode node2, List<NodeRelationship> nodeRels) throws MainException{
 		List<String> fromTables = new ArrayList<String>();
 		String table1 = node1.getOriginalName();
@@ -400,16 +393,16 @@ public class XMLDataGenerator implements Generator {
 			if(!fromTables.contains(table1)) fromTables.add(table1);
 			if(!fromTables.contains(table2)) fromTables.add(table2);
 		}
-		
+
 		//logger.debug("from tables size: "+fromTables.size());
 		CachedRowSet crs = dbCache.joinTables(fromTables, nodeRels, null);
 		return crs;
 	}
-	
+
 	private void printRelationship(ORASSNode node1, ORASSNode node2, List<NodeRelationship> nodeRels, CachedRowSet data, String ID, int indentation) throws MainException{
 		try{
 			int n = nodeRels.size();
-			
+
 			String table1 = node1.getName();
 			String table2 = node2.getName();
 			List<String> cols1 = keyMaps.get(table1);
@@ -435,27 +428,31 @@ public class XMLDataGenerator implements Generator {
 					// Print ID reference of the relationship
 					List<String> pkValues2 = getSelectedVals(table2, cols2, data);
 					String refID = this.getTupleID(table2, pkValues2);
-					printTabs(indentation);
-					if(m==0){
-						writer.print("<"+table2+" " +table2+"_Ref=\""+refID+"\">");
-						writer.println("</"+table2+">");
-					}else{
-						writer.println("<"+table2+" " +table2+"_Ref=\""+refID+"\">");
-					}
-					
-					
-					// Print relationship attributes
-					for(int i=0; i<relCols.size(); i++){
-						ColumnDetail col= relCols.get(i);
-						String colName = col.getName();
-						String colVal = data.getString(colName);
-						printTabs(indentation+1);
-						writer.print("<"+colName+">"+colVal);
-						writer.println("</"+colName+">");
-					}
-					if(m>0){
+					if(n>1){
 						printTabs(indentation);
-						writer.println("</"+table2+">");
+						if(m==0){
+							writer.print("<"+table2+" " +table2+"_Ref=\""+refID+"\">");
+							writer.println("</"+table2+">");
+						}else{
+							writer.println("<"+table2+" " +table2+"_Ref=\""+refID+"\">");
+						}
+
+
+						// Print relationship attributes
+						for(int i=0; i<relCols.size(); i++){
+							ColumnDetail col= relCols.get(i);
+							String colName = col.getName();
+							String colVal = data.getString(colName);
+							printTabs(indentation+1);
+							writer.print("<"+colName+">"+colVal);
+							writer.println("</"+colName+">");
+						}
+						if(m>0){
+							printTabs(indentation);
+							writer.println("</"+table2+">");
+						}
+					}else{
+						writer.print(" " + table2+"_Ref=\""+refID+"\"");
 					}
 				}
 			}
@@ -463,19 +460,17 @@ public class XMLDataGenerator implements Generator {
 			throw new MainException(ex.getMessage());
 		}
 	}
-	
+
 	private void printSpecialRelationship(ORASSNode node2, List<String> pkVals, int indentation) throws MainException{
 		try{
 			String table2 = node2.getName();
-
 			String refID = this.getTupleID(table2, pkVals);
-			printTabs(indentation);
-			writer.print("<"+table2+" " +table2+"_Ref=\""+refID+"\">");
-			writer.println("</"+table2+">");
+			writer.print(" "+table2+"_Ref=\""+refID+"\"");
 		}catch(Exception ex){
 			throw new MainException(ex.getMessage());
 		}
 	}
+
 	/*private void printTable(ORASSNode node, CachedRowSet data, int indentation) throws MainException{
 		try{
 			String tableName = node.getName();
@@ -496,7 +491,7 @@ public class XMLDataGenerator implements Generator {
 				needClosing.put(tableIndex, true);
 				for(int i=0;i<cols.size();i++){
 					ColumnDetail col = cols.get(i);
-					
+
 					String colName = col.getName();
 					String tName = col.getTableName();
 					String nextData;
@@ -521,7 +516,7 @@ public class XMLDataGenerator implements Generator {
 				}
 			}
 			List<ORASSNode> children = node.getChildren();
-			
+
 			for(int i=0; i<children.size(); i++){
 				ORASSNode child = children.get(i);
 				String childName = child.getName();
@@ -599,7 +594,7 @@ public class XMLDataGenerator implements Generator {
 		}
 		return allVals;
 	}*/
-	
+
 	/*
 	private List<String> getEntityValues(ORASSNode node, CachedRowSet data) throws MainException{
 
@@ -628,7 +623,7 @@ public class XMLDataGenerator implements Generator {
 		}
 		return vals;
 	}*/
-	
+
 	/*
 	private String getFirstChangedTable(Map<String, List<String>> vals1, Map<String, List<String>> vals2, List<String> currTables) throws MainException{
 		int n =currTables.size();
@@ -670,7 +665,7 @@ public class XMLDataGenerator implements Generator {
 		}
 		return cols;
 	}*/
-/*
+	/*
 	private void resetNeedClosing(){
 		for(int i=0; i<nodeTables.size(); i++){
 			needClosing.put(i,false);
@@ -679,8 +674,8 @@ public class XMLDataGenerator implements Generator {
 
 
 
-	
-/*	private void printTable2(ORASSNode node, CachedRowSet data, int indentation) throws MainException{
+
+	/*	private void printTable2(ORASSNode node, CachedRowSet data, int indentation) throws MainException{
 		try{
 			String tableName = node.getName();
 			//List<String> cols = getColNames(node);
@@ -700,7 +695,7 @@ public class XMLDataGenerator implements Generator {
 				needClosing.put(tableIndex, true);
 				for(int i=0;i<cols.size();i++){
 					ColumnDetail col = cols.get(i);
-					
+
 					String colName = col.getName();
 					String tName = col.getTableName();
 					String nextData;
@@ -725,7 +720,7 @@ public class XMLDataGenerator implements Generator {
 				}
 			}
 			List<ORASSNode> children = node.getChildren();
-			
+
 			for(int i=0; i<children.size(); i++){
 				ORASSNode child = children.get(i);
 				String childName = child.getName();
@@ -743,13 +738,13 @@ public class XMLDataGenerator implements Generator {
 			throw new MainException("Print table " + node.getName()+" : "+ ex.getMessage());
 		}
 	}*/
-	
+
 	/*private void printClosingTag(ORASSNode node, CachedRowSet data, List<String> previousVals, int indentation) throws MainException{
 		String tName = node.getName();
 		try{
 			List<ORASSNode> children = node.getChildren();
 			int tableIndex = nodeTables.indexOf(tName);
-			
+
 			if(needClosing.get(tableIndex)){
 				if(children.isEmpty() || children.size()==0){
 					printTabs(indentation);
@@ -776,8 +771,8 @@ public class XMLDataGenerator implements Generator {
 			throw new MainException("Error in getting data for printing the closing tag.");
 		}
 	}*/
-	
-	
+
+
 	private boolean checkTableExist(String tName){
 		for(int i=0; i<tables.size();i++){
 			String newName = tables.get(i).get(1);
@@ -800,7 +795,7 @@ public class XMLDataGenerator implements Generator {
 		}
 		return true;
 	}
-	
+
 	private boolean isNameChangedReverse(String originalName){
 		for(int i=0; i<tables.size(); i++){
 			String oldName = tables.get(i).get(0);
@@ -812,7 +807,7 @@ public class XMLDataGenerator implements Generator {
 		}
 		return true;
 	}*/
-	
+
 	private void setupTables(ORASSNode parent) throws MainException{
 		String tName = parent.getOriginalName();
 		String newName = parent.getName();
@@ -823,7 +818,7 @@ public class XMLDataGenerator implements Generator {
 			tables.add(nameMapping);
 		}
 		nodeTables.add(newName);
-		
+
 		//logger.info("new name: "+newName +"|| old name: "+tName);
 		List<String> pks =dbCache.getPrimaryKeys(tName);
 		keyMaps.put(newName, pks);
@@ -839,7 +834,7 @@ public class XMLDataGenerator implements Generator {
 		criticalColMaps.put(newName, criticalCols);
 		List<String> allCols = dbCache.getAllColumns(tName);
 		colMaps.put(newName, allCols);
-		
+
 		List<ORASSNode> supertypes = parent.getSupertypeNode();
 		for(int j=0; j<supertypes.size(); j++){
 			logger.info("is-a");
@@ -854,7 +849,7 @@ public class XMLDataGenerator implements Generator {
 			logger.info("ID/EX");
 			processSpecialRels(parent, weakEntities.get(j));
 		}*/
-		
+
 		List<ORASSNode> children = parent.getChildren();
 		for(int i = 0; i<children.size(); i++){
 			ORASSNode child = children.get(i);
@@ -894,7 +889,7 @@ public class XMLDataGenerator implements Generator {
 					throw new MainException("Error in finding related columns from " + relName + " :" +ex.getMessage());
 				}
 			}	
-			
+
 			setupTables(child);
 		}
 
@@ -941,7 +936,7 @@ public class XMLDataGenerator implements Generator {
 		return crs;
 	}*/
 
-/*	private CachedRowSet getRelevantDataForTable(ORASSNode node, CachedRowSet data) throws MainException{
+	/*	private CachedRowSet getRelevantDataForTable(ORASSNode node, CachedRowSet data) throws MainException{
 		List<TableColVal> valMaps = new ArrayList<TableColVal>();
 		String tableName = node.getName();
 		int tableIndex = nodeTables.indexOf(tableName);
@@ -965,7 +960,7 @@ public class XMLDataGenerator implements Generator {
 		CachedRowSet CachedRowSet = dbCache.getRelevantDataForTable(colMaps, tables, valMaps, keyMaps, nodeTables, nodeRel);
 		return CachedRowSet;
 	}*/
-	
+
 	/*
 	private NodeRelationship getNodeRelationship(String tableName){
 		for(int i = 0; i< relationships.size(); i++){
@@ -981,9 +976,9 @@ public class XMLDataGenerator implements Generator {
 		}
 		return null; 
 	}*/
-	
-	
-	
+
+
+
 	private void printTabs(int indentation){
 		for(int i=0; i<indentation; i++){
 			writer.print("\t");
