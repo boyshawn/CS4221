@@ -24,6 +24,7 @@ public class XMLSchemaGenerator implements Generator {
 	private PrintWriter writer;
 	private Map<Integer, String> sqlDataTypes;
 	private List<String> processedTables;
+	private Map<String, List<String>> naryRels;
 	
 	/**
 	 * To generate the XML Schema for a database
@@ -32,7 +33,9 @@ public class XMLSchemaGenerator implements Generator {
 	 * @throws MainException	if there is a database connection error which occurred at any time during the XML Schema generation
 	 */
 	@Override
-	public void generate(String dbName, String fileName, List<ORASSNode> roots) throws MainException {
+	public void generate(String dbName, String fileName, List<ORASSNode> roots, Map<String,List<String>> nRels) throws MainException {
+		naryRels = nRels;
+		
 		setup(fileName);
 		
 		printDatabase(dbName, roots);
