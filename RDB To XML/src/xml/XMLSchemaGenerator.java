@@ -213,36 +213,44 @@ public class XMLSchemaGenerator implements Generator {
 		List<ORASSNode> superTypes = node.getSupertypeNode();
 		ORASSNode normalEntity = node.getNormalEntityNode();
 		boolean isSubType = superTypes.size() > 0 ? true : false;
-		// if it is a subtype, print the reference to its supertype
+		boolean isWeakEntity = normalEntity == null ? false : true;
+		
+		// print all column info if it is not a subtype
+		if (!isSubType) {
+			writer.println(getTabs(numOfTabs + 1) + "<xs:all>");
+			printColumns(node.getEntityAttributes(), numOfTabs + 2);
+		}
+		
+		// if it is a subtype, print the reference to its supertypes
 		if (isSubType) {
 			Iterator<ORASSNode> itr = superTypes.iterator();
 			while (itr.hasNext()) {
 				ORASSNode superType = itr.next();
 				String superTypeName = superType.getName();
-				writer.println(getTabs(numOfTabs + 1) + "<xs:attribute name=\""+superTypeName+"_Ref\" type=\"xs:string\" use=\"requred\"/>");
+				writer.println(getTabs(numOfTabs + 1) + "<xs:all>");
+				writer.println(getTabs(numOfTabs + 2) + "<xs:element name=\""+superTypeName+"\">");
+				writer.println(getTabs(numOfTabs + 3) + "<xs:complexType>");
+				writer.println(getTabs(numOfTabs + 4) + "<xs:attribute name=\""+superTypeName+"_Ref\" type=\"xs:string\" use=\"requred\"/>");
+				writer.println(getTabs(numOfTabs + 3) + "</xs:complexType>");
+				writer.println(getTabs(numOfTabs + 2) + "</xs:element>");
 			}
 		}
 		
-		// if it is a weak entity, print the reference to its normal entity
-		else if (normalEntity != null) {
-			String entityName = normalEntity.getName();
-			writer.println(getTabs(numOfTabs + 1) + "<xs:attribute name=\""+entityName+"_Ref\" type=\"xs:string\" use=\"requred\"/>");
+		// if it is a weak entity, print the reference to its normal entity	
+		else if (isWeakEntity) {
+			String normalEntityName = normalEntity.getName();
+			writer.println(getTabs(numOfTabs + 2) + "<xs:element name=\""+normalEntityName+"\">");
+			writer.println(getTabs(numOfTabs + 3) + "<xs:complexType>");
+			writer.println(getTabs(numOfTabs + 4) + "<xs:attribute name=\""+normalEntityName+"_Ref\" type=\"xs:string\" use=\"requred\"/>");
+			writer.println(getTabs(numOfTabs + 3) + "</xs:complexType>");
+			writer.println(getTabs(numOfTabs + 2) + "</xs:element>");
 		}
 		
-		if (!isSubType) {
-			writer.println(getTabs(numOfTabs + 1) + "<xs:all>");
-			printColumns(node.getEntityAttributes(), numOfTabs + 2);
-		}
-	
+		
 		// print references to other tables
 		List<ORASSNode> children = node.getChildren();
 		Iterator<ORASSNode> itr = children.iterator();
-		boolean hasPrintedXsAll = isSubType ? false : true;
 		
-		if (children.size() > 0 && isSubType) {
-			writer.println(getTabs(numOfTabs + 1) + "<xs:all>");
-			hasPrintedXsAll = true;
-		}
 		while (itr.hasNext()) {
 			ORASSNode child = itr.next();
 			String childName = child.getName();
@@ -259,9 +267,7 @@ public class XMLSchemaGenerator implements Generator {
 			writer.println(getTabs(numOfTabs + 2) + "</xs:element>");
 		}
 		
-		if (hasPrintedXsAll)
-			writer.println(getTabs(numOfTabs + 1) + "</xs:all>");
-		
+		writer.println(getTabs(numOfTabs + 1) + "</xs:all>");
 		writer.println(getTabs(numOfTabs)     + "</xs:complexType>");
 		writer.println();
 		
