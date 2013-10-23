@@ -43,8 +43,6 @@ public class MainPanel {
 			BoxLayout layout = new BoxLayout(mainPane, BoxLayout.Y_AXIS);
 			mainPane.setLayout(layout);
 			
-			//mainPane.add(Box.createRigidArea(new Dimension(0,40)));
-			
 			errorMsgLabel = new JLabel(" ");
 			errorMsgLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 			errorMsgLabel.setForeground(Color.RED);
