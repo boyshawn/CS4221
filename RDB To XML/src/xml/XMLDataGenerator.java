@@ -425,7 +425,7 @@ public class XMLDataGenerator implements Generator {
 	private void printRelationship(ORASSNode node1, ORASSNode node2, List<NodeRelationship> nodeRels, CachedRowSet data, String ID, int indentation) throws MainException{
 		try{
 			int n = nodeRels.size();
-
+			String relName = "";
 			String table1 = node1.getName();
 			String table2 = node2.getName();
 			List<String> cols1 = keyMaps.get(table1);
@@ -440,6 +440,7 @@ public class XMLDataGenerator implements Generator {
 					if(relTable2.equals(table1)){
 						shouldPrint = true;
 					}
+					relName = nodeRel.getTable1();
 				}
 			}
 			List<ColumnDetail> relCols = node2.getRelAttributes();
@@ -463,11 +464,15 @@ public class XMLDataGenerator implements Generator {
 					// Print relationship attributes
 					for(int i=0; i<relCols.size(); i++){
 						ColumnDetail col= relCols.get(i);
-						String colName = col.getName();
-						String colVal = data.getString(colName);
-						printTabs(indentation+1);
-						writer.print("<"+colName+">"+colVal);
-						writer.println("</"+colName+">");
+
+						String tName = col.getTableName();
+						if(tName.equals(relName)){
+							String colName = col.getName();
+							String colVal = data.getString(colName);
+							printTabs(indentation+1);
+							writer.print("<"+colName+">"+colVal);
+							writer.println("</"+colName+">");
+						}
 					}
 					if(m>0){
 						printTabs(indentation);
